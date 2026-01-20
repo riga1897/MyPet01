@@ -10,23 +10,25 @@ A personal pet website now being developed with Python.
 - **Testing**: Use `pytest` (installed in the `test` group).
 
 ## Project Structure
-- `main.py` - Main Python entry point
+- `manage.py` - Django project management script
+- `mypet_project/` - Django project configuration
+- `main.py` - Legacy entry point
 - `replit.nix` - Nix environment configuration
 
 ## Running the Application
-### Python
+### Django
 ```bash
-python main.py
+python manage.py runserver 0.0.0.0:5000
 ```
 
 ## Tech Stack
-- Python 3.11 (selected for stability with Poetry and dev tools)
-- Poetry
-- Ruff
-- Mypy
-- Pytest
+- Python 3.11
+- Django 5.x
+- Poetry (for dependency management)
+- Ruff, Mypy, Pytest (dev tools)
 
 ## Recent Changes
 - 2026-01-20: Project prepared for Python development.
-- 2026-01-20: Added user preferences for tooling (Poetry, Ruff, Mypy, Pytest) to `replit.md`.
-- 2026-01-20: Updated tech stack description to reflect Python 3.11 usage for tool compatibility.
+- 2026-01-20: Installed Django 5.x and initialized project structure.
+- 2026-01-20: Configured "Run Django App" workflow on port 5000.
+- 2026-01-20: Installed Django and initialized project.
