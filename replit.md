@@ -20,7 +20,7 @@ python main.py
 ```
 
 ## Tech Stack
-- Python 3.12
+- Python 3.11 (selected for stability with Poetry and dev tools)
 - Poetry
 - Ruff
 - Mypy
@@ -29,3 +29,4 @@ python main.py
 ## Recent Changes
 - 2026-01-20: Project prepared for Python development.
 - 2026-01-20: Added user preferences for tooling (Poetry, Ruff, Mypy, Pytest) to `replit.md`.
+- 2026-01-20: Updated tech stack description to reflect Python 3.11 usage for tool compatibility.
