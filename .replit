@@ -1,4 +1,4 @@
-modules = ["python-3.12"]
+modules = ["ruff-0.4.4", "python-3.11"]
 [[ports]]
 localPort = 5000
 externalPort = 80
