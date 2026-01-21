@@ -37,3 +37,6 @@ waitForPort = 5000
 ALLOWED_HOSTS = "*"
 SECRET_KEY = "django-insecure-dummy-key-for-replit-dev"
 DEBUG = "True"
+
+[nix]
+channel = "stable-25_05"
