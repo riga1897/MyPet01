@@ -19,6 +19,8 @@ The project is designed to be container-compatible. In Replit, it runs as a sing
 - [x] Dependencies minimized in `pyproject.toml`
 - [x] Docker configuration files simplified
 - [x] Basic Django structure initialized
+- [x] PostgreSQL database integrated
+- [x] Created `blog` app with Post, Video, and Comment models
 
 ## How to Run (Replit)
 Click the "Run" button to start the Django development server.
