@@ -18,9 +18,9 @@
             </div>
             
             <nav class="hidden md:flex items-center gap-6">
-                <a href="#home" class="transition-colors hover:text-primary">Главная</a>
-                <a href="#videos" class="transition-colors hover:text-primary">Видео</a>
-                <a href="#about" class="transition-colors hover:text-primary">О блоге</a>
+                <a href="{% url 'blog:index' %}" class="transition-colors hover:text-primary">Главная</a>
+                <a href="{% url 'blog:index' %}#videos" class="transition-colors hover:text-primary">Видео</a>
+                <a href="{% url 'blog:index' %}#about" class="transition-colors hover:text-primary">О блоге</a>
                 
                 {% if user.is_authenticated %}
                     {% if is_moderator %}
