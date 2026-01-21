@@ -30,3 +30,10 @@ outputType = "webview"
 task = "shell.exec"
 args = "poetry run python manage.py runserver 0.0.0.0:5000 --noreload"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+ALLOWED_HOSTS = "localhost,127.0.0.1,0.0.0.0,.replit.app"
+SECRET_KEY = "django-insecure-dummy-key-for-replit-dev"
+DEBUG = "True"
