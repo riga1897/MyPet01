@@ -35,10 +35,25 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] Docker configuration files simplified
 - [x] Basic Django structure initialized
 - [x] PostgreSQL database integrated
-- [x] Created `blog` app with Post, Video, and Comment models
+- [x] Created `blog` app with Content model (video/photo support)
 - [x] Configured Django Admin for blog management
 - [x] Frontend templates created based on Figma design "Гармония Души"
-- [x] Video model extended with category, thumbnail, duration fields
+- [x] Content model with content_type (video/photo), category, thumbnail, duration fields
+
+## Data Models
+```
+BaseModel (abstract)
+  └── created_at, updated_at
+
+Content (inherits BaseModel)
+  ├── title: CharField
+  ├── description: TextField
+  ├── content_type: video | photo
+  ├── category: yoga | oils
+  ├── thumbnail: ImageField
+  ├── video_file: FileField
+  └── duration: CharField (MM:SS)
+```
 
 ## Frontend Structure
 - **Base template**: `templates/base.html` (Tailwind CSS CDN + custom CSS variables)
@@ -103,9 +118,9 @@ X_FRAME_OPTIONS=DENY
 2. **Ubuntu + Docker**: Use Let's Encrypt with Caddy (recommended) or Nginx + Certbot
 
 ## Recent Changes
+- 2026-01-21: Refactored Video → Content model with content_type (video/photo), removed Post and Comment models.
+- 2026-01-21: Added USE_HTTPS toggle for one-click production security settings.
 - 2026-01-21: Added production security settings (SSL redirect, HSTS, secure cookies) with env toggles.
 - 2026-01-21: Implemented frontend based on Figma design "Гармония Души" — yoga & essential oils blog.
-- 2026-01-21: Extended Video model with title, category (yoga/oils), thumbnail, duration fields.
-- 2026-01-21: Created HomeView with ListView for displaying videos on the main page.
 - 2026-01-21: Migrated from django-environ to pydantic-settings for fully typed configuration.
 - 2026-01-21: Integrated PostgreSQL, created `blog` app, configured Admin, and documented the TDD workflow in `replit.md`.
