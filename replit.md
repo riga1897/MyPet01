@@ -42,6 +42,11 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] Created `users` app with authentication and role-based permissions
 - [x] Implemented moderator group with management interface
 - [x] Added content editing on site (CRUD for moderators only)
+- [x] Mobile responsive menu (burger menu)
+- [x] Category filters (Все/Йога/Масла)
+- [x] Search by title and description
+- [x] Dark/Light theme toggle with localStorage persistence
+- [x] SEO optimization (meta tags, Open Graph)
 
 ## Data Models
 ```
@@ -133,13 +138,19 @@ X_FRAME_OPTIONS=DENY
 1. **Replit Deployment**: HTTPS is automatic
 2. **Ubuntu + Docker**: Use Let's Encrypt with Caddy (recommended) or Nginx + Certbot
 
+## Future Improvements (Backlog)
+- [ ] Счётчик просмотров контента
+- [ ] Подписка на email-рассылку
+- [ ] Пагинация (когда контента станет много)
+- [ ] Комментарии к видео/фото
+
 ## Recent Changes
+- 2026-01-21: Added mobile menu, category filters, search, dark theme, and SEO meta tags.
+- 2026-01-21: Added modal windows for viewing video/photo content.
 - 2026-01-21: Added users app with login/logout, moderator group management, and role-based content editing.
 - 2026-01-21: Created content CRUD interface on site (accessible only to moderators and admins).
 - 2026-01-21: Restructured tests into app-specific directories with 100% coverage (76 tests).
-- 2026-01-21: Added ADMIN_SHOW_FACETS setting for controlling facet counters in admin filters.
 - 2026-01-21: Refactored Video → Content model with content_type (video/photo), removed Post and Comment models.
-- 2026-01-21: Added USE_HTTPS toggle for one-click production security settings.
 - 2026-01-21: Added production security settings (SSL redirect, HSTS, secure cookies) with env toggles.
 - 2026-01-21: Implemented frontend based on Figma design "Гармония Души" — yoga & essential oils blog.
 - 2026-01-21: Migrated from django-environ to pydantic-settings for fully typed configuration.

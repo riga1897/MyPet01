@@ -1,11 +1,34 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Гармония Души — блог о йоге и эфирных маслах. Практики для здоровья тела и души, советы по ароматерапии.{% endblock %}">
+    <meta name="keywords" content="йога, эфирные масла, ароматерапия, медитация, здоровье, гармония">
+    <meta name="author" content="Гармония Души">
+    <meta name="robots" content="index, follow">
+    
+    <meta property="og:title" content="{% block og_title %}Гармония Души — Йога и Эфирные масла{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Практики йоги и секреты ароматерапии для гармонии тела и души{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:site_name" content="Гармония Души">
+    {% block og_image %}<meta property="og:image" content="">{% endblock %}
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Гармония Души — Йога и Эфирные масла">
+    <meta name="twitter:description" content="Практики йоги и секреты ароматерапии для гармонии тела и души">
+    
+    {% block canonical %}{% endblock %}
+    
     <title>{% block title %}Гармония Души{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <style>
         :root {
             --background: #F9FAFA;
@@ -25,10 +48,28 @@
             --radius: 0.75rem;
         }
         
+        .dark {
+            --background: #1a1f1c;
+            --foreground: #e8ede7;
+            --card: #242a26;
+            --card-foreground: #e8ede7;
+            --primary: #7AA9BA;
+            --primary-foreground: #ffffff;
+            --secondary: #A8B89C;
+            --secondary-foreground: #1a1f1c;
+            --muted: #2f3832;
+            --muted-foreground: #9ca89f;
+            --accent: #3a4a4f;
+            --accent-foreground: #e8ede7;
+            --border: rgba(168, 184, 156, 0.15);
+            --ring: #7AA9BA;
+        }
+        
         body {
             background-color: var(--background);
             color: var(--foreground);
             font-family: system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .bg-background { background-color: var(--background); }
@@ -60,10 +101,52 @@
         .hover\:text-primary:hover { color: var(--primary); }
         .hover\:bg-primary\/90:hover { background-color: rgba(122, 169, 186, 0.9); }
         .hover\:bg-secondary\/90:hover { background-color: rgba(168, 184, 156, 0.9); }
+        .hover\:bg-muted:hover { background-color: var(--muted); }
         
         h1, h2, h3, h4 { font-weight: 500; }
+        
+        .header-bg {
+            background-color: rgba(249, 250, 250, 0.95);
+        }
+        .dark .header-bg {
+            background-color: rgba(26, 31, 28, 0.95);
+        }
+        
+        .filter-btn {
+            transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+        }
     </style>
     {% block extra_css %}{% endblock %}
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.classList.remove('light', 'dark');
+            document.documentElement.classList.add(theme);
+        })();
+        
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            html.classList.remove('light', 'dark');
+            const newTheme = isDark ? 'light' : 'dark';
+            html.classList.add(newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const openIcon = document.getElementById('menu-open-icon');
+            const closeIcon = document.getElementById('menu-close-icon');
+            
+            if (menu) menu.classList.toggle('hidden');
+            if (openIcon) openIcon.classList.toggle('hidden');
+            if (closeIcon) closeIcon.classList.toggle('hidden');
+        }
+    </script>
 </head>
 <body class="min-h-screen">
     {% block content %}{% endblock %}
