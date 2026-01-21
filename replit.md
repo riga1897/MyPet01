@@ -22,6 +22,7 @@ A personal pet website for the family. This is a Django project using a minimali
   2. Implement code.
   3. Verify with tests.
   4. Run linters (Ruff, Mypy).
+- **Test Coverage**: 100% code coverage is mandatory. All new code must be fully tested before merging.
 - **Database Choice**: PostgreSQL is the preferred database for its robust Django support and features.
 - **Tools**: Use `mypy` for static analysis and `ruff` for linting.
 - **Design Principles**:
