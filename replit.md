@@ -14,6 +14,15 @@ A personal pet website for the family. This is a Django project using a minimali
 ## Project Architecture
 The project is designed to be container-compatible. In Replit, it runs as a single "container" with integrated services.
 
+## User Preferences
+- **Coding Workflow (TDD + QA)**:
+  1. Write tests first.
+  2. Implement code.
+  3. Verify with tests.
+  4. Run linters (Ruff, Mypy).
+- **Database Choice**: PostgreSQL is the preferred database for its robust Django support and features.
+- **Tools**: Use `mypy` for static analysis and `ruff` for linting.
+
 ## Current Setup Progress
 - [x] Environment configured with Python 3.12
 - [x] Dependencies minimized in `pyproject.toml`
@@ -21,6 +30,7 @@ The project is designed to be container-compatible. In Replit, it runs as a sing
 - [x] Basic Django structure initialized
 - [x] PostgreSQL database integrated
 - [x] Created `blog` app with Post, Video, and Comment models
+- [x] Configured Django Admin for blog management
 
 ## How to Run (Replit)
 Click the "Run" button to start the Django development server.
@@ -31,4 +41,4 @@ Click the "Run" button to start the Django development server.
 3. Run `docker-compose up --build`.
 
 ## Recent Changes
-- 2026-01-21: Cleaned up dependencies and simplified Docker configs to a minimalist starting point.
+- 2026-01-21: Integrated PostgreSQL, created `blog` app, configured Admin, and documented the TDD workflow in `replit.md`.
