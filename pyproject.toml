@@ -33,6 +33,20 @@ check_untyped_defs = true
 [tool.django-stubs]
 django_settings_module = "mypet_project.settings"
 strict_settings = false
+[tool.pyright]
+include = ["."]
+exclude = ["**/node_modules", "**/__pycache__", ".venv"]
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+typeCheckingMode = "basic"
+
+[tool.pyright]
+include = ["."]
+exclude = ["**/node_modules", "**/__pycache__", ".venv"]
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+typeCheckingMode = "basic"
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mypet_project.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
