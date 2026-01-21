@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     postgres_db: str = ''
 
     csrf_trusted_origins: str = 'https://*.replit.dev,https://*.repl.co,https://*.pike.replit.dev'
-    csrf_cookie_secure: bool | None = None
     csrf_cookie_httponly: bool = True
     csrf_cookie_samesite: str = 'Lax'
     language_code: str = 'ru'

@@ -27,12 +27,12 @@ class TestContentModel:
         assert contents[1] == c1
 
     def test_content_category_choices(self) -> None:
-        assert Content.Category.YOGA == 'yoga'
-        assert Content.Category.OILS == 'oils'
+        assert Content.Category.YOGA.value == 'yoga'
+        assert Content.Category.OILS.value == 'oils'
 
     def test_content_type_choices(self) -> None:
-        assert Content.ContentType.VIDEO == 'video'
-        assert Content.ContentType.PHOTO == 'photo'
+        assert Content.ContentType.VIDEO.value == 'video'
+        assert Content.ContentType.PHOTO.value == 'photo'
 
     def test_content_can_be_photo(self) -> None:
         content = Content.objects.create(
