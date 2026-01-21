@@ -60,10 +60,10 @@ CSRF_COOKIE_SECURE = env_settings.csrf_cookie_secure
 CSRF_COOKIE_HTTPONLY = env_settings.csrf_cookie_httponly
 CSRF_COOKIE_SAMESITE = env_settings.csrf_cookie_samesite
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
+LANGUAGE_CODE = env_settings.language_code
+TIME_ZONE = env_settings.time_zone
+USE_I18N = env_settings.use_i18n
+USE_TZ = env_settings.use_tz
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 

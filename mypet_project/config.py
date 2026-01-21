@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     csrf_cookie_secure: bool = False
     csrf_cookie_httponly: bool = True
     csrf_cookie_samesite: str = 'Lax'
+    language_code: str = 'ru'
+    time_zone: str = 'UTC'
+    use_i18n: bool = True
+    use_tz: bool = True
 
     @property
     def allowed_hosts_list(self) -> list[str]:
