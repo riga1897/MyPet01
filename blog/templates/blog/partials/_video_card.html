@@ -1,0 +1,45 @@
+<article class="group overflow-hidden rounded-2xl bg-card border border-border transition-all hover:shadow-lg hover:-translate-y-1">
+    <div class="relative aspect-video overflow-hidden bg-muted">
+        {% if video.thumbnail %}
+        <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center bg-muted">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="text-muted-foreground">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+        </div>
+        {% endif %}
+        <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div class="rounded-full bg-primary/90 p-4 backdrop-blur-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+            </div>
+        </div>
+        {% if video.duration %}
+        <div class="absolute bottom-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-xs text-white">
+            {{ video.duration }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="p-5">
+        <div class="mb-2">
+            <span class="inline-block px-3 py-1 rounded-full text-xs {% if video.category == 'yoga' %}bg-primary/10 text-primary{% else %}bg-secondary/10 text-secondary{% endif %}">
+                {% if video.category == 'yoga' %}Йога{% elif video.category == 'oils' %}Эфирные масла{% else %}{{ video.get_category_display }}{% endif %}
+            </span>
+        </div>
+        
+        <h3 class="mb-2 line-clamp-2 group-hover:text-primary transition-colors text-lg font-medium">
+            {{ video.title }}
+        </h3>
+        
+        <p class="text-muted-foreground line-clamp-2 mb-3 text-sm">
+            {{ video.description }}
+        </p>
+        
+        <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{{ video.created_at|date:"d F Y" }}</span>
+        </div>
+    </div>
+</article>

@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Гармония Души{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --background: #F9FAFA;
+            --foreground: #2A3B34;
+            --card: #ffffff;
+            --card-foreground: #2A3B34;
+            --primary: #7AA9BA;
+            --primary-foreground: #ffffff;
+            --secondary: #A8B89C;
+            --secondary-foreground: #2A3B34;
+            --muted: #E8EDE7;
+            --muted-foreground: #6B7B6F;
+            --accent: #C5E1E9;
+            --accent-foreground: #2A3B34;
+            --border: rgba(168, 184, 156, 0.2);
+            --ring: #9BC4D6;
+            --radius: 0.75rem;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--foreground);
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .bg-background { background-color: var(--background); }
+        .bg-card { background-color: var(--card); }
+        .bg-primary { background-color: var(--primary); }
+        .bg-secondary { background-color: var(--secondary); }
+        .bg-muted { background-color: var(--muted); }
+        .bg-accent { background-color: var(--accent); }
+        
+        .text-foreground { color: var(--foreground); }
+        .text-card-foreground { color: var(--card-foreground); }
+        .text-primary { color: var(--primary); }
+        .text-primary-foreground { color: var(--primary-foreground); }
+        .text-secondary { color: var(--secondary); }
+        .text-secondary-foreground { color: var(--secondary-foreground); }
+        .text-muted-foreground { color: var(--muted-foreground); }
+        .text-accent-foreground { color: var(--accent-foreground); }
+        
+        .border-border { border-color: var(--border); }
+        
+        .bg-primary\/10 { background-color: rgba(122, 169, 186, 0.1); }
+        .bg-primary\/90 { background-color: rgba(122, 169, 186, 0.9); }
+        .bg-secondary\/10 { background-color: rgba(168, 184, 156, 0.1); }
+        .bg-secondary\/20 { background-color: rgba(168, 184, 156, 0.2); }
+        .bg-accent\/20 { background-color: rgba(197, 225, 233, 0.2); }
+        .bg-accent\/50 { background-color: rgba(197, 225, 233, 0.5); }
+        .bg-muted\/30 { background-color: rgba(232, 237, 231, 0.3); }
+        
+        .hover\:text-primary:hover { color: var(--primary); }
+        .hover\:bg-primary\/90:hover { background-color: rgba(122, 169, 186, 0.9); }
+        .hover\:bg-secondary\/90:hover { background-color: rgba(168, 184, 156, 0.9); }
+        
+        h1, h2, h3, h4 { font-weight: 500; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen">
+    {% block content %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
