@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     secure_content_type_nosniff: bool = True
     x_frame_options: str = 'DENY'
 
+    # Admin settings
+    admin_show_facets: bool = True
+
     @property
     def is_secure_ssl_redirect(self) -> bool:
         return self.secure_ssl_redirect if self.secure_ssl_redirect is not None else self.use_https
