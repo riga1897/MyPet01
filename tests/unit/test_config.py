@@ -65,3 +65,11 @@ class TestSettings:
         assert settings.is_secure_ssl_redirect is False
         assert settings.get_secure_hsts_seconds == 60
         assert settings.is_session_cookie_secure is True
+
+    def test_admin_show_facets_defaults_to_true(self) -> None:
+        settings = Settings()
+        assert settings.admin_show_facets is True
+
+    def test_admin_show_facets_can_be_disabled(self) -> None:
+        settings = Settings(admin_show_facets=False)
+        assert settings.admin_show_facets is False
