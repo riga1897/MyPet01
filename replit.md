@@ -13,7 +13,8 @@ A personal pet website for the family. This is a Django project using a minimali
 - **Dependency Management**: Poetry 2.0+
 
 ## Project Architecture
-The project is designed to be container-compatible. In Replit, it runs as a single "container" with integrated services.
+- **Base Models**: All models must inherit from an abstract `BaseModel` that provides common fields like `created_at` and `updated_at`.
+- **Containerization**: The project is designed to be container-compatible. In Replit, it runs as a single "container" with integrated services.
 
 ## User Preferences
 - **Coding Workflow (TDD + QA)**:
@@ -23,6 +24,9 @@ The project is designed to be container-compatible. In Replit, it runs as a sing
   4. Run linters (Ruff, Mypy).
 - **Database Choice**: PostgreSQL is the preferred database for its robust Django support and features.
 - **Tools**: Use `mypy` for static analysis and `ruff` for linting.
+- **Design Principles**:
+  - Strict adherence to **OOP** (Object-Oriented Programming).
+  - Maximum use of **inheritance from abstract classes** to minimize code duplication and ensure consistent behavior across models.
 
 ## Current Setup Progress
 - [x] Environment configured with Python 3.12
