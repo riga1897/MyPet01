@@ -34,6 +34,6 @@ waitForPort = 5000
 [userenv]
 
 [userenv.shared]
-ALLOWED_HOSTS = "localhost,127.0.0.1,0.0.0.0,.replit.app"
+ALLOWED_HOSTS = "*"
 SECRET_KEY = "django-insecure-dummy-key-for-replit-dev"
 DEBUG = "True"
