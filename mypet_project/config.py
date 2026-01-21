@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     use_i18n: bool = True
     use_tz: bool = True
 
+    # Production security settings (disabled by default for development)
+    secure_ssl_redirect: bool = False
+    secure_hsts_seconds: int = 0
+    secure_hsts_include_subdomains: bool = False
+    secure_hsts_preload: bool = False
+    session_cookie_secure: bool = False
+    secure_browser_xss_filter: bool = True
+    secure_content_type_nosniff: bool = True
+    x_frame_options: str = 'DENY'
+
     @property
     def allowed_hosts_list(self) -> list[str]:
         return [h.strip() for h in self.allowed_hosts.split(',') if h.strip()]
