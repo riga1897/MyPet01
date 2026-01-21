@@ -22,7 +22,7 @@ python manage.py runserver 0.0.0.0:5000
 ```
 
 ## Tech Stack
-- Python 3.11
+- Python 3.12
 - Django 5.x
 - Poetry (for dependency management)
 - Ruff, Mypy, Pytest (dev tools)
