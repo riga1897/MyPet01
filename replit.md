@@ -1,34 +1,34 @@
 # MyPet01
 
 ## Overview
-A personal pet website now being developed with Python.
-
-## User Preferences
-- **Package Management**: Use `poetry` for installing and managing modules.
-- **Linting & Formatting**: Use `ruff` for code quality.
-- **Type Checking**: Use `mypy` (installed in the `dev` group).
-- **Testing**: Use `pytest` (installed in the `test` group).
-
-## Project Structure
-- `manage.py` - Django project management script
-- `mypet_project/` - Django project configuration
-- `main.py` - Legacy entry point
-- `replit.nix` - Nix environment configuration
-
-## Running the Application
-### Django
-```bash
-python manage.py runserver 0.0.0.0:5000
-```
+A personal pet website for the family. This is a Django 5.2 project using a modern backend stack.
 
 ## Tech Stack
-- Python 3.12
-- Django 5.x
-- Poetry (for dependency management)
-- Ruff, Mypy, Pytest (dev tools)
+- **Python**: 3.12
+- **Framework**: Django 5.2.7
+- **API**: Django REST Framework 3.16.1
+- **Database**: PostgreSQL (psycopg2-binary)
+- **Task Queue**: Celery (planned)
+- **Cache/Broker**: Redis
+- **Containerization**: Docker & Docker Compose (prepared)
+- **Dependency Management**: Poetry 2.0+
+
+## Project Architecture
+The project is designed to be container-compatible. In Replit, it runs as a single "container" with integrated services.
+
+## Current Setup Progress
+- [x] Environment configured with Python 3.12
+- [x] Dependencies defined in `pyproject.toml`
+- [x] Docker configuration files prepared (`Dockerfile`, `docker-compose.yaml`)
+- [x] Basic Django structure initialized
+
+## How to Run (Replit)
+Click the "Run" button to start the Django development server.
+
+## Future Deployment (Ubuntu 24.04)
+1. Install Docker and Docker Compose on Ubuntu.
+2. Clone the repository.
+3. Run `docker-compose up --build`.
 
 ## Recent Changes
-- 2026-01-20: Project prepared for Python development.
-- 2026-01-20: Installed Django 5.x and initialized project structure.
-- 2026-01-20: Configured "Run Django App" workflow on port 5000.
-- 2026-01-20: Installed Django and initialized project.
+- 2026-01-21: Upgraded environment to Python 3.12 and defined the full production stack.

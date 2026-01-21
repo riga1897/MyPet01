@@ -1,4 +1,4 @@
-modules = ["ruff-0.4.4", "python-3.11"]
+modules = ["ruff-0.4.4", "python-3.12", "postgresql-16"]
 
 [[ports]]
 localPort = 5000
