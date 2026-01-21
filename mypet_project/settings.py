@@ -66,11 +66,12 @@ USE_I18N = env_settings.use_i18n
 USE_TZ = env_settings.use_tz
 
 # Production security settings
-SECURE_SSL_REDIRECT = env_settings.secure_ssl_redirect
-SECURE_HSTS_SECONDS = env_settings.secure_hsts_seconds
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env_settings.secure_hsts_include_subdomains
-SECURE_HSTS_PRELOAD = env_settings.secure_hsts_preload
-SESSION_COOKIE_SECURE = env_settings.session_cookie_secure
+SECURE_SSL_REDIRECT = env_settings.is_secure_ssl_redirect
+SECURE_HSTS_SECONDS = env_settings.get_secure_hsts_seconds
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_settings.is_secure_hsts_include_subdomains
+SECURE_HSTS_PRELOAD = env_settings.is_secure_hsts_preload
+SESSION_COOKIE_SECURE = env_settings.is_session_cookie_secure
+CSRF_COOKIE_SECURE = env_settings.is_csrf_cookie_secure
 SECURE_BROWSER_XSS_FILTER = env_settings.secure_browser_xss_filter
 SECURE_CONTENT_TYPE_NOSNIFF = env_settings.secure_content_type_nosniff
 X_FRAME_OPTIONS = env_settings.x_frame_options
