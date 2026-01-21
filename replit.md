@@ -71,7 +71,39 @@ Environment variables are managed via `pydantic-settings` in `mypet_project/conf
 - Comma-separated values (ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS) handled via properties
 - DATABASE_URL fallback: auto-constructs from POSTGRES_* variables if not set
 
+## Security Configuration
+
+### Development (current)
+All security features are disabled to allow HTTP development:
+```env
+SECURE_SSL_REDIRECT=False
+SESSION_COOKIE_SECURE=False
+SECURE_HSTS_SECONDS=0
+```
+
+### Production (when HTTPS is ready)
+Enable these settings in `.env` when you have SSL certificate:
+```env
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+SECURE_HSTS_SECONDS=31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+SECURE_HSTS_PRELOAD=True
+X_FRAME_OPTIONS=DENY
+```
+
+### Security Headers (always enabled)
+- `SECURE_BROWSER_XSS_FILTER=True` — XSS protection
+- `SECURE_CONTENT_TYPE_NOSNIFF=True` — prevent MIME-type sniffing
+- `X_FRAME_OPTIONS=DENY` — prevent clickjacking
+
+### SSL Certificate Options
+1. **Replit Deployment**: HTTPS is automatic
+2. **Ubuntu + Docker**: Use Let's Encrypt with Caddy (recommended) or Nginx + Certbot
+
 ## Recent Changes
+- 2026-01-21: Added production security settings (SSL redirect, HSTS, secure cookies) with env toggles.
 - 2026-01-21: Implemented frontend based on Figma design "Гармония Души" — yoga & essential oils blog.
 - 2026-01-21: Extended Video model with title, category (yoga/oils), thumbnail, duration fields.
 - 2026-01-21: Created HomeView with ListView for displaying videos on the main page.

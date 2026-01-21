@@ -34,3 +34,28 @@ class TestSettings:
     def test_csrf_trusted_origins_list_splits_correctly(self) -> None:
         settings = Settings(csrf_trusted_origins='https://a.com, https://b.com')
         assert settings.csrf_trusted_origins_list == ['https://a.com', 'https://b.com']
+
+    def test_production_security_defaults(self) -> None:
+        settings = Settings()
+        assert settings.secure_ssl_redirect is False
+        assert settings.secure_hsts_seconds == 0
+        assert settings.secure_hsts_include_subdomains is False
+        assert settings.secure_hsts_preload is False
+        assert settings.session_cookie_secure is False
+        assert settings.secure_browser_xss_filter is True
+        assert settings.secure_content_type_nosniff is True
+        assert settings.x_frame_options == 'DENY'
+
+    def test_production_security_can_be_enabled(self) -> None:
+        settings = Settings(
+            secure_ssl_redirect=True,
+            secure_hsts_seconds=31536000,
+            secure_hsts_include_subdomains=True,
+            secure_hsts_preload=True,
+            session_cookie_secure=True,
+        )
+        assert settings.secure_ssl_redirect is True
+        assert settings.secure_hsts_seconds == 31536000
+        assert settings.secure_hsts_include_subdomains is True
+        assert settings.secure_hsts_preload is True
+        assert settings.session_cookie_secure is True
