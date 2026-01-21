@@ -59,7 +59,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mypet_project.wsgi.application'
 
 DATABASES = {
-    'default': env.db('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
+    'default': env.db('DATABASE_URL')
 }
 
 LANGUAGE_CODE = 'en-us'
