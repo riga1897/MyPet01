@@ -15,9 +15,9 @@ def test_create_post() -> None:
 def test_create_video() -> None:
     user = User.objects.create_user(username='testuser2', password='password')
     post = Post.objects.create(title='Post with Video', content='Content', author=user)
-    video = Video.objects.create(post=post, description='Test Video')
+    video = Video.objects.create(post=post, title='Мое видео', description='Test Video')
     assert video.description == 'Test Video'
-    assert str(video) == f"Video for {post.title}"
+    assert str(video) == 'Мое видео'
 
 @pytest.mark.django_db
 def test_create_comment() -> None:

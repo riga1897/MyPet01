@@ -9,14 +9,17 @@ class TestHomeView:
         response = client.get('/')
         assert response.status_code == 200
 
-    def test_home_contains_welcome_message(self) -> None:
+    def test_home_uses_correct_template(self) -> None:
         client = Client()
         response = client.get('/')
-        assert b'Welcome to MyPet01' in response.content
+        assert 'blog/index.html' in [t.name for t in response.templates]
 
-    def test_home_contains_admin_link(self) -> None:
+    def test_home_contains_blog_title(self) -> None:
         client = Client()
         response = client.get('/')
-        assert b'/admin/' in response.content
+        assert 'Гармония Души' in response.content.decode('utf-8')
 
-
+    def test_home_contains_videos_section(self) -> None:
+        client = Client()
+        response = client.get('/')
+        assert 'id="videos"' in response.content.decode('utf-8')
