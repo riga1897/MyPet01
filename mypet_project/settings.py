@@ -13,9 +13,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Django Settings
-DEBUG = env.bool('DEBUG', default=False)
-SECRET_KEY = env.str('SECRET_KEY', default='django-insecure-dummy-key')
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+DEBUG = env('DEBUG', cast=bool, default=False)  # type: ignore
+SECRET_KEY = env('SECRET_KEY', cast=str, default='django-insecure-dummy-key')  # type: ignore
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', cast=list, default=['*'])  # type: ignore
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -60,25 +60,25 @@ WSGI_APPLICATION = 'mypet_project.wsgi.application'
 
 # Database
 # If DATABASE_URL is not set, construct it from individual POSTGRES_* variables
-DATABASE_URL = env.str('DATABASE_URL', default='')
+DATABASE_URL = env('DATABASE_URL', cast=str, default='')  # type: ignore
 if not DATABASE_URL:
     try:
-        POSTGRES_USER = env.str('POSTGRES_USER')
-        POSTGRES_PASSWORD = env.str('POSTGRES_PASSWORD')
-        POSTGRES_HOST = env.str('POSTGRES_HOST')
-        POSTGRES_PORT = env.str('POSTGRES_PORT')
-        POSTGRES_DB = env.str('POSTGRES_DB')
+        POSTGRES_USER = env('POSTGRES_USER', cast=str)  # type: ignore
+        POSTGRES_PASSWORD = env('POSTGRES_PASSWORD', cast=str)  # type: ignore
+        POSTGRES_HOST = env('POSTGRES_HOST', cast=str)  # type: ignore
+        POSTGRES_PORT = env('POSTGRES_PORT', cast=str)  # type: ignore
+        POSTGRES_DB = env('POSTGRES_DB', cast=str)  # type: ignore
         DATABASE_URL = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
     except Exception:
         # Fallback to empty if variables are missing
         DATABASE_URL = ''
 
 DATABASES = {
-    'default': env.db_url('DATABASE_URL', default=DATABASE_URL)
+    'default': env.db_url('DATABASE_URL', default=DATABASE_URL)  # type: ignore
 }
 
 # CSRF Trusted Origins
-CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
+CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS', cast=list, default=[  # type: ignore
     'https://*.replit.dev',
     'https://*.repl.co',
     'https://*.pike.replit.dev'
