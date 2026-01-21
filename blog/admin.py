@@ -12,3 +12,4 @@ class ContentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         admin.ShowFacets.ALWAYS if settings.admin_show_facets
         else admin.ShowFacets.NEVER
     )
+    
