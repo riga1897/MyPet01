@@ -1,29 +1,9 @@
 from django.contrib import admin
-from .models import Post, Video, Comment
+from .models import Content
 
-class VideoInline(admin.TabularInline):  # type: ignore[type-arg]
-    model = Video
-    extra = 1
 
-class CommentInline(admin.TabularInline):  # type: ignore[type-arg]
-    model = Comment
-    extra = 0
-    readonly_fields = ('created_at',)
-
-@admin.register(Post)
-class PostAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('title', 'author', 'created_at')
-    search_fields = ('title', 'content')
-    list_filter = ('created_at', 'author')
-    inlines = [VideoInline, CommentInline]
-
-@admin.register(Video)
-class VideoAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('title', 'category', 'duration', 'created_at')
-    list_filter = ('category', 'created_at')
+@admin.register(Content)
+class ContentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    list_display = ('title', 'content_type', 'category', 'duration', 'created_at')
+    list_filter = ('content_type', 'category', 'created_at')
     search_fields = ('title', 'description')
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('author', 'post', 'created_at')
-    list_filter = ('created_at', 'author')
