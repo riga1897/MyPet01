@@ -31,6 +31,7 @@ ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "mypet_project.settings"
+[tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mypet_project.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "--cov=mypet_project --cov-report=term-missing"
