@@ -4,7 +4,7 @@ from blog.models import Content
 
 
 @pytest.mark.django_db
-class TestHomeViewWithContent:
+class TestHomeView:
     def test_home_displays_content(self) -> None:
         Content.objects.create(
             title='Тестовое видео',

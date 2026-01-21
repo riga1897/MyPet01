@@ -44,8 +44,9 @@ typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mypet_project.settings"
-python_files = ["tests.py", "test_*.py", "*_tests.py"]
-addopts = "--cov=mypet_project --cov=blog --cov-report=term-missing"
+python_files = ["test_*.py", "*_tests.py"]
+testpaths = ["tests", "mypet_project/tests", "core/tests", "blog/tests"]
+addopts = "--cov=mypet_project --cov=blog --cov=core --cov-report=term-missing"
 
 [tool.coverage.run]
 omit = [
@@ -54,14 +55,13 @@ omit = [
     "mypet_project/wsgi.py",
     "mypet_project/asgi.py",
     "manage.py",
-    "blog/views.py",
-    "blog/tests.py",
 ]
 
 [tool.coverage.report]
 show_missing = true
 exclude_lines = [
     "pragma: no cover",
+    "if TYPE_CHECKING:",
     "def __repr__",
     "if self.debug:",
     "if __name__ == .__main__.:",

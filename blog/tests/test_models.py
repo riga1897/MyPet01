@@ -41,3 +41,23 @@ class TestContentModel:
             category='yoga',
         )
         assert content.content_type == 'photo'
+
+    def test_create_content_video(self) -> None:
+        content = Content.objects.create(
+            title='Мое видео',
+            description='Test Video',
+            content_type='video',
+        )
+        assert content.description == 'Test Video'
+        assert content.content_type == 'video'
+        assert str(content) == 'Мое видео'
+
+    def test_create_content_photo(self) -> None:
+        content = Content.objects.create(
+            title='Моя фотография',
+            description='Test Photo',
+            content_type='photo',
+        )
+        assert content.description == 'Test Photo'
+        assert content.content_type == 'photo'
+        assert str(content) == 'Моя фотография'

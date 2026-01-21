@@ -3,7 +3,7 @@ from django.test import Client
 
 
 @pytest.mark.django_db
-class TestHomeView:
+class TestBlogUrls:
     def test_home_returns_200(self) -> None:
         client = Client()
         response = client.get('/')
