@@ -7,7 +7,8 @@ A personal pet website for the family. This is a Django project using a minimali
 - **Python**: 3.12
 - **Framework**: Django
 - **API**: Django REST Framework
-- **Database**: PostgreSQL (psycopg2-binary)
+- **Database**: PostgreSQL (psycopg2-binary, dj-database-url)
+- **Configuration**: pydantic-settings (typed environment variables)
 - **Containerization**: Docker & Docker Compose (minimal setup)
 - **Dependency Management**: Poetry 2.0+
 
@@ -40,5 +41,13 @@ Click the "Run" button to start the Django development server.
 2. Clone the repository.
 3. Run `docker-compose up --build`.
 
+## Configuration
+Environment variables are managed via `pydantic-settings` in `mypet_project/config.py`:
+- Reads from `.env` file automatically
+- Fully typed with no `# type: ignore` comments
+- Comma-separated values (ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS) handled via properties
+- DATABASE_URL fallback: auto-constructs from POSTGRES_* variables if not set
+
 ## Recent Changes
+- 2026-01-21: Migrated from django-environ to pydantic-settings for fully typed configuration.
 - 2026-01-21: Integrated PostgreSQL, created `blog` app, configured Admin, and documented the TDD workflow in `replit.md`.
