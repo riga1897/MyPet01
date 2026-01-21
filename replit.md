@@ -39,6 +39,9 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] Configured Django Admin for blog management
 - [x] Frontend templates created based on Figma design "Гармония Души"
 - [x] Content model with content_type (video/photo), category, thumbnail, duration fields
+- [x] Created `users` app with authentication and role-based permissions
+- [x] Implemented moderator group with management interface
+- [x] Added content editing on site (CRUD for moderators only)
 
 ## Data Models
 ```
@@ -64,6 +67,19 @@ Content (inherits BaseModel)
   - `partials/_video_card.html` — карточка видео
   - `partials/_about.html` — секция "О блоге"
   - `partials/_footer.html` — подвал
+  - `content_list.html` — список контента для модераторов
+  - `content_form.html` — форма создания/редактирования контента
+  - `content_confirm_delete.html` — подтверждение удаления
+- **Users templates**: `users/templates/users/`
+  - `login.html` — страница входа
+  - `moderator_list.html` — управление модераторами
+
+## Role-Based Access
+| Действие | Гости | Модераторы | Админы |
+|----------|-------|------------|--------|
+| Просмотр контента | ✅ | ✅ | ✅ |
+| Редактирование контента | ❌ | ✅ | ✅ |
+| Управление модераторами | ❌ | ✅ | ✅ |
 
 ## Design Theme (CSS Variables)
 - Primary: `#7AA9BA` (голубой)
@@ -118,6 +134,9 @@ X_FRAME_OPTIONS=DENY
 2. **Ubuntu + Docker**: Use Let's Encrypt with Caddy (recommended) or Nginx + Certbot
 
 ## Recent Changes
+- 2026-01-21: Added users app with login/logout, moderator group management, and role-based content editing.
+- 2026-01-21: Created content CRUD interface on site (accessible only to moderators and admins).
+- 2026-01-21: Restructured tests into app-specific directories with 100% coverage (76 tests).
 - 2026-01-21: Added ADMIN_SHOW_FACETS setting for controlling facet counters in admin filters.
 - 2026-01-21: Refactored Video → Content model with content_type (video/photo), removed Post and Comment models.
 - 2026-01-21: Added USE_HTTPS toggle for one-click production security settings.

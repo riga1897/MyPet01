@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Удалить контент — Гармония Души{% endblock %}
+
+{% block content %}
+{% include "blog/partials/_header.html" %}
+
+<div class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-card rounded-2xl shadow-lg p-8 w-full max-w-md">
+        <h1 class="text-2xl font-semibold text-foreground text-center mb-4">Удалить контент?</h1>
+        
+        <p class="text-muted-foreground text-center mb-6">
+            Вы уверены, что хотите удалить «{{ object.title }}»?<br>
+            Это действие нельзя отменить.
+        </p>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div class="flex gap-4">
+                <button type="submit" 
+                    class="flex-1 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                    Удалить
+                </button>
+                <a href="{% url 'blog:content_list' %}" 
+                   class="flex-1 text-center bg-muted text-foreground px-6 py-2 rounded-lg hover:bg-muted/80 transition-colors">
+                    Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

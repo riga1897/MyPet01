@@ -21,6 +21,20 @@
                 <a href="#home" class="transition-colors hover:text-primary">Главная</a>
                 <a href="#videos" class="transition-colors hover:text-primary">Видео</a>
                 <a href="#about" class="transition-colors hover:text-primary">О блоге</a>
+                
+                {% if user.is_authenticated %}
+                    {% if is_moderator %}
+                    <a href="{% url 'blog:content_list' %}" class="transition-colors hover:text-primary">Контент</a>
+                    <a href="{% url 'users:moderator_list' %}" class="transition-colors hover:text-primary">Модераторы</a>
+                    {% endif %}
+                    <span class="text-muted-foreground text-sm">{{ user.username }}</span>
+                    <form method="post" action="{% url 'users:logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-primary hover:underline text-sm">Выйти</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'users:login' %}" class="text-primary hover:underline">Войти</a>
+                {% endif %}
             </nav>
         </div>
     </div>

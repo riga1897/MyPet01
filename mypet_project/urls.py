@@ -7,6 +7,7 @@ from typing import Union
 urlpatterns: list[Union[URLPattern, URLResolver]] = [
     path('', include('blog.urls')),
     path('admin/', admin.site.urls),
+    path('users/', include('users.urls', namespace='users')),
 ]
 
 if settings.DEBUG:  # pragma: no cover

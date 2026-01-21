@@ -45,8 +45,8 @@ typeCheckingMode = "basic"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mypet_project.settings"
 python_files = ["test_*.py", "*_tests.py"]
-testpaths = ["tests", "mypet_project/tests", "core/tests", "blog/tests"]
-addopts = "--cov=mypet_project --cov=blog --cov=core --cov-report=term-missing"
+testpaths = ["tests", "mypet_project/tests", "core/tests", "blog/tests", "users/tests"]
+addopts = "--cov=mypet_project --cov=blog --cov=core --cov=users --cov-report=term-missing"
 
 [tool.coverage.run]
 omit = [
