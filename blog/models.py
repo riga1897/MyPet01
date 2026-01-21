@@ -28,7 +28,7 @@ class Content(BaseModel):
     )
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-created_at', 'published_at']
 
     def __str__(self) -> str:
         return self.title
