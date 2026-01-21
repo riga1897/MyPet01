@@ -1,4 +1,5 @@
-<article class="group overflow-hidden rounded-2xl bg-card border border-border transition-all hover:shadow-lg hover:-translate-y-1">
+<article class="group overflow-hidden rounded-2xl bg-card border border-border transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer" 
+         onclick="openModal('{{ video.title|escapejs }}', '{{ video.description|escapejs }}', '{{ video.content_type }}', '{{ video.video_file.url|default:"" }}', '{{ video.thumbnail.url|default:"" }}')">
     <div class="relative aspect-video overflow-hidden bg-muted">
         {% if video.thumbnail %}
         <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
@@ -11,9 +12,15 @@
         {% endif %}
         <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <div class="rounded-full bg-primary/90 p-4 backdrop-blur-sm">
+                {% if video.content_type == 'video' %}
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
                     <polygon points="5 3 19 12 5 21 5 3"/>
                 </svg>
+                {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                </svg>
+                {% endif %}
             </div>
         </div>
         {% if video.duration %}

@@ -32,5 +32,85 @@
     {% include 'blog/partials/_about.html' %}
 </main>
 
+<!-- Modal -->
+<div id="contentModal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+        <div class="fixed inset-0 bg-black/80 transition-opacity" onclick="closeModal()"></div>
+
+        <div class="relative transform overflow-hidden rounded-2xl bg-background text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
+            <div class="absolute right-4 top-4 z-10">
+                <button onclick="closeModal()" class="rounded-full bg-black/20 p-2 text-white hover:bg-black/40 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="bg-muted aspect-video flex items-center justify-center overflow-hidden">
+                <div id="modalVideoContainer" class="hidden w-full h-full">
+                    <video id="modalVideo" controls class="w-full h-full">
+                        <source src="" type="video/mp4">
+                        Ваш браузер не поддерживает видео.
+                    </video>
+                </div>
+                <div id="modalImageContainer" class="hidden w-full h-full">
+                    <img id="modalImage" src="" alt="" class="w-full h-full object-contain">
+                </div>
+            </div>
+
+            <div class="p-6 sm:p-8">
+                <h3 class="text-2xl font-semibold mb-4 text-foreground" id="modalTitle"></h3>
+                <p class="text-muted-foreground whitespace-pre-line" id="modalDescription"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(title, description, type, videoUrl, imageUrl) {
+    const modal = document.getElementById('contentModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
+    const videoContainer = document.getElementById('modalVideoContainer');
+    const imageContainer = document.getElementById('modalImageContainer');
+    const videoElement = document.getElementById('modalVideo');
+    const imageElement = document.getElementById('modalImage');
+
+    modalTitle.textContent = title;
+    modalDescription.textContent = description;
+
+    if (type === 'video') {
+        videoContainer.classList.remove('hidden');
+        imageContainer.classList.add('hidden');
+        videoElement.src = videoUrl;
+        videoElement.play();
+    } else {
+        imageContainer.classList.remove('hidden');
+        videoContainer.classList.add('hidden');
+        imageElement.src = imageUrl;
+        imageElement.alt = title;
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('contentModal');
+    const videoElement = document.getElementById('modalVideo');
+    
+    videoElement.pause();
+    videoElement.src = "";
+    
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Close on ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === "Escape") {
+        closeModal();
+    }
+});
+</script>
+
 {% include 'blog/partials/_footer.html' %}
 {% endblock %}
