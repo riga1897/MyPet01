@@ -1,14 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from core.models import BaseModel
 
 User = get_user_model()
-
-class BaseModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
 
 class Post(BaseModel):
     title = models.CharField(max_length=200)
