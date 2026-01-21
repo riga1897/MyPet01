@@ -110,6 +110,14 @@ function filterCards(category) {
     applyFilters();
 }
 
+function filterFromAbout(category) {
+    const videosSection = document.getElementById('videos');
+    if (videosSection) {
+        videosSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    setTimeout(() => filterCards(category), 300);
+}
+
 function searchCards(query) {
     currentSearch = query.toLowerCase().trim();
     applyFilters();
