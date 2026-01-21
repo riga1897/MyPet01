@@ -21,6 +21,27 @@ pytest-django = "*"
 black = "*"
 ruff = "*"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "mypet_project.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "--cov=mypet_project --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = [
+    "*/migrations/*",
+    "*/__init__.py",
+    "mypet_project/wsgi.py",
+    "mypet_project/asgi.py",
+    "manage.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
