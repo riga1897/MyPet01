@@ -19,7 +19,9 @@ class PostAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('description', 'post')
+    list_display = ('title', 'category', 'duration', 'created_at')
+    list_filter = ('category', 'created_at')
+    search_fields = ('title', 'description')
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
