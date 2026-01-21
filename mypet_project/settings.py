@@ -58,9 +58,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mypet_project.wsgi.application'
 
+# Database
+# If DATABASE_URL is not set, construct it from individual POSTGRES_* variables
+DATABASE_URL = env.str('DATABASE_URL', default='')
+if not DATABASE_URL:
+    try:
+        POSTGRES_USER = env.str('POSTGRES_USER')
+        POSTGRES_PASSWORD = env.str('POSTGRES_PASSWORD')
+        POSTGRES_HOST = env.str('POSTGRES_HOST')
+        POSTGRES_PORT = env.str('POSTGRES_PORT')
+        POSTGRES_DB = env.str('POSTGRES_DB')
+        DATABASE_URL = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    except Exception:
+        # Fallback to empty if variables are missing
+        DATABASE_URL = ''
+
 DATABASES = {
-    'default': env.db('DATABASE_URL')
+    'default': env.db_url('DATABASE_URL', default=DATABASE_URL)
 }
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
+    'https://*.replit.dev',
+    'https://*.repl.co',
+    'https://*.pike.replit.dev'
+])
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -73,3 +95,4 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
