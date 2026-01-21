@@ -34,7 +34,7 @@ django_settings_module = "mypet_project.settings"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mypet_project.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
-addopts = "--cov=mypet_project --cov-report=term-missing"
+addopts = "--cov=mypet_project --cov=blog --cov-report=term-missing"
 
 [tool.coverage.run]
 omit = [
@@ -43,6 +43,8 @@ omit = [
     "mypet_project/wsgi.py",
     "mypet_project/asgi.py",
     "manage.py",
+    "blog/views.py",
+    "blog/tests.py",
 ]
 
 [tool.coverage.report]
