@@ -6,7 +6,7 @@ User = get_user_model()
 
 @pytest.mark.django_db
 def test_create_post() -> None:
-    user = User.objects.create_user(username='testuser', password='password')
+    user = User.objects.create_user(username='testuser1', password='password')
     post = Post.objects.create(title='Test Post', content='Content', author=user)
     assert post.title == 'Test Post'
     assert str(post) == 'Test Post'
