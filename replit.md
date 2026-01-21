@@ -118,6 +118,7 @@ X_FRAME_OPTIONS=DENY
 2. **Ubuntu + Docker**: Use Let's Encrypt with Caddy (recommended) or Nginx + Certbot
 
 ## Recent Changes
+- 2026-01-21: Added ADMIN_SHOW_FACETS setting for controlling facet counters in admin filters.
 - 2026-01-21: Refactored Video → Content model with content_type (video/photo), removed Post and Comment models.
 - 2026-01-21: Added USE_HTTPS toggle for one-click production security settings.
 - 2026-01-21: Added production security settings (SSL redirect, HSTS, secure cookies) with env toggles.
