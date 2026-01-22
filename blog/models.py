@@ -1,7 +1,10 @@
 import logging
+import os
+import re
 from io import BytesIO
 from typing import Any
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import UploadedFile
 from django.db import models
@@ -18,6 +21,54 @@ from core.models import BaseModel
 logger = logging.getLogger(__name__)
 
 THUMBNAIL_MAX_SIZE = (800, 600)
+
+CYRILLIC_TO_LATIN = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+    'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '',
+    'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+}
+
+
+def transliterate(text: str) -> str:
+    """Transliterate Cyrillic text to Latin."""
+    result = []
+    for char in text.lower():
+        if char in CYRILLIC_TO_LATIN:
+            result.append(CYRILLIC_TO_LATIN[char])
+        elif char.isalnum() or char in '_-':
+            result.append(char)
+        elif char in ' \t':
+            result.append('_')
+    return ''.join(result)
+
+
+def generate_unique_code(model_class: type[models.Model], base_code: str, exclude_pk: int | None = None) -> str:
+    """Generate unique code by adding number suffix if needed."""
+    code = base_code[:20]
+    code = re.sub(r'_+', '_', code).strip('_')
+    if not code:
+        code = 'item'
+    
+    queryset = model_class.objects.filter(code=code)  # type: ignore[attr-defined]
+    if exclude_pk:
+        queryset = queryset.exclude(pk=exclude_pk)
+    
+    if not queryset.exists():
+        return code
+    
+    counter = 1
+    while True:
+        new_code = f"{code[:17]}_{counter}"
+        queryset = model_class.objects.filter(code=new_code)  # type: ignore[attr-defined]
+        if exclude_pk:
+            queryset = queryset.exclude(pk=exclude_pk)
+        if not queryset.exists():
+            return new_code
+        counter += 1
+
+
 THUMBNAIL_QUALITY = 85
 
 
@@ -167,8 +218,9 @@ class ContentType(BaseModel):
     code = models.CharField(
         max_length=20,
         unique=True,
+        blank=True,
         verbose_name='Код',
-        help_text='Уникальный код для использования в коде (например: video, photo, audio)',
+        help_text='Генерируется автоматически из названия (можно изменить)',
     )
     upload_folder = models.CharField(
         max_length=100,
@@ -186,6 +238,9 @@ class ContentType(BaseModel):
         return self.name
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        if not self.code:
+            base_code = transliterate(self.name)
+            self.code = generate_unique_code(ContentType, base_code, self.pk)
         if not self.upload_folder:
             self.upload_folder = self.code
         self._ensure_upload_folder_exists()
@@ -193,8 +248,6 @@ class ContentType(BaseModel):
 
     def _ensure_upload_folder_exists(self) -> None:
         """Create upload folder in media directory if it doesn't exist."""
-        from django.conf import settings
-        import os
         folder_path = os.path.join(settings.MEDIA_ROOT, self.upload_folder)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path, exist_ok=True)

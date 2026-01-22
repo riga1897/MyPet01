@@ -107,8 +107,17 @@ class TestCategoryModel:
 @pytest.mark.django_db
 class TestContentTypeModel:
     def test_content_type_str_returns_name(self) -> None:
-        ct = ContentType.objects.create(name='Аудио', code='audio')
+        ct = ContentType.objects.create(name='Аудио')
         assert str(ct) == 'Аудио'
+
+    def test_code_auto_generated_from_name(self) -> None:
+        ct = ContentType.objects.create(name='Новый тип')
+        assert ct.code == 'novyy_tip'
+
+    def test_code_unique_suffix_when_duplicate(self) -> None:
+        ContentType.objects.create(name='Дубликат', code='dublikat')
+        ct2 = ContentType.objects.create(name='Дубликат Второй')
+        assert ct2.code == 'dublikat_vtoroy'
 
     def test_upload_folder_auto_generated_from_code(self) -> None:
         ct = ContentType.objects.create(name='Тестовый тип', code='test')
@@ -118,10 +127,10 @@ class TestContentTypeModel:
         ct = ContentType.objects.create(name='Аудио', code='audio', upload_folder='audio_files')
         assert ct.upload_folder == 'audio_files'
 
-    def test_upload_folder_created_on_save(self, settings: object) -> None:
+    def test_upload_folder_created_on_save(self) -> None:
         import os
         from django.conf import settings as django_settings
-        ct = ContentType.objects.create(name='Новый тип', code='newtype')
+        ct = ContentType.objects.create(name='Папка тест', code='folder_test')
         folder_path = os.path.join(django_settings.MEDIA_ROOT, ct.upload_folder)
         assert os.path.exists(folder_path)
 
