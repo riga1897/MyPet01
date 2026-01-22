@@ -154,7 +154,7 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
     }
     window.clearAllTagSelectsForm = clearAllTagSelectsForm;
 
-    function updateTagGroupsVisibilityForm(categoryCode) {
+    function updateTagGroupsVisibilityForm(categoryCodes) {
         const container = document.getElementById('tag-select-container');
         if (!container) return;
         
@@ -162,12 +162,16 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
         const dropdowns = container.querySelectorAll('.tag-group-select');
         let visibleCount = 0;
         
+        const codesArray = Array.isArray(categoryCodes) ? categoryCodes : (categoryCodes ? [categoryCodes] : []);
+        const hasSelection = codesArray.length > 0;
+        
         dropdowns.forEach(dropdown => {
-            const categories = dropdown.dataset.categories;
-            const isVisible = categories === '' || 
-                             (categoryCode && categories.includes(categoryCode + ','));
+            const groupCategories = dropdown.dataset.categories;
+            const appliesToAll = groupCategories === '';
+            const matchesAny = codesArray.some(code => groupCategories.includes(code + ','));
+            const isVisible = appliesToAll || matchesAny;
             
-            if (isVisible && categoryCode) {
+            if (isVisible && hasSelection) {
                 dropdown.classList.remove('hidden');
                 visibleCount++;
             } else {
@@ -181,7 +185,11 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
         });
         
         if (noTagsMessage) {
-            if (!categoryCode) {
+            if (!hasSelection) {
+                noTagsMessage.classList.remove('hidden');
+                container.querySelector('.flex')?.classList.add('hidden');
+            } else if (visibleCount === 0) {
+                noTagsMessage.textContent = 'Нет тегов для выбранных категорий';
                 noTagsMessage.classList.remove('hidden');
                 container.querySelector('.flex')?.classList.add('hidden');
             } else {
@@ -206,13 +214,6 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
             updateSelectAllStateForm(dropdown);
             updateSelectedCountForm(dropdown);
         });
-        
-        const checkedRadio = document.querySelector('.category-radio:checked');
-        if (checkedRadio && checkedRadio.value) {
-            updateTagGroupsVisibilityForm(checkedRadio.dataset.categoryCode);
-        } else {
-            updateTagGroupsVisibilityForm(null);
-        }
     });
 }
 </script>
