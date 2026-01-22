@@ -114,7 +114,7 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         content = self.object
         context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
         context['selected_category_ids'] = list(content.categories.values_list('id', flat=True))
-        context['has_file'] = bool(content.video_file)
+        context['has_file'] = bool(content.video_file or content.photo_file)
         return context
 
 

@@ -81,15 +81,15 @@
                     {% endif %}
                 </div>
                 
-                <div id="file-upload-section">
+                <div id="video-file-section" class="{% if form.content_type.value == 'photo' %}hidden{% endif %}">
                     <label class="block text-sm font-medium text-foreground mb-1">
-                        <span id="file-label">Файл</span>
+                        Видео файл
                     </label>
                     <input type="file" 
                            name="video_file" 
                            id="id_video_file"
                            class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                           accept=""
+                           accept="video/*"
                            onchange="onFileSelected(this)">
                     {% if object.video_file %}
                     <p class="text-sm text-muted-foreground mt-1">
@@ -99,7 +99,28 @@
                     {% if form.video_file.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.video_file.errors.0 }}</p>
                     {% endif %}
-                    <p id="file-hint" class="text-xs text-muted-foreground mt-1"></p>
+                    <p class="text-xs text-muted-foreground mt-1">Поддерживаемые форматы: MP4, WebM, AVI, MOV</p>
+                </div>
+                
+                <div id="photo-file-section" class="{% if form.content_type.value != 'photo' %}hidden{% endif %}">
+                    <label class="block text-sm font-medium text-foreground mb-1">
+                        Фото файл
+                    </label>
+                    <input type="file" 
+                           name="photo_file" 
+                           id="id_photo_file"
+                           class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                           accept="image/*"
+                           onchange="onFileSelected(this)">
+                    {% if object.photo_file %}
+                    <p class="text-sm text-muted-foreground mt-1">
+                        Текущий файл: {{ object.photo_file.name|truncatechars:50 }}
+                    </p>
+                    {% endif %}
+                    {% if form.photo_file.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.photo_file.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-xs text-muted-foreground mt-1">Поддерживаемые форматы: JPG, PNG, WebP, GIF</p>
                 </div>
                 
                 <div>
@@ -164,39 +185,23 @@
     
     function updateFileInput() {
         const contentType = getContentType();
-        const fileInput = document.getElementById('id_video_file');
-        const fileLabel = document.getElementById('file-label');
-        const fileHint = document.getElementById('file-hint');
+        const videoSection = document.getElementById('video-file-section');
+        const photoSection = document.getElementById('photo-file-section');
         const durationField = document.getElementById('duration-field');
         
         if (contentType === 'video') {
-            fileInput.accept = 'video/*';
-            fileLabel.textContent = 'Видео файл';
-            fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
+            videoSection.classList.remove('hidden');
+            photoSection.classList.add('hidden');
             durationField.classList.remove('hidden');
         } else {
-            fileInput.accept = 'image/*';
-            fileLabel.textContent = 'Фото';
-            fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
+            videoSection.classList.add('hidden');
+            photoSection.classList.remove('hidden');
             durationField.classList.add('hidden');
         }
     }
     
     function onContentTypeChange(value) {
         updateFileInput();
-        
-        const fileInput = document.getElementById('id_video_file');
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-            
-            if ((value === 'photo' && !isImage) || (value === 'video' && !isVideo)) {
-                fileInput.value = '';
-                fileSelected = false;
-                alert('Выбранный файл не соответствует типу контента. Пожалуйста, выберите другой файл.');
-            }
-        }
     }
     window.onContentTypeChange = onContentTypeChange;
     

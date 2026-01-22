@@ -161,7 +161,7 @@ function applyFilters() {
         const description = card.dataset.description;
         const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesFilter = currentFilter === 'all' || categories.length === 0 || categories.includes(currentFilter);
+        const matchesFilter = currentFilter === 'all' || categories.includes(currentFilter);
         const matchesSearch = currentSearch === '' || 
                              title.includes(currentSearch) || 
                              description.includes(currentSearch);
@@ -184,7 +184,7 @@ function applyFilters() {
     }
 }
 
-function openModal(title, description, type, videoUrl, imageUrl) {
+function openModal(title, description, type, videoUrl, thumbnailUrl, photoUrl) {
     const modal = document.getElementById('contentModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalDescription = document.getElementById('modalDescription');
@@ -204,7 +204,7 @@ function openModal(title, description, type, videoUrl, imageUrl) {
     } else {
         imageContainer.classList.remove('hidden');
         videoContainer.classList.add('hidden');
-        imageElement.src = imageUrl;
+        imageElement.src = photoUrl || thumbnailUrl;
         imageElement.alt = title;
     }
 

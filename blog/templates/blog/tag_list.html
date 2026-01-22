@@ -264,7 +264,7 @@ function filterByCategory(category) {
 function updateGroupCheckboxesVisibility(category) {
     document.querySelectorAll('.group-checkbox-label').forEach(label => {
         const categories = label.dataset.categories ? label.dataset.categories.split(',').filter(c => c) : [];
-        const isVisible = category === 'all' || categories.length === 0 || categories.includes(category);
+        const isVisible = category === 'all' || categories.includes(category);
         
         if (isVisible) {
             label.classList.remove('hidden');
@@ -306,7 +306,6 @@ function applyTagGroupFilters() {
         const tags = card.dataset.tags || '';
         
         const matchesCategory = currentCategoryFilter === 'all' || 
-                               categories.length === 0 ||
                                categories.includes(currentCategoryFilter);
         const matchesSearch = currentTagSearch === '' || 
                              name.includes(currentTagSearch) || 

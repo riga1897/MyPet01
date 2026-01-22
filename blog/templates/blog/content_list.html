@@ -153,7 +153,7 @@ function applyFilters() {
         const description = row.dataset.description || '';
         const rowTags = row.dataset.tags ? row.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesCategory = currentContentCategory === 'all' || categories.length === 0 || categories.includes(currentContentCategory);
+        const matchesCategory = currentContentCategory === 'all' || categories.includes(currentContentCategory);
         const matchesSearch = currentContentSearch === '' || 
                              title.includes(currentContentSearch) || 
                              description.includes(currentContentSearch);

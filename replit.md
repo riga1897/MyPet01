@@ -84,7 +84,8 @@ Content (inherits BaseModel)
   ├── content_type: video | photo
   ├── categories: ManyToMany → Category (multiple selection)
   ├── thumbnail: ImageField (auto-compressed)
-  ├── video_file: FileField
+  ├── video_file: FileField (uploads to videos/)
+  ├── photo_file: ImageField (uploads to photos/)
   ├── duration: CharField (MM:SS, auto-extracted)
   └── tags: ManyToMany → Tag
 ```
@@ -225,6 +226,8 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: **Separate photo storage**: Added photo_file field to Content model (uploads to photos/). Fixed category filtering logic in index.html, tag_list.html, content_list.html (removed incorrect `categories.length === 0` condition). Updated form to show separate file inputs for video/photo.
+- 2026-01-22: **Test media isolation**: Created separate media_test/ folder for tests with auto-cleanup after test runs. Cleaned up 72 garbage test files from media/. Added header to moderators page for consistent UI.
 - 2026-01-22: **100% test coverage achieved**: Added 28 new tests for admin.py, TagGroup prefetch logic, Content auto-fields/thumbnail compression, services.py edge cases, TagReorderView error handling. Total: 179 tests.
 - 2026-01-22: **Database query optimization**: Fixed N+1 in TagGroup.is_visible_for_category() using prefetch cache. Optimized Content.save() to single save (was double). Added prefetch_related('groups') in ModeratorListView.
 - 2026-01-22: **Deployment preparation**: Created DEPLOYMENT.md with step-by-step deployment guide, docker-compose.dev.yml, docker-compose.prod.yml, docker-entrypoint.sh, .env.docker.example, GitHub Actions CI/CD workflow.

@@ -173,6 +173,11 @@ class Content(BaseModel):
         blank=True,
         verbose_name='Видео файл',
     )
+    photo_file = models.ImageField(
+        upload_to='photos/',
+        blank=True,
+        verbose_name='Фото файл',
+    )
     thumbnail = models.ImageField(
         upload_to='thumbnails/',
         blank=True,
@@ -235,9 +240,9 @@ class Content(BaseModel):
                 if thumbnail:
                     self.thumbnail = thumbnail
         
-        elif self.content_type == self.ContentType.PHOTO and self.video_file:
+        elif self.content_type == self.ContentType.PHOTO and self.photo_file:
             if not self.thumbnail:
-                thumbnail = generate_thumbnail_from_image(self.video_file)
+                thumbnail = generate_thumbnail_from_image(self.photo_file)
                 if thumbnail:
                     self.thumbnail = thumbnail
 

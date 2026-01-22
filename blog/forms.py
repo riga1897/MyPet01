@@ -80,7 +80,7 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
 
     class Meta:
         model = Content
-        fields = ['title', 'description', 'content_type', 'categories', 'tags', 'thumbnail', 'video_file', 'duration']
+        fields = ['title', 'description', 'content_type', 'categories', 'tags', 'thumbnail', 'video_file', 'photo_file', 'duration']
         labels = {
             'title': 'Заголовок',
             'description': 'Описание',
@@ -89,6 +89,7 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
             'tags': 'Теги',
             'thumbnail': 'Превью',
             'video_file': 'Видеофайл',
+            'photo_file': 'Фото файл',
             'duration': 'Длительность',
         }
         widgets = {
@@ -118,6 +119,9 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
                 'class': FORM_INPUT_CLASS,
             }),
             'video_file': forms.ClearableFileInput(attrs={
+                'class': FORM_INPUT_CLASS,
+            }),
+            'photo_file': forms.ClearableFileInput(attrs={
                 'class': FORM_INPUT_CLASS,
             }),
         }

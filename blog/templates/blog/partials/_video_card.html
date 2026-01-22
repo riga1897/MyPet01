@@ -1,5 +1,5 @@
 <article class="group overflow-hidden rounded-2xl bg-card border border-border transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer" 
-         onclick="openModal('{{ video.title|escapejs }}', '{{ video.description|escapejs }}', '{{ video.content_type }}', '{% if video.video_file %}{{ video.video_file.url|escapejs }}{% endif %}', '{% if video.thumbnail %}{{ video.thumbnail.url|escapejs }}{% endif %}')">
+         onclick="openModal('{{ video.title|escapejs }}', '{{ video.description|escapejs }}', '{{ video.content_type }}', '{% if video.video_file %}{{ video.video_file.url|escapejs }}{% endif %}', '{% if video.thumbnail %}{{ video.thumbnail.url|escapejs }}{% endif %}', '{% if video.photo_file %}{{ video.photo_file.url|escapejs }}{% endif %}')">
     <div class="relative aspect-video overflow-hidden bg-muted">
         {% if video.thumbnail %}
         <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
