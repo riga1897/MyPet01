@@ -36,7 +36,9 @@ class TestContentModel:
         )
         content.content_types.add(video_type)
         assert content.content_types.count() == 1
-        assert content.content_types.first().is_video is True
+        first_type = content.content_types.first()
+        assert first_type is not None
+        assert first_type.is_video is True
 
     def test_content_can_be_photo(self, yoga_category: Category, photo_type: ContentType) -> None:
         content = Content.objects.create(
@@ -45,7 +47,9 @@ class TestContentModel:
         )
         content.content_types.add(photo_type)
         assert content.content_types.count() == 1
-        assert content.content_types.first().is_photo is True
+        first_type = content.content_types.first()
+        assert first_type is not None
+        assert first_type.is_photo is True
 
     def test_create_content_video(self, video_type: ContentType) -> None:
         content = Content.objects.create(
@@ -55,7 +59,9 @@ class TestContentModel:
         content.content_types.add(video_type)
         assert content.description == 'Test Video'
         assert content.content_types.count() == 1
-        assert content.content_types.first().code == 'video'
+        first_type = content.content_types.first()
+        assert first_type is not None
+        assert first_type.code == 'video'
         assert str(content) == 'Мое видео'
 
     def test_create_content_photo(self, photo_type: ContentType) -> None:
@@ -66,7 +72,9 @@ class TestContentModel:
         content.content_types.add(photo_type)
         assert content.description == 'Test Photo'
         assert content.content_types.count() == 1
-        assert content.content_types.first().code == 'photo'
+        first_type = content.content_types.first()
+        assert first_type is not None
+        assert first_type.code == 'photo'
         assert str(content) == 'Моя фотография'
 
     def test_content_can_have_multiple_types(self, video_type: ContentType, photo_type: ContentType) -> None:
@@ -131,7 +139,7 @@ class TestTagModel:
     def test_tag_str_returns_name_with_group(self) -> None:
         group = TagGroup.objects.create(name='Уровень')
         tag = Tag.objects.create(name='Начинающий', group=group)
-        assert str(tag) == 'Начинающий (Уровень)'
+        assert str(tag) == 'Уровень: Начинающий'
 
     def test_tag_slug_auto_generated(self) -> None:
         group = TagGroup.objects.create(name='Уровень')

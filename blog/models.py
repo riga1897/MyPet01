@@ -144,7 +144,7 @@ class Tag(BaseModel):
 
 def content_file_upload_path(instance: 'Content', filename: str) -> str:
     """Generate upload path based on content type."""
-    content_types = instance.content_types.all() if instance.pk else []
+    content_types = list(instance.content_types.all()) if instance.pk else []
     if content_types:
         first_type = content_types[0]
         if first_type.upload_folder:

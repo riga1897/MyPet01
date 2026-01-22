@@ -39,7 +39,7 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] Created `blog` app with Content model (video/photo support)
 - [x] Configured Django Admin for blog management
 - [x] Frontend templates created based on Figma design "Гармония Души"
-- [x] Content model with content_type (video/photo), category, thumbnail, duration fields
+- [x] Content model with content_types (ManyToMany), category, thumbnail, duration fields
 - [x] Created `users` app with authentication and role-based permissions
 - [x] Implemented moderator group with management interface
 - [x] Added content editing on site (CRUD for moderators only)
@@ -89,10 +89,10 @@ Tag (inherits BaseModel)
 Content (inherits BaseModel)
   ├── title: CharField
   ├── description: TextField
-  ├── content_type: ForeignKey → ContentType (nullable)
+  ├── content_types: ManyToMany → ContentType (like tags, multiple or none)
   ├── category: ForeignKey → Category (nullable)
   ├── thumbnail: ImageField
-  ├── video_file: FileField (dynamic path from ContentType.upload_folder)
+  ├── video_file: FileField (dynamic path from first ContentType.upload_folder)
   ├── duration: CharField (MM:SS)
   └── tags: ManyToMany → Tag
 ```
@@ -216,6 +216,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Changed Content.content_type from ForeignKey to ManyToMany (content_types). Content can now have multiple types, no types, or all types selected — matching the tag selection pattern.
 - 2026-01-22: Added ContentType model (replaces TextChoices). Content types are now manageable via admin with custom upload folders for each type.
 - 2026-01-22: Added GZipMiddleware for HTTP compression, nginx production config with gzip/static/media serving, Docker setup with gunicorn (4 workers), collectstatic in build.
 - 2026-01-22: Added thumbnail auto-compression on upload (Pillow: max 800x600, JPEG quality 85%), lazy loading for images, browser cache enabled.
