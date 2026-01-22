@@ -225,6 +225,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: **100% test coverage achieved**: Added 28 new tests for admin.py, TagGroup prefetch logic, Content auto-fields/thumbnail compression, services.py edge cases, TagReorderView error handling. Total: 179 tests.
 - 2026-01-22: **Database query optimization**: Fixed N+1 in TagGroup.is_visible_for_category() using prefetch cache. Optimized Content.save() to single save (was double). Added prefetch_related('groups') in ModeratorListView.
 - 2026-01-22: **Deployment preparation**: Created DEPLOYMENT.md with step-by-step deployment guide, docker-compose.dev.yml, docker-compose.prod.yml, docker-entrypoint.sh, .env.docker.example, GitHub Actions CI/CD workflow.
 - 2026-01-22: **Code optimization**: Replaced N+1 save() loop with bulk_update() in TagReorderView. Moved context['is_moderator'] to ModeratorRequiredMixin base class.

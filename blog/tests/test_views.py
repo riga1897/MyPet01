@@ -187,3 +187,39 @@ class TestTagReorderView:
         )
         assert response.status_code == 400
         assert 'error' in response.json()
+
+    def test_reorder_nonexistent_tags(
+        self, moderator_user: User, tag_group: TagGroup
+    ) -> None:
+        tag = Tag.objects.create(name='Реальный тег', group=tag_group)
+        client = Client()
+        client.login(username='moderator', password='testpass123')
+        response = client.post(
+            '/tags/reorder/',
+            data=json.dumps({
+                'tag_ids': [tag.pk, 99999],
+                'group_id': tag_group.pk,
+            }),
+            content_type='application/json',
+        )
+        assert response.status_code == 400
+        assert 'not found' in response.json()['error'].lower()
+
+    def test_reorder_handles_unexpected_exception(
+        self, moderator_user: User, tag_group: TagGroup
+    ) -> None:
+        from unittest.mock import patch
+        tag = Tag.objects.create(name='Тег', group=tag_group)
+        client = Client()
+        client.login(username='moderator', password='testpass123')
+        with patch('blog.views.Tag.objects.bulk_update', side_effect=RuntimeError('DB error')):
+            response = client.post(
+                '/tags/reorder/',
+                data=json.dumps({
+                    'tag_ids': [tag.pk],
+                    'group_id': tag_group.pk,
+                }),
+                content_type='application/json',
+            )
+        assert response.status_code == 500
+        assert 'DB error' in response.json()['error']
