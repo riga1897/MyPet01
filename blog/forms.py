@@ -71,7 +71,7 @@ class TagForm(forms.ModelForm):  # type: ignore[type-arg]
 class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
     class Meta:
         model = Content
-        fields = ['title', 'description', 'content_type', 'category', 'tags', 'thumbnail', 'video_file', 'duration']
+        fields = ['title', 'description', 'content_type', 'category', 'tags', 'thumbnail', 'video_file']
         labels = {
             'title': 'Заголовок',
             'description': 'Описание',
@@ -79,8 +79,7 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
             'category': 'Категория',
             'tags': 'Теги',
             'thumbnail': 'Превью',
-            'video_file': 'Видеофайл',
-            'duration': 'Длительность',
+            'video_file': 'Файл',
         }
         widgets = {
             'title': forms.TextInput(attrs={
@@ -100,10 +99,6 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
             }),
             'tags': forms.CheckboxSelectMultiple(attrs={
                 'class': 'space-y-2',
-            }),
-            'duration': forms.TextInput(attrs={
-                'class': FORM_INPUT_CLASS,
-                'placeholder': '10:30',
             }),
             'thumbnail': forms.ClearableFileInput(attrs={
                 'class': FORM_INPUT_CLASS,

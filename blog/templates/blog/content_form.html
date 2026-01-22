@@ -93,19 +93,37 @@
                     
                     <div id="file-select-mode" class="hidden">
                         <input type="hidden" name="existing_file" id="existing_file_input" value="">
-                        <select id="existing-file-select" onchange="onExistingFileSelected(this)"
-                                class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card">
-                            <option value="">— Выберите файл —</option>
-                        </select>
+                        <div id="file-select-container">
+                            <select id="existing-file-select" onchange="onExistingFileSelected(this)"
+                                    class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card">
+                                <option value="">— Выберите файл —</option>
+                            </select>
+                        </div>
+                        <div id="selected-file-display" class="hidden flex items-center gap-2 p-2 bg-muted rounded-lg">
+                            <span id="selected-file-name" class="text-sm text-foreground flex-1"></span>
+                            <button type="button" onclick="clearSelectedFile()" 
+                                    class="text-red-500 hover:text-red-700 p-1" title="Убрать выбор">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
                         <p id="no-files-message" class="hidden text-sm text-muted-foreground mt-1">
                             Нет доступных файлов в папке этого типа контента
                         </p>
                     </div>
                     
                     {% if object.video_file %}
-                    <p class="text-sm text-muted-foreground mt-1">
-                        Текущий файл: {{ object.video_file.name|truncatechars:50 }}
-                    </p>
+                    <div id="current-file-info" class="flex items-center gap-2 mt-1 p-2 bg-muted rounded-lg">
+                        <span class="text-sm text-foreground flex-1">{{ object.video_file.name|truncatechars:50 }}</span>
+                        <button type="button" onclick="detachFile()" 
+                                class="text-red-500 hover:text-red-700 p-1" title="Открепить файл">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <input type="hidden" name="detach_file" id="detach_file_input" value="">
+                    </div>
                     {% endif %}
                     {% if form.video_file.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.video_file.errors.0 }}</p>
@@ -135,18 +153,6 @@
                     </p>
                 </div>
                 
-                <div id="duration-field">
-                    <label for="id_duration" class="block text-sm font-medium text-foreground mb-1">
-                        Длительность (необязательно)
-                    </label>
-                    {{ form.duration }}
-                    {% if form.duration.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.duration.errors.0 }}</p>
-                    {% endif %}
-                    <p class="text-xs text-muted-foreground mt-1">
-                        Формат: MM:SS. Если не указана, будет определена автоматически из видео.
-                    </p>
-                </div>
                 
                 <div class="flex gap-4 pt-4">
                     <button type="submit" 
@@ -248,32 +254,52 @@
     }
     
     function onExistingFileSelected(select) {
-        document.getElementById('existing_file_input').value = select.value;
+        const value = select.value;
+        document.getElementById('existing_file_input').value = value;
+        
+        if (value) {
+            const fileName = value.split('/').pop();
+            document.getElementById('selected-file-name').textContent = fileName;
+            document.getElementById('file-select-container').classList.add('hidden');
+            document.getElementById('selected-file-display').classList.remove('hidden');
+        }
     }
     window.onExistingFileSelected = onExistingFileSelected;
+    
+    function clearSelectedFile() {
+        document.getElementById('existing_file_input').value = '';
+        document.getElementById('existing-file-select').value = '';
+        document.getElementById('selected-file-display').classList.add('hidden');
+        document.getElementById('file-select-container').classList.remove('hidden');
+    }
+    window.clearSelectedFile = clearSelectedFile;
+    
+    function detachFile() {
+        document.getElementById('detach_file_input').value = 'true';
+        document.getElementById('current-file-info').classList.add('hidden');
+        
+        const dropdown = document.getElementById('content-type-select-dropdown');
+        dropdown.classList.remove('pointer-events-none', 'opacity-50');
+        dropdown.dataset.hasFile = 'false';
+        const hint = dropdown.querySelector('.file-lock-hint, p.text-xs.text-muted-foreground');
+        if (hint) hint.remove();
+    }
+    window.detachFile = detachFile;
     
     function updateFileInput() {
         const code = getSelectedContentTypeCode();
         const fileInput = document.getElementById('id_video_file');
-        const fileLabel = document.getElementById('file-label');
         const fileHint = document.getElementById('file-hint');
-        const durationField = document.getElementById('duration-field');
         
         if (code === 'video') {
             fileInput.accept = 'video/*';
-            fileLabel.textContent = 'Видео файл';
             fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
-            durationField.classList.remove('hidden');
         } else if (code === 'photo') {
             fileInput.accept = 'image/*';
-            fileLabel.textContent = 'Фото';
             fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
-            durationField.classList.add('hidden');
         } else {
             fileInput.accept = '*/*';
-            fileLabel.textContent = 'Файл';
             fileHint.textContent = '';
-            durationField.classList.add('hidden');
         }
         
         if (currentFileMode === 'select') {

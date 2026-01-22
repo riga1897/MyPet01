@@ -126,13 +126,17 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
     success_url = reverse_lazy('blog:content_list')
 
     def form_valid(self, form: ContentForm) -> HttpResponse:
-        existing_file = self.request.POST.get('existing_file', '').strip()
-        if existing_file:
-            if validate_existing_file(existing_file, form.instance.content_type):
-                form.instance.video_file = existing_file
-            else:
-                form.add_error(None, 'Выбранный файл недоступен.')
-                return self.form_invalid(form)
+        detach_file = self.request.POST.get('detach_file', '').strip()
+        if detach_file == 'true':
+            form.instance.video_file = ''
+        else:
+            existing_file = self.request.POST.get('existing_file', '').strip()
+            if existing_file:
+                if validate_existing_file(existing_file, form.instance.content_type):
+                    form.instance.video_file = existing_file
+                else:
+                    form.add_error(None, 'Выбранный файл недоступен.')
+                    return self.form_invalid(form)
         messages.success(self.request, 'Контент успешно обновлён.')
         return super().form_valid(form)
 

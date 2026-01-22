@@ -12,7 +12,6 @@ class TestContentForm:
         assert 'category' in form.fields
         assert 'thumbnail' in form.fields
         assert 'video_file' in form.fields
-        assert 'duration' in form.fields
 
     def test_form_labels_in_russian(self) -> None:
         form = ContentForm()
