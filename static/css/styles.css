@@ -144,7 +144,7 @@ h1, h2, h3, h4 { font-weight: 500; }
     background-color: var(--muted);
 }
 .dropdown-menu {
-    display: none;
+    /* Visibility controlled by Tailwind 'hidden' class */
     position: absolute;
     top: 100%;
     left: 0;
@@ -156,9 +156,6 @@ h1, h2, h3, h4 { font-weight: 500; }
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     z-index: 50;
     padding: 0.25rem 0;
-}
-.dropdown-menu.open {
-    display: block;
 }
 
 /* Card Components */
