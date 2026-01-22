@@ -33,6 +33,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.BrowserCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'mypet_project.urls'
@@ -83,8 +84,28 @@ X_FRAME_OPTIONS = env_settings.x_frame_options
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Cache configuration
+CACHE_BACKENDS_MAP = {
+    'locmem': 'django.core.cache.backends.locmem.LocMemCache',
+    'db': 'django.core.cache.backends.db.DatabaseCache',
+    'redis': 'django.core.cache.backends.redis.RedisCache',
+    'memcached': 'django.core.cache.backends.memcached.PyMemcacheCache',
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': CACHE_BACKENDS_MAP.get(
+            env_settings.cache_backend,
+            'django.core.cache.backends.locmem.LocMemCache'
+        ),
+        'LOCATION': env_settings.cache_location,
+        'TIMEOUT': env_settings.cache_timeout,
+    }
+}

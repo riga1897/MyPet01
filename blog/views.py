@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
+from blog.cache import get_cached_content_list, set_cached_content_list
 from blog.forms import ContentForm
 from blog.models import Content
 from users.models import is_moderator
@@ -21,8 +22,12 @@ class HomeView(ListView):  # type: ignore[type-arg]
     template_name = 'blog/index.html'
     context_object_name = 'videos'
 
-    def get_queryset(self) -> QuerySet[Content]:
-        return Content.objects.all()[:6]
+    def get_queryset(self) -> QuerySet[Content] | list[Content]:
+        cached = get_cached_content_list()
+        if cached is not None:
+            return cached
+        queryset = Content.objects.all()
+        return set_cached_content_list(queryset, limit=6)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)

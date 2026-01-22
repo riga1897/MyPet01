@@ -47,6 +47,8 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] Search by title and description
 - [x] Dark/Light theme toggle with localStorage persistence
 - [x] SEO optimization (meta tags, Open Graph)
+- [x] Favicon for the website
+- [x] Caching system (server-side + browser cache control)
 
 ## Data Models
 ```
@@ -138,6 +140,43 @@ X_FRAME_OPTIONS=DENY
 1. **Replit Deployment**: HTTPS is automatic
 2. **Ubuntu + Docker**: Use Let's Encrypt with Caddy (recommended) or Nginx + Certbot
 
+## Caching Configuration
+
+### Server-side Cache (Django)
+Configured via environment variables:
+```env
+CACHE_BACKEND=locmem    # Options: locmem, db, redis, memcached
+CACHE_LOCATION=mypet-cache
+CACHE_TIMEOUT=300       # 5 minutes default
+```
+
+Backend options:
+- `locmem` — Local memory (development, single process)
+- `db` — PostgreSQL table (production, multi-worker safe)
+- `redis` — Redis server (high performance)
+- `memcached` — Memcached server
+
+For `db` backend, create cache table:
+```bash
+python manage.py createcachetable cache_table
+```
+
+### Browser Cache (HTTP headers)
+```env
+BROWSER_CACHE_ENABLED=False  # True for production
+BROWSER_CACHE_MAX_AGE=86400  # 1 day for static files
+```
+
+When enabled, adds `Cache-Control` headers:
+- Static/media files: `public, max-age=<BROWSER_CACHE_MAX_AGE>`
+- Dynamic pages: `no-cache, no-store, must-revalidate`
+
+### Cache Invalidation
+Content cache is automatically invalidated via Django signals when:
+- Content is created
+- Content is updated
+- Content is deleted
+
 ## Future Improvements (Backlog)
 - [ ] Счётчик просмотров контента
 - [ ] Подписка на email-рассылку
@@ -145,6 +184,8 @@ X_FRAME_OPTIONS=DENY
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added caching system (locmem/db/redis/memcached backends), browser cache middleware, and favicon.
+- 2026-01-22: Made "About blog" section tiles clickable for category filtering.
 - 2026-01-21: Added mobile menu, category filters, search, dark theme, and SEO meta tags.
 - 2026-01-21: Added modal windows for viewing video/photo content.
 - 2026-01-21: Added users app with login/logout, moderator group management, and role-based content editing.

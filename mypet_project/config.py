@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     # Admin settings
     admin_show_facets: bool = True
 
+    # Cache settings
+    cache_backend: str = 'locmem'
+    cache_location: str = 'mypet-cache'
+    cache_timeout: int = 300
+
+    # Browser cache settings
+    browser_cache_enabled: bool = False
+    browser_cache_max_age: int = 86400
+
     @property
     def is_secure_ssl_redirect(self) -> bool:
         return self.secure_ssl_redirect if self.secure_ssl_redirect is not None else self.use_https

@@ -1,6 +1,13 @@
 import pytest
+from django.core.cache import cache
 from django.test import Client
 from blog.models import Content
+
+
+@pytest.fixture(autouse=True)
+def clear_cache() -> None:
+    """Clear cache before each test."""
+    cache.clear()
 
 
 @pytest.mark.django_db
@@ -26,13 +33,13 @@ class TestHomeView:
             )
         client = Client()
         response = client.get('/')
-        assert response.context['videos'].count() == 6
+        assert len(response.context['videos']) == 6
 
     def test_home_shows_empty_message_when_no_content(self) -> None:
         client = Client()
         response = client.get('/')
         page_content = response.content.decode('utf-8')
-        assert 'Видео пока нет' in page_content
+        assert 'Контента пока нет' in page_content
 
     def test_content_card_shows_category_yoga(self) -> None:
         Content.objects.create(
