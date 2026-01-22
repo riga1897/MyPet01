@@ -215,6 +215,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added real-time code validation in admin with AJAX uniqueness check (API endpoint), auto-fill upload_folder from code, debounced input validation with success/error messages.
 - 2026-01-22: Added auto-generation of ContentType.code from name (Cyrillic transliteration), unique suffix if duplicate. Added temp MEDIA_ROOT for tests (auto-cleanup).
 - 2026-01-22: Simplified ContentType model: removed slug field, upload_folder now defaults to code value, auto-creates folder in media/ on save.
 - 2026-01-22: Changed Content.content_type from ForeignKey to ManyToMany (content_types). Content can now have multiple types, no types, or all types selected — matching the tag selection pattern.
