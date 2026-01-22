@@ -36,7 +36,7 @@ class HomeView(ListView):  # type: ignore[type-arg]
         cached = get_cached_content_list()
         if cached is not None:
             return cached
-        queryset = Content.objects.select_related('category').prefetch_related(
+        queryset = Content.objects.prefetch_related('categories',
             'tags', 'tags__group'
         ).all()
         return set_cached_content_list(queryset, limit=6)
@@ -62,8 +62,8 @@ class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-ar
     ordering = ['-created_at']
 
     def get_queryset(self) -> Any:
-        return Content.objects.select_related('category').prefetch_related(
-            'tags', 'tags__group'
+        return Content.objects.prefetch_related(
+            'categories', 'tags', 'tags__group'
         ).order_by('-created_at')
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
@@ -111,8 +111,7 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         context.update(get_filter_context())
         content = self.object
         context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
-        context['selected_category_id'] = content.category_id
-        context['current_category_code'] = content.category.code if content.category else None
+        context['selected_category_ids'] = list(content.categories.values_list('id', flat=True))
         context['has_file'] = bool(content.video_file)
         return context
 

@@ -45,7 +45,7 @@
             
             <div id="cards-container" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 {% for video in videos %}
-                    <div class="content-card" data-category="{{ video.category.code|default:''|lower }}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
+                    <div class="content-card" data-categories="{% for cat in video.categories.all %}{{ cat.code|lower }},{% endfor %}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
                         {% include 'blog/partials/_video_card.html' with video=video %}
                     </div>
                 {% empty %}
@@ -156,12 +156,12 @@ function applyFilters() {
     const activeTagIds = typeof getSelectedTagIds === 'function' ? getSelectedTagIds() : [];
     
     cards.forEach(card => {
-        const category = card.dataset.category;
+        const categories = card.dataset.categories ? card.dataset.categories.split(',').filter(c => c) : [];
         const title = card.dataset.title;
         const description = card.dataset.description;
         const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesFilter = currentFilter === 'all' || category === currentFilter;
+        const matchesFilter = currentFilter === 'all' || categories.length === 0 || categories.includes(currentFilter);
         const matchesSearch = currentSearch === '' || 
                              title.includes(currentSearch) || 
                              description.includes(currentSearch);

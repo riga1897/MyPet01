@@ -42,10 +42,17 @@ class TagAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 @admin.register(Content)
 class ContentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('title', 'content_type', 'category', 'duration', 'created_at')
-    list_filter = ('content_type', 'category', 'tags', 'created_at')
+    list_display = ('title', 'content_type', 'get_categories', 'duration', 'created_at')
+    list_filter = ('content_type', 'categories', 'tags', 'created_at')
     search_fields = ('title', 'description')
-    filter_horizontal = ('tags',)
+    filter_horizontal = ('categories', 'tags')
+
+    def get_categories(self, obj: Content) -> str:
+        categories = obj.categories.all()
+        if not categories:
+            return 'Все'
+        return ', '.join(c.name for c in categories)
+    get_categories.short_description = 'Категории'  # type: ignore[attr-defined]
     show_facets = (
         admin.ShowFacets.ALWAYS if settings.admin_show_facets
         else admin.ShowFacets.NEVER

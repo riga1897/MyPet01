@@ -93,6 +93,32 @@
         
         .border-border { border-color: var(--border); }
         
+        input::placeholder,
+        textarea::placeholder,
+        input::-webkit-input-placeholder,
+        textarea::-webkit-input-placeholder,
+        input::-moz-placeholder,
+        textarea::-moz-placeholder,
+        input:-ms-input-placeholder,
+        textarea:-ms-input-placeholder {
+            color: #333333 !important;
+            opacity: 1 !important;
+            -webkit-text-fill-color: #333333 !important;
+        }
+        
+        .dark input::placeholder,
+        .dark textarea::placeholder,
+        .dark input::-webkit-input-placeholder,
+        .dark textarea::-webkit-input-placeholder,
+        .dark input::-moz-placeholder,
+        .dark textarea::-moz-placeholder,
+        .dark input:-ms-input-placeholder,
+        .dark textarea:-ms-input-placeholder {
+            color: #333333 !important;
+            opacity: 1 !important;
+            -webkit-text-fill-color: #333333 !important;
+        }
+        
         .bg-primary\/10 { background-color: rgba(122, 169, 186, 0.1); }
         .bg-primary\/90 { background-color: rgba(122, 169, 186, 0.9); }
         .bg-secondary\/10 { background-color: rgba(168, 184, 156, 0.1); }

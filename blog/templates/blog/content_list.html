@@ -69,7 +69,7 @@
                 <tbody id="content-table-body" class="divide-y divide-border">
                     {% for content in contents %}
                     <tr class="content-row hover:bg-muted/30" 
-                        data-category="{{ content.category.code|default:'' }}"
+                        data-categories="{% for cat in content.categories.all %}{{ cat.code|lower }},{% endfor %}"
                         data-title="{{ content.title|lower }}"
                         data-description="{{ content.description|lower }}"
                         data-tags="{% for tag in content.tags.all %}{{ tag.id }},{% endfor %}">
@@ -84,7 +84,7 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4">
-                            <span class="text-muted-foreground">{{ content.category.name|default:"—" }}</span>
+                            <span class="text-muted-foreground">{% for cat in content.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}Все{% endfor %}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1">
@@ -148,12 +148,12 @@ function applyFilters() {
     const activeTagIds = typeof getSelectedTagIds === 'function' ? getSelectedTagIds() : [];
     
     rows.forEach(row => {
-        const category = row.dataset.category;
+        const categories = row.dataset.categories ? row.dataset.categories.split(',').filter(c => c) : [];
         const title = row.dataset.title || '';
         const description = row.dataset.description || '';
         const rowTags = row.dataset.tags ? row.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesCategory = currentContentCategory === 'all' || category === currentContentCategory;
+        const matchesCategory = currentContentCategory === 'all' || categories.length === 0 || categories.includes(currentContentCategory);
         const matchesSearch = currentContentSearch === '' || 
                              title.includes(currentContentSearch) || 
                              description.includes(currentContentSearch);

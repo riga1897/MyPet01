@@ -27,7 +27,7 @@ def filter_content(
         Filtered queryset
     """
     if category:
-        queryset = queryset.filter(category=category)
+        queryset = queryset.filter(categories=category)
     
     if tags:
         for tag in tags:

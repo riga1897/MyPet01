@@ -5,15 +5,13 @@ from blog.models import Category, Content
 @pytest.mark.django_db
 class TestContentModel:
     def test_content_str_returns_title(self, yoga_category: Category) -> None:
-        content = Content.objects.create(
-            title='Утренняя йога',
-            category=yoga_category,
-        )
+        content = Content.objects.create(title='Утренняя йога')
+        content.categories.add(yoga_category)
         assert str(content) == 'Утренняя йога'
 
-    def test_content_default_category_is_none(self) -> None:
+    def test_content_default_categories_is_empty(self) -> None:
         content = Content.objects.create(title='Тест')
-        assert content.category is None
+        assert content.categories.count() == 0
 
     def test_content_default_type_is_video(self) -> None:
         content = Content.objects.create(title='Тест')
@@ -34,8 +32,8 @@ class TestContentModel:
         content = Content.objects.create(
             title='Фото йоги',
             content_type='photo',
-            category=yoga_category,
         )
+        content.categories.add(yoga_category)
         assert content.content_type == 'photo'
 
     def test_create_content_video(self) -> None:

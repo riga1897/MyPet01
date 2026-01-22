@@ -175,13 +175,12 @@ class Content(BaseModel):
         help_text='Формат: MM:SS',
         verbose_name='Длительность',
     )
-    category = models.ForeignKey(
+    categories = models.ManyToManyField(
         Category,
-        on_delete=models.PROTECT,
-        related_name='contents',
-        verbose_name='Категория',
-        null=True,
         blank=True,
+        related_name='contents',
+        verbose_name='Категории',
+        help_text='Оставьте пустым для применения ко всем категориям',
     )
     tags = models.ManyToManyField(
         Tag,
