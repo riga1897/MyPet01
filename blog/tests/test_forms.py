@@ -1,6 +1,5 @@
 import pytest
 from blog.forms import ContentForm
-from blog.models import Content
 
 
 class TestContentForm:

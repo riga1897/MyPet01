@@ -52,6 +52,7 @@ class CacheUtilsTestCase(TestCase):
 
         result = get_cached_content_list()
         self.assertIsNotNone(result)
+        assert result is not None
         self.assertEqual(len(result), 1)
 
     def test_invalidate_content_cache_clears_cache(self) -> None:

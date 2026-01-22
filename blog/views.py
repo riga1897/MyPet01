@@ -13,7 +13,6 @@ from blog.models import Content
 from users.models import is_moderator
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
     from django.http import HttpResponse
 
 
@@ -22,7 +21,7 @@ class HomeView(ListView):  # type: ignore[type-arg]
     template_name = 'blog/index.html'
     context_object_name = 'videos'
 
-    def get_queryset(self) -> QuerySet[Content] | list[Content]:
+    def get_queryset(self) -> list[Content]:  # type: ignore[override]
         cached = get_cached_content_list()
         if cached is not None:
             return cached

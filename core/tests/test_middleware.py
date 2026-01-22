@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 
 class BrowserCacheMiddlewareTestCase(TestCase):
