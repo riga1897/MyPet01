@@ -88,10 +88,10 @@ Tag (inherits BaseModel)
 Content (inherits BaseModel)
   ├── title: CharField
   ├── description: TextField
-  ├── content_types: ManyToMany → ContentType (like tags, multiple or none)
+  ├── content_type: ForeignKey → ContentType (nullable, single selection via RadioSelect)
   ├── category: ForeignKey → Category (nullable)
   ├── thumbnail: ImageField
-  ├── video_file: FileField (dynamic path from first ContentType.upload_folder)
+  ├── video_file: FileField (dynamic path from ContentType.upload_folder)
   ├── duration: CharField (MM:SS)
   └── tags: ManyToMany → Tag
 ```
@@ -215,6 +215,8 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added CheckContentTypeFolderView API endpoint for upload_folder uniqueness validation. JavaScript now validates both code and folder with debounced input.
+- 2026-01-22: Reverted Content.content_types (ManyToMany) back to content_type (ForeignKey) — single content type per content for clearer file storage logic. Form uses RadioSelect widget.
 - 2026-01-22: Refactored to single-path architecture: code generation moved entirely to client-side (JavaScript). API endpoint now only checks availability. Server-side transliterate/generate_unique_code functions removed.
 - 2026-01-22: Added real-time code validation in admin with AJAX uniqueness check (API endpoint), auto-fill upload_folder from code, debounced input validation with success/error messages.
 - 2026-01-22: Added auto-generation of ContentType.code from name (Cyrillic transliteration), unique suffix if duplicate. Added temp MEDIA_ROOT for tests (auto-cleanup).
