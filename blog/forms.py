@@ -1,3 +1,5 @@
+from typing import Any
+
 from django import forms
 from blog.models import Content, Tag, TagGroup
 
@@ -7,12 +9,20 @@ CHECKBOX_CLASS = 'w-4 h-4 text-primary border-border rounded focus:ring-primary'
 
 
 class TagGroupForm(forms.ModelForm):  # type: ignore[type-arg]
+    select_all = forms.BooleanField(
+        required=False,
+        label='Выбрать все категории',
+        widget=forms.CheckboxInput(attrs={
+            'class': CHECKBOX_CLASS,
+            'id': 'select-all-categories',
+        }),
+    )
+
     class Meta:
         model = TagGroup
-        fields = ['name', 'applies_to_all', 'categories']
+        fields = ['name', 'categories']
         labels = {
             'name': 'Название группы',
-            'applies_to_all': 'Применяется ко всем категориям',
             'categories': 'Категории',
         }
         widgets = {
@@ -20,17 +30,23 @@ class TagGroupForm(forms.ModelForm):  # type: ignore[type-arg]
                 'class': FORM_INPUT_CLASS,
                 'placeholder': 'Например: Месяц практики',
             }),
-            'applies_to_all': forms.CheckboxInput(attrs={
-                'class': CHECKBOX_CLASS,
-            }),
             'categories': forms.CheckboxSelectMultiple(attrs={
-                'class': 'space-y-2',
+                'class': 'space-y-2 category-checkboxes',
             }),
         }
         help_texts = {
-            'applies_to_all': 'Если отмечено, группа будет видна для всех категорий',
-            'categories': 'Выберите категории, если группа не применяется ко всем',
+            'categories': 'Оставьте пустым для применения ко всем категориям',
         }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        from blog.models import Category
+        all_category_count = Category.objects.count()
+        if self.instance and self.instance.pk:
+            selected_count = self.instance.categories.count()
+            self.fields['select_all'].initial = (
+                selected_count == all_category_count and all_category_count > 0
+            )
 
 
 class TagForm(forms.ModelForm):  # type: ignore[type-arg]

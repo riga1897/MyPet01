@@ -55,17 +55,12 @@ class TagGroup(BaseModel):
         blank=True,
         verbose_name='Слаг',
     )
-    applies_to_all = models.BooleanField(
-        default=True,
-        verbose_name='Применяется ко всем категориям',
-        help_text='Если отмечено, группа будет видна для всех категорий',
-    )
     categories = models.ManyToManyField(
         Category,
         blank=True,
         related_name='tag_groups',
         verbose_name='Категории',
-        help_text='Выберите категории, к которым относится эта группа тегов',
+        help_text='Оставьте пустым для применения ко всем категориям',
     )
 
     class Meta:
@@ -82,8 +77,11 @@ class TagGroup(BaseModel):
         super().save(*args, **kwargs)
 
     def is_visible_for_category(self, category: 'Category | None') -> bool:
-        """Check if this tag group should be visible for the given category."""
-        if self.applies_to_all:
+        """Check if this tag group should be visible for the given category.
+        
+        Empty categories = applies to all categories.
+        """
+        if not self.categories.exists():
             return True
         if category is None:
             return False

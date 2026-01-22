@@ -70,8 +70,7 @@ Category (inherits BaseModel)
 TagGroup (inherits BaseModel)
   ├── name: CharField (unique)
   ├── slug: SlugField (auto-generated)
-  ├── applies_to_all: BooleanField (default True)
-  └── categories: ManyToMany → Category
+  └── categories: ManyToMany → Category (empty = applies to all)
 
 Tag (inherits BaseModel)
   ├── name: CharField
@@ -208,6 +207,10 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Simplified TagGroup model - removed applies_to_all field, empty categories now means "applies to all".
+- 2026-01-22: Created blog/utils.py with reusable filtering functions (filter_content, filter_tag_groups, get_visible_tag_groups).
+- 2026-01-22: Added "Select All" checkbox to TagGroup form with JavaScript synchronization.
+- 2026-01-22: Added category filtering and search to content_list and tag_list pages.
 - 2026-01-22: Added Category model (replaces TextChoices), tag groups can be linked to specific categories or apply to all.
 - 2026-01-22: Added dynamic tag system with TagGroup and Tag models, moderator management interface, home page filters, and content list columns.
 - 2026-01-22: Added caching system (locmem/db/redis/memcached backends), browser cache middleware, and favicon.

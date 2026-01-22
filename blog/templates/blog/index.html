@@ -127,7 +127,6 @@ const tagGroupsData = {
     {% for group in tag_groups %}
     {{ group.id }}: {
         "name": "{{ group.name|escapejs }}",
-        "applies_to_all": {{ group.applies_to_all|yesno:"true,false" }},
         "categories": [{% for cat in group.categories.all %}"{{ cat.code }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
         "tags": [{% for tag in group.tags.all %}{"id": {{ tag.id }}, "name": "{{ tag.name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]
     }{% if not forloop.last %},{% endif %}
@@ -137,7 +136,7 @@ const tagGroupsData = {
 function isGroupVisibleForCategory(groupId, category) {
     const group = tagGroupsData[groupId];
     if (!group) return false;
-    if (group.applies_to_all) return true;
+    if (group.categories.length === 0) return true;
     if (category === 'all') return true;
     return group.categories.includes(category);
 }

@@ -79,21 +79,22 @@ class TestTagModel:
 class TestTagGroupForm:
     """Tests for TagGroupForm."""
 
+    @pytest.mark.django_db
     def test_form_has_required_fields(self) -> None:
         """Test that form has all required fields."""
         form = TagGroupForm()
         assert 'name' in form.fields
-        assert 'applies_to_all' in form.fields
+        assert 'select_all' in form.fields
         assert 'categories' in form.fields
 
     @pytest.mark.django_db
     def test_valid_form_creates_tag_group(self) -> None:
         """Test that valid form creates tag group."""
-        form = TagGroupForm(data={'name': 'Новая группа', 'applies_to_all': True})
+        form = TagGroupForm(data={'name': 'Новая группа'})
         assert form.is_valid()
         group = form.save()
         assert group.name == 'Новая группа'
-        assert group.applies_to_all is True
+        assert group.categories.count() == 0
 
 
 class TestTagForm:

@@ -16,17 +16,36 @@
             <form method="post" class="space-y-4">
                 {% csrf_token %}
                 
-                {% for field in form %}
                 <div>
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-foreground mb-1">
-                        {{ field.label }}
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-foreground mb-1">
+                        {{ form.name.label }}
                     </label>
-                    {{ field }}
-                    {% if field.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ field.errors.0 }}</p>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.name.errors.0 }}</p>
                     {% endif %}
                 </div>
-                {% endfor %}
+                
+                <div>
+                    <label class="block text-sm font-medium text-foreground mb-2">
+                        {{ form.categories.label }}
+                    </label>
+                    <div class="mb-2">
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            {{ form.select_all }}
+                            <span class="text-sm text-foreground">{{ form.select_all.label }}</span>
+                        </label>
+                    </div>
+                    <div class="pl-4 space-y-1" id="category-checkboxes">
+                        {{ form.categories }}
+                    </div>
+                    {% if form.categories.help_text %}
+                    <p class="text-muted-foreground text-xs mt-1">{{ form.categories.help_text }}</p>
+                    {% endif %}
+                    {% if form.categories.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.categories.errors.0 }}</p>
+                    {% endif %}
+                </div>
                 
                 <div class="flex gap-4 pt-4">
                     <button type="submit" 
@@ -42,4 +61,27 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select-all-categories');
+    const checkboxes = document.querySelectorAll('#category-checkboxes input[type="checkbox"]');
+    
+    function updateSelectAll() {
+        const total = checkboxes.length;
+        const checked = document.querySelectorAll('#category-checkboxes input[type="checkbox"]:checked').length;
+        selectAll.checked = (total > 0 && checked === total);
+    }
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    });
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectAll);
+    });
+    
+    updateSelectAll();
+});
+</script>
 {% endblock %}

@@ -12,6 +12,14 @@ from blog.forms import ContentForm, TagForm, TagGroupForm
 from blog.models import Category, Content, Tag, TagGroup
 from users.models import is_moderator
 
+
+def get_filter_context() -> dict[str, Any]:
+    """Get common filter context (categories and tag groups)."""
+    return {
+        'tag_groups': TagGroup.objects.prefetch_related('tags', 'categories').all(),
+        'categories': Category.objects.all(),
+    }
+
 if TYPE_CHECKING:
     from django.http import HttpResponse
 
@@ -33,10 +41,7 @@ class HomeView(ListView):  # type: ignore[type-arg]
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = is_moderator(self.request.user)
-        context['tag_groups'] = TagGroup.objects.prefetch_related(
-            'tags', 'categories'
-        ).all()
-        context['categories'] = Category.objects.all()
+        context.update(get_filter_context())
         return context
 
 
@@ -61,10 +66,7 @@ class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-ar
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
-        context['tag_groups'] = TagGroup.objects.prefetch_related(
-            'tags', 'categories'
-        ).all()
-        context['categories'] = Category.objects.all()
+        context.update(get_filter_context())
         return context
 
 
@@ -128,6 +130,7 @@ class TagListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
+        context.update(get_filter_context())
         return context
 
 

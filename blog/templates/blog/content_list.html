@@ -25,32 +25,57 @@
         </div>
         {% endif %}
         
-        {% if tag_groups %}
         <div class="bg-card rounded-2xl shadow-lg p-4 mb-4">
-            <div id="content-tag-filters" class="flex flex-wrap items-center gap-3">
-                <span class="text-sm text-muted-foreground">Фильтр по тегам:</span>
-                <div class="tag-filter-row flex items-center gap-2">
-                    <select onchange="updateContentTagSelect(this)" class="content-group-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        <option value="">Выберите группу</option>
-                        {% for group in tag_groups %}
-                        <option value="{{ group.id }}" data-tags='{% for tag in group.tags.all %}{"id":{{ tag.id }},"name":"{{ tag.name }}"}{% if not forloop.last %},{% endif %}{% endfor %}'>{{ group.name }}</option>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-sm text-muted-foreground">Категория:</span>
+                        <button onclick="filterContentCategory('all')" class="content-filter-btn active px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm" data-filter="all">
+                            Все
+                        </button>
+                        {% for cat in categories %}
+                        <button onclick="filterContentCategory('{{ cat.code }}')" class="content-filter-btn px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm" data-filter="{{ cat.code }}">
+                            {{ cat.name }}
+                        </button>
                         {% endfor %}
-                    </select>
-                    <select onchange="filterContentByTag()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
-                        <option value="">Выберите тег</option>
-                    </select>
+                    </div>
+                    
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" id="contentSearchInput" placeholder="Поиск..." 
+                               class="w-full px-4 py-2 pl-10 rounded-full border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+                               oninput="searchContent(this.value)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </div>
                 </div>
-                <button onclick="addContentTagFilter()" class="px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Добавить фильтр">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 5v14M5 12h14"/>
-                    </svg>
-                </button>
-                <button onclick="clearContentFilters()" class="px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm">
-                    Сбросить
-                </button>
+                
+                {% if tag_groups %}
+                <div id="content-tag-filters" class="flex flex-wrap items-center gap-3">
+                    <span class="text-sm text-muted-foreground">Теги:</span>
+                    <div class="tag-filter-row flex items-center gap-2">
+                        <select onchange="updateContentTagSelect(this)" class="content-group-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">Группа</option>
+                            {% for group in tag_groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <select onchange="applyContentFilters()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                            <option value="">Тег</option>
+                        </select>
+                    </div>
+                    <button onclick="addContentTagFilter()" class="px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Добавить фильтр">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                    </button>
+                    <button onclick="clearContentFilters()" class="px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm">
+                        Сбросить
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
         
         <div class="bg-card rounded-2xl shadow-lg overflow-x-auto">
             <table class="w-full">
@@ -66,7 +91,11 @@
                 </thead>
                 <tbody id="content-table-body" class="divide-y divide-border">
                     {% for content in contents %}
-                    <tr class="content-row hover:bg-muted/30" data-tags="{% for tag in content.tags.all %}{{ tag.id }},{% endfor %}">
+                    <tr class="content-row hover:bg-muted/30" 
+                        data-category="{{ content.category.code|default:'' }}"
+                        data-title="{{ content.title|lower }}"
+                        data-description="{{ content.description|lower }}"
+                        data-tags="{% for tag in content.tags.all %}{{ tag.id }},{% endfor %}">
                         <td class="px-6 py-4">
                             <span class="font-medium text-foreground">{{ content.title }}</span>
                         </td>
@@ -113,21 +142,73 @@
 </div>
 
 <script>
+let currentContentCategory = 'all';
+let currentContentSearch = '';
+
 const tagGroupsData = {
     {% for group in tag_groups %}
-    {{ group.id }}: [{% for tag in group.tags.all %}{"id": {{ tag.id }}, "name": "{{ tag.name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+    {{ group.id }}: {
+        "categories": [{% for cat in group.categories.all %}"{{ cat.code }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        "tags": [{% for tag in group.tags.all %}{"id": {{ tag.id }}, "name": "{{ tag.name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]
+    }{% if not forloop.last %},{% endif %}
     {% endfor %}
 };
+
+function isGroupVisibleForCategory(groupId, category) {
+    const group = tagGroupsData[groupId];
+    if (!group) return false;
+    if (group.categories.length === 0) return true;
+    if (category === 'all') return true;
+    return group.categories.includes(category);
+}
+
+function updateGroupSelectOptions() {
+    document.querySelectorAll('.content-group-select').forEach(select => {
+        Array.from(select.options).forEach(option => {
+            if (option.value === '') return;
+            const groupId = parseInt(option.value);
+            const visible = isGroupVisibleForCategory(groupId, currentContentCategory);
+            option.style.display = visible ? '' : 'none';
+            if (!visible && select.value === option.value) {
+                select.value = '';
+                const tagSelect = select.closest('.tag-filter-row').querySelector('.content-tag-select');
+                if (tagSelect) {
+                    tagSelect.innerHTML = '<option value="">Тег</option>';
+                    tagSelect.disabled = true;
+                }
+            }
+        });
+    });
+}
+
+function filterContentCategory(category) {
+    currentContentCategory = category;
+    
+    document.querySelectorAll('.content-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.filter === category) {
+            btn.classList.add('active');
+        }
+    });
+    
+    updateGroupSelectOptions();
+    applyContentFilters();
+}
+
+function searchContent(query) {
+    currentContentSearch = query.toLowerCase().trim();
+    applyContentFilters();
+}
 
 function updateContentTagSelect(groupSelect) {
     const row = groupSelect.closest('.tag-filter-row');
     const tagSelect = row.querySelector('.content-tag-select');
     const groupId = groupSelect.value;
     
-    tagSelect.innerHTML = '<option value="">Выберите тег</option>';
+    tagSelect.innerHTML = '<option value="">Тег</option>';
     
     if (groupId && tagGroupsData[groupId]) {
-        tagGroupsData[groupId].forEach(tag => {
+        tagGroupsData[groupId].tags.forEach(tag => {
             const option = document.createElement('option');
             option.value = tag.id;
             option.textContent = tag.name;
@@ -138,26 +219,25 @@ function updateContentTagSelect(groupSelect) {
         tagSelect.disabled = true;
     }
     
-    filterContentByTag();
+    applyContentFilters();
 }
 
 function addContentTagFilter() {
     const container = document.getElementById('content-tag-filters');
-    const existingRows = container.querySelectorAll('.tag-filter-row');
     
     const newRow = document.createElement('div');
     newRow.className = 'tag-filter-row flex items-center gap-2';
     newRow.innerHTML = `
         <select onchange="updateContentTagSelect(this)" class="content-group-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-            <option value="">Выберите группу</option>
+            <option value="">Группа</option>
             {% for group in tag_groups %}
             <option value="{{ group.id }}">{{ group.name }}</option>
             {% endfor %}
         </select>
-        <select onchange="filterContentByTag()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
-            <option value="">Выберите тег</option>
+        <select onchange="applyContentFilters()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+            <option value="">Тег</option>
         </select>
-        <button onclick="removeContentTagFilter(this)" class="px-1 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Удалить фильтр">
+        <button onclick="removeContentTagFilter(this)" class="px-1 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Удалить">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -166,15 +246,16 @@ function addContentTagFilter() {
     
     const addButton = container.querySelector('button[onclick="addContentTagFilter()"]');
     container.insertBefore(newRow, addButton);
+    updateGroupSelectOptions();
 }
 
 function removeContentTagFilter(button) {
     const row = button.closest('.tag-filter-row');
     row.remove();
-    filterContentByTag();
+    applyContentFilters();
 }
 
-function filterContentByTag() {
+function applyContentFilters() {
     const rows = document.querySelectorAll('.content-row');
     const filterRows = document.querySelectorAll('.tag-filter-row');
     
@@ -186,34 +267,59 @@ function filterContentByTag() {
         }
     });
     
+    let visibleCount = 0;
     rows.forEach(row => {
+        const category = row.dataset.category;
+        const title = row.dataset.title || '';
+        const description = row.dataset.description || '';
         const rowTags = row.dataset.tags ? row.dataset.tags.split(',').filter(t => t) : [];
         
-        if (activeTagIds.length === 0) {
+        const matchesCategory = currentContentCategory === 'all' || category === currentContentCategory;
+        const matchesSearch = currentContentSearch === '' || 
+                             title.includes(currentContentSearch) || 
+                             description.includes(currentContentSearch);
+        const matchesTags = activeTagIds.length === 0 || 
+                           activeTagIds.every(tagId => rowTags.includes(tagId));
+        
+        if (matchesCategory && matchesSearch && matchesTags) {
             row.classList.remove('hidden');
+            visibleCount++;
         } else {
-            const matchesAll = activeTagIds.every(tagId => rowTags.includes(tagId));
-            row.classList.toggle('hidden', !matchesAll);
+            row.classList.add('hidden');
         }
     });
 }
 
 function clearContentFilters() {
-    const container = document.getElementById('content-tag-filters');
-    const filterRows = container.querySelectorAll('.tag-filter-row');
+    currentContentCategory = 'all';
+    currentContentSearch = '';
     
-    filterRows.forEach((row, index) => {
-        if (index === 0) {
-            row.querySelector('.content-group-select').value = '';
-            const tagSelect = row.querySelector('.content-tag-select');
-            tagSelect.innerHTML = '<option value="">Выберите тег</option>';
-            tagSelect.disabled = true;
-        } else {
-            row.remove();
+    document.querySelectorAll('.content-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.filter === 'all') {
+            btn.classList.add('active');
         }
     });
     
-    filterContentByTag();
+    document.getElementById('contentSearchInput').value = '';
+    
+    const container = document.getElementById('content-tag-filters');
+    if (container) {
+        const filterRows = container.querySelectorAll('.tag-filter-row');
+        filterRows.forEach((row, index) => {
+            if (index === 0) {
+                row.querySelector('.content-group-select').value = '';
+                const tagSelect = row.querySelector('.content-tag-select');
+                tagSelect.innerHTML = '<option value="">Тег</option>';
+                tagSelect.disabled = true;
+            } else {
+                row.remove();
+            }
+        });
+    }
+    
+    updateGroupSelectOptions();
+    applyContentFilters();
 }
 </script>
 {% endblock %}

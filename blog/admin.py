@@ -17,17 +17,18 @@ class TagInline(admin.TabularInline):  # type: ignore[type-arg]
 
 @admin.register(TagGroup)
 class TagGroupAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'slug', 'applies_to_all', 'get_categories', 'created_at')
-    list_filter = ('applies_to_all', 'categories')
+    list_display = ('name', 'slug', 'get_categories', 'created_at')
+    list_filter = ('categories',)
     search_fields = ('name',)
     prepopulated_fields = {'slug': ('name',)}
     filter_horizontal = ('categories',)
     inlines = [TagInline]
 
     def get_categories(self, obj: TagGroup) -> str:
-        if obj.applies_to_all:
+        categories = obj.categories.all()
+        if not categories:
             return 'Все'
-        return ', '.join(c.name for c in obj.categories.all())
+        return ', '.join(c.name for c in categories)
     get_categories.short_description = 'Категории'  # type: ignore[attr-defined]
 
 
