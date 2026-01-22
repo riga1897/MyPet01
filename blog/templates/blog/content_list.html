@@ -50,30 +50,7 @@
                     </div>
                 </div>
                 
-                {% if tag_groups %}
-                <div id="content-tag-filters" class="flex flex-wrap items-center gap-3">
-                    <span class="text-sm text-muted-foreground">Теги:</span>
-                    <div class="tag-filter-row flex items-center gap-2">
-                        <select onchange="updateContentTagSelect(this)" class="content-group-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            <option value="">Группа</option>
-                            {% for group in tag_groups %}
-                            <option value="{{ group.id }}">{{ group.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <select onchange="applyContentFilters()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
-                            <option value="">Тег</option>
-                        </select>
-                    </div>
-                    <button onclick="addContentTagFilter()" class="px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Добавить фильтр">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 5v14M5 12h14"/>
-                        </svg>
-                    </button>
-                    <button onclick="clearContentFilters()" class="px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm">
-                        Сбросить
-                    </button>
-                </div>
-                {% endif %}
+                {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag_groups %}
             </div>
         </div>
         
@@ -145,42 +122,6 @@
 let currentContentCategory = 'all';
 let currentContentSearch = '';
 
-const tagGroupsData = {
-    {% for group in tag_groups %}
-    {{ group.id }}: {
-        "categories": [{% for cat in group.categories.all %}"{{ cat.code }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
-        "tags": [{% for tag in group.tags.all %}{"id": {{ tag.id }}, "name": "{{ tag.name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-};
-
-function isGroupVisibleForCategory(groupId, category) {
-    const group = tagGroupsData[groupId];
-    if (!group) return false;
-    if (group.categories.length === 0) return true;
-    if (category === 'all') return true;
-    return group.categories.includes(category);
-}
-
-function updateGroupSelectOptions() {
-    document.querySelectorAll('.content-group-select').forEach(select => {
-        Array.from(select.options).forEach(option => {
-            if (option.value === '') return;
-            const groupId = parseInt(option.value);
-            const visible = isGroupVisibleForCategory(groupId, currentContentCategory);
-            option.style.display = visible ? '' : 'none';
-            if (!visible && select.value === option.value) {
-                select.value = '';
-                const tagSelect = select.closest('.tag-filter-row').querySelector('.content-tag-select');
-                if (tagSelect) {
-                    tagSelect.innerHTML = '<option value="">Тег</option>';
-                    tagSelect.disabled = true;
-                }
-            }
-        });
-    });
-}
-
 function filterContentCategory(category) {
     currentContentCategory = category;
     
@@ -191,83 +132,21 @@ function filterContentCategory(category) {
         }
     });
     
-    updateGroupSelectOptions();
-    applyContentFilters();
+    if (typeof updateTagDropdownsVisibility === 'function') {
+        updateTagDropdownsVisibility(category);
+    }
+    applyFilters();
 }
 
 function searchContent(query) {
     currentContentSearch = query.toLowerCase().trim();
-    applyContentFilters();
+    applyFilters();
 }
 
-function updateContentTagSelect(groupSelect) {
-    const row = groupSelect.closest('.tag-filter-row');
-    const tagSelect = row.querySelector('.content-tag-select');
-    const groupId = groupSelect.value;
-    
-    tagSelect.innerHTML = '<option value="">Тег</option>';
-    
-    if (groupId && tagGroupsData[groupId]) {
-        tagGroupsData[groupId].tags.forEach(tag => {
-            const option = document.createElement('option');
-            option.value = tag.id;
-            option.textContent = tag.name;
-            tagSelect.appendChild(option);
-        });
-        tagSelect.disabled = false;
-    } else {
-        tagSelect.disabled = true;
-    }
-    
-    applyContentFilters();
-}
-
-function addContentTagFilter() {
-    const container = document.getElementById('content-tag-filters');
-    
-    const newRow = document.createElement('div');
-    newRow.className = 'tag-filter-row flex items-center gap-2';
-    newRow.innerHTML = `
-        <select onchange="updateContentTagSelect(this)" class="content-group-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-            <option value="">Группа</option>
-            {% for group in tag_groups %}
-            <option value="{{ group.id }}">{{ group.name }}</option>
-            {% endfor %}
-        </select>
-        <select onchange="applyContentFilters()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
-            <option value="">Тег</option>
-        </select>
-        <button onclick="removeContentTagFilter(this)" class="px-1 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Удалить">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-        </button>
-    `;
-    
-    const addButton = container.querySelector('button[onclick="addContentTagFilter()"]');
-    container.insertBefore(newRow, addButton);
-    updateGroupSelectOptions();
-}
-
-function removeContentTagFilter(button) {
-    const row = button.closest('.tag-filter-row');
-    row.remove();
-    applyContentFilters();
-}
-
-function applyContentFilters() {
+function applyFilters() {
     const rows = document.querySelectorAll('.content-row');
-    const filterRows = document.querySelectorAll('.tag-filter-row');
+    const activeTagIds = typeof getSelectedTagIds === 'function' ? getSelectedTagIds() : [];
     
-    const activeTagIds = [];
-    filterRows.forEach(row => {
-        const tagSelect = row.querySelector('.content-tag-select');
-        if (tagSelect && tagSelect.value) {
-            activeTagIds.push(tagSelect.value);
-        }
-    });
-    
-    let visibleCount = 0;
     rows.forEach(row => {
         const category = row.dataset.category;
         const title = row.dataset.title || '';
@@ -279,11 +158,10 @@ function applyContentFilters() {
                              title.includes(currentContentSearch) || 
                              description.includes(currentContentSearch);
         const matchesTags = activeTagIds.length === 0 || 
-                           activeTagIds.every(tagId => rowTags.includes(tagId));
+                           activeTagIds.some(tagId => rowTags.includes(tagId));
         
         if (matchesCategory && matchesSearch && matchesTags) {
             row.classList.remove('hidden');
-            visibleCount++;
         } else {
             row.classList.add('hidden');
         }
@@ -303,23 +181,11 @@ function clearContentFilters() {
     
     document.getElementById('contentSearchInput').value = '';
     
-    const container = document.getElementById('content-tag-filters');
-    if (container) {
-        const filterRows = container.querySelectorAll('.tag-filter-row');
-        filterRows.forEach((row, index) => {
-            if (index === 0) {
-                row.querySelector('.content-group-select').value = '';
-                const tagSelect = row.querySelector('.content-tag-select');
-                tagSelect.innerHTML = '<option value="">Тег</option>';
-                tagSelect.disabled = true;
-            } else {
-                row.remove();
-            }
-        });
+    if (typeof clearAllTagFilters === 'function') {
+        clearAllTagFilters();
     }
     
-    updateGroupSelectOptions();
-    applyContentFilters();
+    applyFilters();
 }
 </script>
 {% endblock %}
