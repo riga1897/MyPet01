@@ -22,10 +22,9 @@ Usage: {% include 'blog/partials/_category_checkboxes.html' %}
             <input type="checkbox" 
                    name="categories"
                    value="{{ category.id }}"
-                   data-category-code="{{ category.code }}"
                    class="content-category-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
                    {% if category.id in selected_category_ids %}checked{% endif %}
-                   onchange="updateContentCategorySelectAll(); updateTagsForSelectedCategories();">
+                   onchange="updateContentCategorySelectAll()">
             <span class="text-sm">{{ category.name }}</span>
         </label>
         {% empty %}
@@ -43,7 +42,6 @@ Usage: {% include 'blog/partials/_category_checkboxes.html' %}
     function toggleAllContentCategories(checked) {
         const checkboxes = document.querySelectorAll('.content-category-checkbox');
         checkboxes.forEach(cb => { cb.checked = checked; });
-        updateTagsForSelectedCategories();
     }
     window.toggleAllContentCategories = toggleAllContentCategories;
 
@@ -57,23 +55,8 @@ Usage: {% include 'blog/partials/_category_checkboxes.html' %}
     }
     window.updateContentCategorySelectAll = updateContentCategorySelectAll;
 
-    function getSelectedCategoryCodes() {
-        const checkedBoxes = document.querySelectorAll('.content-category-checkbox:checked');
-        return Array.from(checkedBoxes).map(cb => cb.dataset.categoryCode);
-    }
-    window.getSelectedCategoryCodes = getSelectedCategoryCodes;
-
-    function updateTagsForSelectedCategories() {
-        const selectedCodes = getSelectedCategoryCodes();
-        if (typeof updateTagGroupsVisibilityForm === 'function') {
-            updateTagGroupsVisibilityForm(selectedCodes);
-        }
-    }
-    window.updateTagsForSelectedCategories = updateTagsForSelectedCategories;
-
     document.addEventListener('DOMContentLoaded', function() {
         updateContentCategorySelectAll();
-        updateTagsForSelectedCategories();
     });
 })();
 </script>

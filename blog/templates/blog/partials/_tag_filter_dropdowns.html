@@ -56,8 +56,10 @@ Usage: {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag
 </div>
 
 <script>
-(function() {
-    window.toggleTagDropdown = function(button) {
+if (typeof window._tagFilterDropdownsInitialized === 'undefined') {
+    window._tagFilterDropdownsInitialized = true;
+
+    function toggleTagDropdown(button) {
         const dropdown = button.closest('.tag-group-dropdown');
         const menu = dropdown.querySelector('.dropdown-menu');
         const arrow = dropdown.querySelector('.dropdown-arrow');
@@ -65,88 +67,122 @@ Usage: {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag
         
         document.querySelectorAll('.tag-group-dropdown .dropdown-menu').forEach(m => {
             m.classList.add('hidden');
-            const arr = m.closest('.tag-group-dropdown')?.querySelector('.dropdown-arrow');
-            if (arr) arr.classList.remove('rotate-180');
+            m.closest('.tag-group-dropdown').querySelector('.dropdown-arrow').classList.remove('rotate-180');
         });
         
         if (!isOpen) {
             menu.classList.remove('hidden');
             arrow.classList.add('rotate-180');
         }
-    };
+    }
+    window.toggleTagDropdown = toggleTagDropdown;
 
-    if (!window._tagFilterClickListenerAdded) {
-        window._tagFilterClickListenerAdded = true;
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.tag-group-dropdown')) {
-                document.querySelectorAll('.tag-group-dropdown .dropdown-menu').forEach(menu => {
-                    menu.classList.add('hidden');
-                    const arr = menu.closest('.tag-group-dropdown')?.querySelector('.dropdown-arrow');
-                    if (arr) arr.classList.remove('rotate-180');
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.tag-group-dropdown')) {
+            document.querySelectorAll('.tag-group-dropdown .dropdown-menu').forEach(menu => {
+                menu.classList.add('hidden');
+                menu.closest('.tag-group-dropdown').querySelector('.dropdown-arrow').classList.remove('rotate-180');
+            });
+        }
+    });
+
+    function handleSelectAllTags(checkbox) {
+        const dropdown = checkbox.closest('.tag-group-dropdown');
+        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
+        
+        tagCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        
+        updateSelectedCount(dropdown);
+        applyTagFilters();
+    }
+    window.handleSelectAllTags = handleSelectAllTags;
+
+    function handleTagCheckboxChange(checkbox) {
+        const dropdown = checkbox.closest('.tag-group-dropdown');
+        updateSelectAllState(dropdown);
+        updateSelectedCount(dropdown);
+        applyTagFilters();
+    }
+    window.handleTagCheckboxChange = handleTagCheckboxChange;
+
+    function updateSelectAllState(dropdown) {
+        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
+        const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
+        
+        if (tagCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            return;
+        }
+        
+        const allChecked = Array.from(tagCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+    window.updateSelectAllState = updateSelectAllState;
+
+    function updateSelectedCount(dropdown) {
+        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox:checked');
+        const countBadge = dropdown.querySelector('.selected-count');
+        const count = tagCheckboxes.length;
+        
+        if (count > 0) {
+            countBadge.textContent = count;
+            countBadge.classList.remove('hidden');
+        } else {
+            countBadge.classList.add('hidden');
+        }
+    }
+    window.updateSelectedCount = updateSelectedCount;
+
+    function clearAllTagFilters() {
+        document.querySelectorAll('.tag-group-dropdown').forEach(dropdown => {
+            dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            updateSelectAllState(dropdown);
+            updateSelectedCount(dropdown);
+        });
+        applyTagFilters();
+    }
+    window.clearAllTagFilters = clearAllTagFilters;
+
+    function getSelectedTagIds() {
+        const selectedTags = [];
+        document.querySelectorAll('.tag-checkbox:checked').forEach(cb => {
+            selectedTags.push(cb.value);
+        });
+        return selectedTags;
+    }
+    window.getSelectedTagIds = getSelectedTagIds;
+
+    function applyTagFilters() {
+        if (typeof applyFilters === 'function') {
+            applyFilters();
+        }
+    }
+    window.applyTagFilters = applyTagFilters;
+
+    function updateTagDropdownsVisibility(categoryCode) {
+        document.querySelectorAll('.tag-group-dropdown').forEach(dropdown => {
+            const categories = dropdown.dataset.categories;
+            const isVisible = !categories || categories === '' || 
+                             categoryCode === 'all' || 
+                             categories.includes(categoryCode + ',');
+            
+            if (isVisible) {
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.classList.add('hidden');
+                dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
                 });
+                updateSelectAllState(dropdown);
+                updateSelectedCount(dropdown);
             }
         });
     }
-
-    window.handleSelectAllTags = function(checkbox) {
-        const dropdown = checkbox.closest('.tag-group-dropdown');
-        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
-        tagCheckboxes.forEach(cb => { cb.checked = checkbox.checked; });
-        window.updateSelectedCount(dropdown);
-        window.applyTagFilters();
-    };
-
-    window.handleTagCheckboxChange = function(checkbox) {
-        const dropdown = checkbox.closest('.tag-group-dropdown');
-        window.updateSelectAllState(dropdown);
-        window.updateSelectedCount(dropdown);
-        window.applyTagFilters();
-    };
-
-    window.updateSelectAllState = function(dropdown) {
-        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
-        const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
-        if (tagCheckboxes.length === 0) { selectAllCheckbox.checked = false; return; }
-        selectAllCheckbox.checked = Array.from(tagCheckboxes).every(cb => cb.checked);
-    };
-
-    window.updateSelectedCount = function(dropdown) {
-        const count = dropdown.querySelectorAll('.tag-checkbox:checked').length;
-        const countBadge = dropdown.querySelector('.selected-count');
-        if (count > 0) { countBadge.textContent = count; countBadge.classList.remove('hidden'); }
-        else { countBadge.classList.add('hidden'); }
-    };
-
-    window.clearAllTagFilters = function() {
-        document.querySelectorAll('.tag-group-dropdown').forEach(dropdown => {
-            dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
-            window.updateSelectAllState(dropdown);
-            window.updateSelectedCount(dropdown);
-        });
-        window.applyTagFilters();
-    };
-
-    window.getSelectedTagIds = function() {
-        return Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(cb => cb.value);
-    };
-
-    window.applyTagFilters = function() {
-        if (typeof applyFilters === 'function') applyFilters();
-    };
-
-    window.updateTagDropdownsVisibility = function(categoryCode) {
-        document.querySelectorAll('.tag-group-dropdown').forEach(dropdown => {
-            const categories = dropdown.dataset.categories;
-            const isVisible = !categories || categories === '' || categoryCode === 'all' || categories.includes(categoryCode + ',');
-            if (isVisible) { dropdown.classList.remove('hidden'); }
-            else {
-                dropdown.classList.add('hidden');
-                dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
-                window.updateSelectAllState(dropdown);
-                window.updateSelectedCount(dropdown);
-            }
-        });
-    };
-})();
+    window.updateTagDropdownsVisibility = updateTagDropdownsVisibility;
+}
 </script>
 {% endif %}

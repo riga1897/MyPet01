@@ -26,29 +26,29 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
                 </svg>
             </button>
             
-            <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[200px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
-                <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600">
+            <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 py-1">
+                <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer border-b border-border">
                     <input type="checkbox" 
-                           class="select-all-checkbox w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                           class="select-all-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
                            data-group-id="{{ group.id }}"
                            onchange="handleSelectAllTagsForm(this)">
-                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Выбрать все</span>
+                    <span class="text-sm font-medium">Выбрать все</span>
                 </label>
                 
                 {% for tag in group.tags.all %}
-                <label class="tag-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <label class="tag-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
                     <input type="checkbox" 
                            name="tags"
-                           class="tag-checkbox w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                           class="tag-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
                            data-group-id="{{ group.id }}"
                            data-tag-id="{{ tag.id }}"
                            value="{{ tag.id }}"
                            {% if tag.id in selected_tag_ids %}checked{% endif %}
                            onchange="handleTagCheckboxChangeForm(this)">
-                    <span class="text-sm text-gray-900 dark:text-gray-100">{{ tag.name }}</span>
+                    <span class="text-sm">{{ tag.name }}</span>
                 </label>
                 {% empty %}
-                <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Нет тегов</div>
+                <div class="px-3 py-2 text-sm text-muted-foreground">Нет тегов</div>
                 {% endfor %}
             </div>
         </div>
@@ -65,8 +65,10 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
 </div>
 
 <script>
-(function() {
-    window.toggleTagSelectDropdown = function(button) {
+if (typeof window._tagSelectFormInitialized === 'undefined') {
+    window._tagSelectFormInitialized = true;
+
+    function toggleTagSelectDropdown(button) {
         const dropdown = button.closest('.tag-group-select');
         const menu = dropdown.querySelector('.dropdown-menu');
         const arrow = dropdown.querySelector('.dropdown-arrow');
@@ -82,57 +84,77 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
             menu.classList.remove('hidden');
             arrow.classList.add('rotate-180');
         }
-    };
-
-    if (!window._tagDropdownClickListenerAdded) {
-        window._tagDropdownClickListenerAdded = true;
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.tag-group-select') && !e.target.closest('.category-select-dropdown')) {
-                document.querySelectorAll('.tag-group-select .dropdown-menu').forEach(menu => {
-                    menu.classList.add('hidden');
-                    const arrow = menu.closest('.tag-group-select')?.querySelector('.dropdown-arrow');
-                    if (arrow) arrow.classList.remove('rotate-180');
-                });
-            }
-        });
     }
+    window.toggleTagSelectDropdown = toggleTagSelectDropdown;
 
-    window.handleSelectAllTagsForm = function(checkbox) {
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.tag-group-select') && !e.target.closest('.category-select-dropdown')) {
+            document.querySelectorAll('.tag-group-select .dropdown-menu').forEach(menu => {
+                menu.classList.add('hidden');
+                menu.closest('.tag-group-select').querySelector('.dropdown-arrow').classList.remove('rotate-180');
+            });
+        }
+    });
+
+    function handleSelectAllTagsForm(checkbox) {
         const dropdown = checkbox.closest('.tag-group-select');
         const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
-        tagCheckboxes.forEach(cb => { cb.checked = checkbox.checked; });
-        window.updateSelectedCountForm(dropdown);
-    };
+        
+        tagCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        
+        updateSelectedCountForm(dropdown);
+    }
+    window.handleSelectAllTagsForm = handleSelectAllTagsForm;
 
-    window.handleTagCheckboxChangeForm = function(checkbox) {
+    function handleTagCheckboxChangeForm(checkbox) {
         const dropdown = checkbox.closest('.tag-group-select');
-        window.updateSelectAllStateForm(dropdown);
-        window.updateSelectedCountForm(dropdown);
-    };
+        updateSelectAllStateForm(dropdown);
+        updateSelectedCountForm(dropdown);
+    }
+    window.handleTagCheckboxChangeForm = handleTagCheckboxChangeForm;
 
-    window.updateSelectAllStateForm = function(dropdown) {
+    function updateSelectAllStateForm(dropdown) {
         const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
         const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
-        if (tagCheckboxes.length === 0) { selectAllCheckbox.checked = false; return; }
-        selectAllCheckbox.checked = Array.from(tagCheckboxes).every(cb => cb.checked);
-    };
+        
+        if (tagCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            return;
+        }
+        
+        const allChecked = Array.from(tagCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+    window.updateSelectAllStateForm = updateSelectAllStateForm;
 
-    window.updateSelectedCountForm = function(dropdown) {
-        const count = dropdown.querySelectorAll('.tag-checkbox:checked').length;
+    function updateSelectedCountForm(dropdown) {
+        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox:checked');
         const countBadge = dropdown.querySelector('.selected-count');
-        if (count > 0) { countBadge.textContent = count; countBadge.classList.remove('hidden'); }
-        else { countBadge.classList.add('hidden'); }
-    };
+        const count = tagCheckboxes.length;
+        
+        if (count > 0) {
+            countBadge.textContent = count;
+            countBadge.classList.remove('hidden');
+        } else {
+            countBadge.classList.add('hidden');
+        }
+    }
+    window.updateSelectedCountForm = updateSelectedCountForm;
 
-    window.clearAllTagSelectsForm = function() {
+    function clearAllTagSelectsForm() {
         document.querySelectorAll('.tag-group-select').forEach(dropdown => {
-            dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
-            window.updateSelectAllStateForm(dropdown);
-            window.updateSelectedCountForm(dropdown);
+            dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            updateSelectAllStateForm(dropdown);
+            updateSelectedCountForm(dropdown);
         });
-    };
+    }
+    window.clearAllTagSelectsForm = clearAllTagSelectsForm;
 
-    window.updateTagGroupsVisibilityForm = function(categoryCodes) {
+    function updateTagGroupsVisibilityForm(categoryCode) {
         const container = document.getElementById('tag-select-container');
         if (!container) return;
         
@@ -140,32 +162,26 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
         const dropdowns = container.querySelectorAll('.tag-group-select');
         let visibleCount = 0;
         
-        const codesArray = Array.isArray(categoryCodes) ? categoryCodes : (categoryCodes ? [categoryCodes] : []);
-        const hasSelection = codesArray.length > 0;
-        
         dropdowns.forEach(dropdown => {
-            const groupCategories = dropdown.dataset.categories;
-            const appliesToAll = groupCategories === '';
-            const matchesAny = codesArray.some(code => groupCategories.includes(code + ','));
-            const isVisible = appliesToAll || matchesAny;
+            const categories = dropdown.dataset.categories;
+            const isVisible = categories === '' || 
+                             (categoryCode && categories.includes(categoryCode + ','));
             
-            if (isVisible && hasSelection) {
+            if (isVisible && categoryCode) {
                 dropdown.classList.remove('hidden');
                 visibleCount++;
             } else {
                 dropdown.classList.add('hidden');
-                dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
-                window.updateSelectAllStateForm(dropdown);
-                window.updateSelectedCountForm(dropdown);
+                dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+                updateSelectAllStateForm(dropdown);
+                updateSelectedCountForm(dropdown);
             }
         });
         
         if (noTagsMessage) {
-            if (!hasSelection) {
-                noTagsMessage.classList.remove('hidden');
-                container.querySelector('.flex')?.classList.add('hidden');
-            } else if (visibleCount === 0) {
-                noTagsMessage.textContent = 'Нет тегов для выбранных категорий';
+            if (!categoryCode) {
                 noTagsMessage.classList.remove('hidden');
                 container.querySelector('.flex')?.classList.add('hidden');
             } else {
@@ -173,19 +189,31 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
                 container.querySelector('.flex')?.classList.remove('hidden');
             }
         }
-    };
+    }
+    window.updateTagGroupsVisibilityForm = updateTagGroupsVisibilityForm;
 
-    window.onCategoryChanged = function(categoryCode, categoryId) {
-        window.updateTagGroupsVisibilityForm(categoryCode);
-        if (typeof onContentTypeOrCategoryChanged === 'function') onContentTypeOrCategoryChanged();
-    };
+    function onCategoryChanged(categoryCode, categoryId) {
+        updateTagGroupsVisibilityForm(categoryCode);
+        
+        if (typeof onContentTypeOrCategoryChanged === 'function') {
+            onContentTypeOrCategoryChanged();
+        }
+    }
+    window.onCategoryChanged = onCategoryChanged;
 
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.tag-group-select').forEach(dropdown => {
-            window.updateSelectAllStateForm(dropdown);
-            window.updateSelectedCountForm(dropdown);
+            updateSelectAllStateForm(dropdown);
+            updateSelectedCountForm(dropdown);
         });
+        
+        const checkedRadio = document.querySelector('.category-radio:checked');
+        if (checkedRadio && checkedRadio.value) {
+            updateTagGroupsVisibilityForm(checkedRadio.dataset.categoryCode);
+        } else {
+            updateTagGroupsVisibilityForm(null);
+        }
     });
-})();
+}
 </script>
 {% endif %}
