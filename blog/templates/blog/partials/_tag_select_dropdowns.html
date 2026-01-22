@@ -26,29 +26,29 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
                 </svg>
             </button>
             
-            <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 py-1">
-                <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer border-b border-border">
+            <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[200px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
+                <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600">
                     <input type="checkbox" 
-                           class="select-all-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                           class="select-all-checkbox w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                            data-group-id="{{ group.id }}"
                            onchange="handleSelectAllTagsForm(this)">
-                    <span class="text-sm font-medium">Выбрать все</span>
+                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Выбрать все</span>
                 </label>
                 
                 {% for tag in group.tags.all %}
-                <label class="tag-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
+                <label class="tag-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
                     <input type="checkbox" 
                            name="tags"
-                           class="tag-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                           class="tag-checkbox w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                            data-group-id="{{ group.id }}"
                            data-tag-id="{{ tag.id }}"
                            value="{{ tag.id }}"
                            {% if tag.id in selected_tag_ids %}checked{% endif %}
                            onchange="handleTagCheckboxChangeForm(this)">
-                    <span class="text-sm">{{ tag.name }}</span>
+                    <span class="text-sm text-gray-900 dark:text-gray-100">{{ tag.name }}</span>
                 </label>
                 {% empty %}
-                <div class="px-3 py-2 text-sm text-muted-foreground">Нет тегов</div>
+                <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Нет тегов</div>
                 {% endfor %}
             </div>
         </div>
