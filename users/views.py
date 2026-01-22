@@ -34,13 +34,13 @@ class ModeratorListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-
     context_object_name = 'users'
 
     def get_queryset(self) -> QuerySet[User]:
-        return User.objects.all().order_by('username')
+        return User.objects.prefetch_related('groups').order_by('username')
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
         moderators_group = get_or_create_moderators_group()
         context['moderator_ids'] = set(
-            moderators_group.user_set.values_list('id', flat=True)
+            User.objects.filter(groups=moderators_group).values_list('id', flat=True)
         )
         context['group_name'] = MODERATORS_GROUP_NAME
         return context

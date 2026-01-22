@@ -31,7 +31,7 @@ def filter_content(
     
     if tags:
         for tag in tags:
-            queryset = queryset.filter(tags=tag)
+            queryset = queryset.filter(tags__pk=tag.pk)
     
     if search_query:
         queryset = queryset.filter(
