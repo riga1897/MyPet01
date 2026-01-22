@@ -77,13 +77,6 @@ class TestCategoryModel:
         )
         assert str(category) == 'Тестовая категория'
 
-    def test_category_slug_auto_generated(self) -> None:
-        category = Category.objects.create(
-            name='Тестовая категория',
-            code='test',
-        )
-        assert category.slug == 'тестовая-категория'
-
     def test_category_code_is_unique(self) -> None:
         Category.objects.create(name='Категория 1', code='cat1')
         with pytest.raises(Exception):

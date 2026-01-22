@@ -14,9 +14,11 @@ class ContentTypeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'code', 'slug', 'created_at')
+    list_display = ('name', 'code', 'created_at')
     search_fields = ('name', 'code')
-    prepopulated_fields = {'slug': ('name',)}
+
+    class Media:
+        js = ('admin/js/category_transliterate.js',)
 
 
 class TagInline(admin.TabularInline):  # type: ignore[type-arg]

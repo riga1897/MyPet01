@@ -32,17 +32,12 @@ class Category(BaseModel):
         unique=True,
         verbose_name='Название',
     )
-    slug = models.SlugField(
-        max_length=100,
-        unique=True,
-        blank=True,
-        verbose_name='Слаг',
-    )
     code = models.CharField(
         max_length=20,
         unique=True,
+        blank=True,
         verbose_name='Код',
-        help_text='Уникальный код для использования в коде (например: yoga, oils)',
+        help_text='Генерируется автоматически из названия',
     )
 
     class Meta:
@@ -52,11 +47,6 @@ class Category(BaseModel):
 
     def __str__(self) -> str:
         return self.name
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-        super().save(*args, **kwargs)
 
 
 class TagGroup(BaseModel):

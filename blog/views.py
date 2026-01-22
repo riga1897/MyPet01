@@ -332,3 +332,28 @@ class CheckContentTypeFolderView(View):
         
         available = not queryset.exists()
         return JsonResponse({'available': available, 'folder': folder})
+
+
+class CheckCategoryCodeView(View):
+    """API endpoint to check if Category code is available."""
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        code = request.GET.get('code', '').strip()
+        exclude_id_str = request.GET.get('exclude_id')
+        exclude_id: int | None = None
+        
+        if exclude_id_str:
+            try:
+                exclude_id = int(exclude_id_str)
+            except (ValueError, TypeError):
+                pass
+        
+        if not code:
+            return JsonResponse({'available': True})
+        
+        queryset = Category.objects.filter(code=code)
+        if exclude_id:
+            queryset = queryset.exclude(pk=exclude_id)
+        
+        available = not queryset.exists()
+        return JsonResponse({'available': available, 'code': code})

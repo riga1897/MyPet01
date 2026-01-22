@@ -65,8 +65,7 @@ BaseModel (abstract)
 
 Category (inherits BaseModel)
   ├── name: CharField (unique)
-  ├── slug: SlugField (auto-generated)
-  └── code: CharField (unique, e.g. 'yoga', 'oils')
+  └── code: CharField (unique, blank, auto-generated from name via transliteration)
 
 ContentType (inherits BaseModel)
   ├── name: CharField (unique)
@@ -215,6 +214,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Removed slug field from Category model. Added CheckCategoryCodeView API endpoint and category_transliterate.js for auto-generation and validation of Category.code.
 - 2026-01-22: Added CheckContentTypeFolderView API endpoint for upload_folder uniqueness validation. JavaScript now validates both code and folder with debounced input.
 - 2026-01-22: Reverted Content.content_types (ManyToMany) back to content_type (ForeignKey) — single content type per content for clearer file storage logic. Form uses RadioSelect widget.
 - 2026-01-22: Refactored to single-path architecture: code generation moved entirely to client-side (JavaScript). API endpoint now only checks availability. Server-side transliterate/generate_unique_code functions removed.
