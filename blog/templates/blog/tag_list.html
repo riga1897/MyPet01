@@ -56,17 +56,34 @@
                     </div>
                 </div>
                 
-                {% include "blog/partials/_tag_filter_dropdowns.html" %}
+                {% if tag_groups %}
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-sm text-muted-foreground">Группы:</span>
+                    {% for group in tag_groups %}
+                    <label class="group-filter-checkbox inline-flex items-center gap-1.5 cursor-pointer" 
+                           data-group-id="{{ group.pk }}"
+                           data-categories="{% for cat in group.categories.all %}{{ cat.code }},{% endfor %}">
+                        <input type="checkbox" checked 
+                               class="w-4 h-4 rounded border-border text-primary focus:ring-primary/50"
+                               onchange="applyFilters()">
+                        <span class="text-sm text-foreground">{{ group.name }}</span>
+                    </label>
+                    {% endfor %}
+                    <button onclick="toggleAllGroups()" class="text-xs text-primary hover:underline ml-2">
+                        Все / Ничего
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
         
         <div id="tag-groups-container">
             {% for group in tag_groups %}
             <div class="tag-group-card bg-card rounded-2xl shadow-lg overflow-hidden mb-6" 
+                 data-group-id="{{ group.pk }}"
                  data-categories="{% for cat in group.categories.all %}{{ cat.code }},{% endfor %}"
                  data-name="{{ group.name|lower }}"
-                 data-tags="{% for tag in group.tags.all %}{{ tag.name|lower }},{% endfor %}"
-                 data-tag-ids="{% for tag in group.tags.all %}{{ tag.pk }},{% endfor %}">
+                 data-tags="{% for tag in group.tags.all %}{{ tag.name|lower }},{% endfor %}">
                 <div class="bg-muted px-6 py-3 flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center gap-3">
                         <h2 class="text-lg font-medium text-foreground">{{ group.name }}</h2>
@@ -136,12 +153,26 @@ function filterByCategory(category) {
         }
     });
     
-    if (typeof updateTagDropdownsVisibility === 'function') {
-        updateTagDropdownsVisibility(category);
-    }
-    
+    updateGroupCheckboxesVisibility(category);
     applyFilters();
 }
+
+function updateGroupCheckboxesVisibility(category) {
+    document.querySelectorAll('.group-filter-checkbox').forEach(label => {
+        const categories = label.dataset.categories ? label.dataset.categories.split(',').filter(c => c) : [];
+        const isVisible = category === 'all' || categories.length === 0 || categories.includes(category);
+        
+        if (isVisible) {
+            label.classList.remove('hidden');
+        } else {
+            label.classList.add('hidden');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateGroupCheckboxesVisibility(currentCategoryFilter);
+});
 
 function searchTagGroups(query) {
     currentTagSearch = query.toLowerCase().trim();
@@ -152,17 +183,34 @@ function applyFilters() {
     applyTagGroupFilters();
 }
 
+function getSelectedGroupIds() {
+    const selectedIds = [];
+    document.querySelectorAll('.group-filter-checkbox').forEach(label => {
+        if (!label.classList.contains('hidden') && label.querySelector('input').checked) {
+            selectedIds.push(label.dataset.groupId);
+        }
+    });
+    return selectedIds;
+}
+
+function toggleAllGroups() {
+    const checkboxes = document.querySelectorAll('.group-filter-checkbox:not(.hidden) input');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    applyFilters();
+}
+
 function applyTagGroupFilters() {
     const cards = document.querySelectorAll('.tag-group-card');
     const noResults = document.getElementById('no-tag-results');
-    const selectedTagIds = typeof getSelectedTagIds === 'function' ? getSelectedTagIds() : [];
+    const selectedGroupIds = getSelectedGroupIds();
     let visibleCount = 0;
     
     cards.forEach(card => {
+        const groupId = card.dataset.groupId;
         const categories = card.dataset.categories ? card.dataset.categories.split(',').filter(c => c) : [];
         const name = card.dataset.name || '';
         const tags = card.dataset.tags || '';
-        const tagIds = card.dataset.tagIds ? card.dataset.tagIds.split(',').filter(id => id) : [];
         
         const matchesCategory = currentCategoryFilter === 'all' || 
                                categories.length === 0 ||
@@ -170,10 +218,9 @@ function applyTagGroupFilters() {
         const matchesSearch = currentTagSearch === '' || 
                              name.includes(currentTagSearch) || 
                              tags.includes(currentTagSearch);
-        const matchesTags = selectedTagIds.length === 0 || 
-                           selectedTagIds.some(id => tagIds.includes(id));
+        const matchesGroup = selectedGroupIds.includes(groupId);
         
-        if (matchesCategory && matchesSearch && matchesTags) {
+        if (matchesCategory && matchesSearch && matchesGroup) {
             card.classList.remove('hidden');
             visibleCount++;
         } else {
