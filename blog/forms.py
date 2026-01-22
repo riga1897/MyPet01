@@ -4,7 +4,7 @@ from django import forms
 from blog.models import Content, Tag, TagGroup
 
 
-FORM_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-black dark:placeholder:text-black'
+FORM_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
 CHECKBOX_CLASS = 'w-4 h-4 text-primary border-border rounded focus:ring-primary'
 
 
