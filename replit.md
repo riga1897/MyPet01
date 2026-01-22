@@ -214,6 +214,10 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added path traversal protection in ContentType.delete(), AvailableFilesView, and validate_existing_file(). Server-side validation for existing_file selection.
+- 2026-01-22: Thumbnails now use unique MD5 hash names (video_12345678.jpg, photo_12345678.jpg). Auto-deleted with content.
+- 2026-01-22: Added file selection UI: toggle between "Upload new" and "Select existing". AvailableFilesView API returns files not used by other content.
+- 2026-01-22: ContentType deletion protection: blocks if has related content, auto-deletes folder if empty.
 - 2026-01-22: Changed content_type selection from RadioSelect to checkboxes with "one or none" logic. Removed "Без типа" option from form.
 - 2026-01-22: Removed slug field from Category model. Added CheckCategoryCodeView API endpoint and category_transliterate.js for auto-generation and validation of Category.code.
 - 2026-01-22: Added CheckContentTypeFolderView API endpoint for upload_folder uniqueness validation. JavaScript now validates both code and folder with debounced input.
