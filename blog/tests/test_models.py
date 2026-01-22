@@ -1,31 +1,5 @@
 import pytest
-from blog.models import Category, Content, ContentType
-
-
-@pytest.mark.django_db
-class TestContentTypeModel:
-    def test_content_type_str_returns_name(self) -> None:
-        content_type = ContentType.objects.create(
-            name='Аудио',
-            code='audio',
-            upload_folder='audio',
-        )
-        assert str(content_type) == 'Аудио'
-
-    def test_content_type_slug_auto_generated(self) -> None:
-        content_type = ContentType.objects.create(
-            name='Аудио',
-            code='audio',
-        )
-        assert content_type.slug == 'аудио'
-
-    def test_content_type_is_video(self, video_type: ContentType) -> None:
-        assert video_type.is_video is True
-        assert video_type.is_photo is False
-
-    def test_content_type_is_photo(self, photo_type: ContentType) -> None:
-        assert photo_type.is_photo is True
-        assert photo_type.is_video is False
+from blog.models import Category, Content, ContentType, Tag, TagGroup
 
 
 @pytest.mark.django_db
@@ -34,21 +8,23 @@ class TestContentModel:
         content = Content.objects.create(
             title='Утренняя йога',
             category=yoga_category,
-            content_type=video_type,
         )
+        content.content_types.add(video_type)
         assert str(content) == 'Утренняя йога'
 
-    def test_content_default_category_is_none(self, video_type: ContentType) -> None:
-        content = Content.objects.create(title='Тест', content_type=video_type)
+    def test_content_default_category_is_none(self) -> None:
+        content = Content.objects.create(title='Тест')
         assert content.category is None
 
     def test_content_default_type_is_none(self) -> None:
         content = Content.objects.create(title='Тест')
-        assert content.content_type is None
+        assert content.content_types.count() == 0
 
     def test_content_ordering_by_created_at_desc(self, video_type: ContentType) -> None:
-        c1 = Content.objects.create(title='Первое', content_type=video_type)
-        c2 = Content.objects.create(title='Второе', content_type=video_type)
+        c1 = Content.objects.create(title='Первое')
+        c1.content_types.add(video_type)
+        c2 = Content.objects.create(title='Второе')
+        c2.content_types.add(video_type)
         contents = list(Content.objects.all())
         assert contents[0] == c2
         assert contents[1] == c1
@@ -56,42 +32,47 @@ class TestContentModel:
     def test_content_can_be_video(self, yoga_category: Category, video_type: ContentType) -> None:
         content = Content.objects.create(
             title='Видео йоги',
-            content_type=video_type,
             category=yoga_category,
         )
-        assert content.content_type is not None
-        assert content.content_type.is_video is True
+        content.content_types.add(video_type)
+        assert content.content_types.count() == 1
+        assert content.content_types.first().is_video is True
 
     def test_content_can_be_photo(self, yoga_category: Category, photo_type: ContentType) -> None:
         content = Content.objects.create(
             title='Фото йоги',
-            content_type=photo_type,
             category=yoga_category,
         )
-        assert content.content_type is not None
-        assert content.content_type.is_photo is True
+        content.content_types.add(photo_type)
+        assert content.content_types.count() == 1
+        assert content.content_types.first().is_photo is True
 
     def test_create_content_video(self, video_type: ContentType) -> None:
         content = Content.objects.create(
             title='Мое видео',
             description='Test Video',
-            content_type=video_type,
         )
+        content.content_types.add(video_type)
         assert content.description == 'Test Video'
-        assert content.content_type is not None
-        assert content.content_type.code == 'video'
+        assert content.content_types.count() == 1
+        assert content.content_types.first().code == 'video'
         assert str(content) == 'Мое видео'
 
     def test_create_content_photo(self, photo_type: ContentType) -> None:
         content = Content.objects.create(
             title='Моя фотография',
             description='Test Photo',
-            content_type=photo_type,
         )
+        content.content_types.add(photo_type)
         assert content.description == 'Test Photo'
-        assert content.content_type is not None
-        assert content.content_type.code == 'photo'
+        assert content.content_types.count() == 1
+        assert content.content_types.first().code == 'photo'
         assert str(content) == 'Моя фотография'
+
+    def test_content_can_have_multiple_types(self, video_type: ContentType, photo_type: ContentType) -> None:
+        content = Content.objects.create(title='Мультимедиа')
+        content.content_types.add(video_type, photo_type)
+        assert content.content_types.count() == 2
 
 
 @pytest.mark.django_db
@@ -112,7 +93,55 @@ class TestCategoryModel:
 
     def test_category_code_is_unique(self, yoga_category: Category) -> None:
         with pytest.raises(Exception):
-            Category.objects.create(
-                name='Другая категория',
-                code='yoga',
-            )
+            Category.objects.create(name='Другая категория', code='yoga')
+
+
+@pytest.mark.django_db
+class TestContentTypeModel:
+    def test_content_type_str_returns_name(self) -> None:
+        ct = ContentType.objects.create(name='Аудио', code='audio', upload_folder='audio')
+        assert str(ct) == 'Аудио'
+
+    def test_content_type_slug_auto_generated(self) -> None:
+        ct = ContentType.objects.create(name='Тестовый тип', code='test', upload_folder='test')
+        assert ct.slug == 'тестовый-тип'
+
+    def test_is_video_property(self, video_type: ContentType) -> None:
+        assert video_type.is_video is True
+        assert video_type.is_photo is False
+
+    def test_is_photo_property(self, photo_type: ContentType) -> None:
+        assert photo_type.is_photo is True
+        assert photo_type.is_video is False
+
+
+@pytest.mark.django_db
+class TestTagGroupModel:
+    def test_tag_group_str_returns_name(self) -> None:
+        group = TagGroup.objects.create(name='Уровень сложности')
+        assert str(group) == 'Уровень сложности'
+
+    def test_tag_group_slug_auto_generated(self) -> None:
+        group = TagGroup.objects.create(name='Уровень сложности')
+        assert group.slug == 'уровень-сложности'
+
+
+@pytest.mark.django_db
+class TestTagModel:
+    def test_tag_str_returns_name_with_group(self) -> None:
+        group = TagGroup.objects.create(name='Уровень')
+        tag = Tag.objects.create(name='Начинающий', group=group)
+        assert str(tag) == 'Начинающий (Уровень)'
+
+    def test_tag_slug_auto_generated(self) -> None:
+        group = TagGroup.objects.create(name='Уровень')
+        tag = Tag.objects.create(name='Продвинутый', group=group)
+        assert tag.slug == 'продвинутый'
+
+    def test_tags_ordered_by_order_field(self) -> None:
+        group = TagGroup.objects.create(name='Группа')
+        tag1 = Tag.objects.create(name='Тег 1', group=group, order=2)
+        tag2 = Tag.objects.create(name='Тег 2', group=group, order=1)
+        tag3 = Tag.objects.create(name='Тег 3', group=group, order=3)
+        tags = list(Tag.objects.filter(group=group))
+        assert tags == [tag2, tag1, tag3]

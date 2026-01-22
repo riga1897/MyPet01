@@ -33,9 +33,9 @@ class CacheUtilsTestCase(TestCase):
         self.content = Content.objects.create(
             title='Test Content',
             description='Test Description',
-            content_type=self.video_type,
             category=self.yoga_category,
         )
+        self.content.content_types.add(self.video_type)
 
     def tearDown(self) -> None:
         cache.clear()
@@ -80,12 +80,12 @@ class CacheUtilsTestCase(TestCase):
     def test_set_cached_content_list_respects_limit(self) -> None:
         """Test that set_cached_content_list respects the limit parameter."""
         for i in range(10):
-            Content.objects.create(
+            c = Content.objects.create(
                 title=f'Content {i}',
                 description=f'Description {i}',
-                content_type=self.video_type,
                 category=self.yoga_category,
             )
+            c.content_types.add(self.video_type)
 
         queryset = Content.objects.all()
         result = set_cached_content_list(queryset, limit=5)
@@ -123,9 +123,9 @@ class CacheSignalsTestCase(TestCase):
         content = Content.objects.create(
             title='Test Content',
             description='Test Description',
-            content_type=self.video_type,
             category=self.yoga_category,
         )
+        content.content_types.add(self.video_type)
 
         queryset = Content.objects.all()
         set_cached_content_list(queryset, limit=6)
@@ -141,12 +141,12 @@ class CacheSignalsTestCase(TestCase):
         queryset = Content.objects.all()
         set_cached_content_list(queryset, limit=6)
 
-        Content.objects.create(
+        c = Content.objects.create(
             title='New Content',
             description='New Description',
-            content_type=self.photo_type,
             category=self.oils_category,
         )
+        c.content_types.add(self.photo_type)
 
         self.assertIsNone(get_cached_content_list())
 
@@ -155,9 +155,9 @@ class CacheSignalsTestCase(TestCase):
         content = Content.objects.create(
             title='Test Content',
             description='Test Description',
-            content_type=self.video_type,
             category=self.yoga_category,
         )
+        content.content_types.add(self.video_type)
 
         queryset = Content.objects.all()
         set_cached_content_list(queryset, limit=6)

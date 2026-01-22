@@ -38,7 +38,7 @@ class HomeView(ListView):  # type: ignore[type-arg]
         if cached is not None:
             return cached
         queryset = Content.objects.select_related('category').prefetch_related(
-            'tags', 'tags__group'
+            'tags', 'tags__group', 'content_types'
         ).all()
         return set_cached_content_list(queryset, limit=6)
 

@@ -32,8 +32,10 @@ class TestContentListView:
 
     def test_shows_all_content(self, video_type: ContentType) -> None:
         admin = User.objects.create_superuser(username='admin', password='test123')
-        Content.objects.create(title='Контент 1', content_type=video_type)
-        Content.objects.create(title='Контент 2', content_type=video_type)
+        c1 = Content.objects.create(title='Контент 1')
+        c1.content_types.add(video_type)
+        c2 = Content.objects.create(title='Контент 2')
+        c2.content_types.add(video_type)
         client = Client()
         client.force_login(admin)
         response = client.get('/content/')
@@ -67,7 +69,7 @@ class TestContentCreateView:
         response = client.post('/content/create/', {
             'title': 'Новый контент',
             'description': 'Описание',
-            'content_type': video_type.pk,
+            'content_types': [video_type.pk],
             'category': yoga_category.pk,
         })
         assert response.status_code == 302
@@ -76,8 +78,8 @@ class TestContentCreateView:
 
 @pytest.mark.django_db
 class TestContentUpdateView:
-    def test_anonymous_user_redirected(self, video_type: ContentType) -> None:
-        content = Content.objects.create(title='Тест', content_type=video_type)
+    def test_anonymous_user_redirected(self) -> None:
+        content = Content.objects.create(title='Тест')
         client = Client()
         response = client.get(f'/content/{content.pk}/edit/')
         assert response.status_code == 302
@@ -86,7 +88,8 @@ class TestContentUpdateView:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
-        content = Content.objects.create(title='Тест', content_type=video_type)
+        content = Content.objects.create(title='Тест')
+        content.content_types.add(video_type)
         client = Client()
         client.force_login(user)
         response = client.get(f'/content/{content.pk}/edit/')
@@ -97,13 +100,14 @@ class TestContentUpdateView:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
-        content = Content.objects.create(title='Старый заголовок', content_type=video_type)
+        content = Content.objects.create(title='Старый заголовок')
+        content.content_types.add(video_type)
         client = Client()
         client.force_login(user)
         response = client.post(f'/content/{content.pk}/edit/', {
             'title': 'Новый заголовок',
             'description': 'Описание',
-            'content_type': video_type.pk,
+            'content_types': [video_type.pk],
             'category': yoga_category.pk,
         })
         assert response.status_code == 302
@@ -113,8 +117,8 @@ class TestContentUpdateView:
 
 @pytest.mark.django_db
 class TestContentDeleteView:
-    def test_anonymous_user_redirected(self, video_type: ContentType) -> None:
-        content = Content.objects.create(title='Тест', content_type=video_type)
+    def test_anonymous_user_redirected(self) -> None:
+        content = Content.objects.create(title='Тест')
         client = Client()
         response = client.get(f'/content/{content.pk}/delete/')
         assert response.status_code == 302
@@ -123,7 +127,8 @@ class TestContentDeleteView:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
-        content = Content.objects.create(title='Удалить меня', content_type=video_type)
+        content = Content.objects.create(title='Удалить меня')
+        content.content_types.add(video_type)
         client = Client()
         client.force_login(user)
         response = client.post(f'/content/{content.pk}/delete/')
