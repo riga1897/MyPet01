@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load blog_filters %}
+
+{% block title %}Управление файлами — Гармония Души{% endblock %}
+
+{% block content %}
+{% include "blog/partials/_header.html" %}
+
+{% csrf_token %}
+<div class="min-h-screen p-4 pt-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-2xl font-semibold text-foreground mb-6">Управление файлами</h1>
+        
+        {% if not content_types %}
+        <div class="bg-card rounded-2xl shadow-lg p-8 text-center">
+            <p class="text-muted-foreground">Нет типов контента. Создайте тип контента в админке.</p>
+        </div>
+        {% else %}
+        
+        {% for ct in content_types %}
+        <div class="bg-card rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-medium text-foreground">{{ ct.name }}</h2>
+                <span class="text-sm text-muted-foreground">Папка: {{ ct.upload_folder }}/</span>
+            </div>
+            
+            <div class="mb-4 p-4 bg-muted rounded-lg">
+                <form id="upload-form-{{ ct.id }}" class="flex items-center gap-4">
+                    <input type="file" 
+                           id="file-input-{{ ct.id }}"
+                           class="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                           accept="{% if ct.code == 'video' %}video/*{% elif ct.code == 'photo' %}image/*{% else %}*/*{% endif %}">
+                    <button type="button" 
+                            onclick="uploadFile({{ ct.id }})"
+                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors text-sm">
+                        Загрузить
+                    </button>
+                </form>
+            </div>
+            
+            {% with files=files_by_type|get_item:ct.id %}
+            {% if files %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-border">
+                            <th class="text-left py-2 px-3 text-muted-foreground font-medium">Файл</th>
+                            <th class="text-left py-2 px-3 text-muted-foreground font-medium">Размер</th>
+                            <th class="text-left py-2 px-3 text-muted-foreground font-medium">Статус</th>
+                            <th class="text-right py-2 px-3 text-muted-foreground font-medium">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="file-list-{{ ct.id }}">
+                        {% for file in files %}
+                        <tr class="border-b border-border hover:bg-muted/30" id="file-row-{{ forloop.counter }}-{{ ct.id }}">
+                            <td class="py-2 px-3">{{ file.name }}</td>
+                            <td class="py-2 px-3 text-muted-foreground">{{ file.size|filesizeformat }}</td>
+                            <td class="py-2 px-3">
+                                {% if file.used %}
+                                <span class="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded">Используется</span>
+                                {% else %}
+                                <span class="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">Свободен</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-2 px-3 text-right">
+                                {% if not file.used %}
+                                <button type="button" 
+                                        onclick="deleteFile('{{ file.path }}', this)"
+                                        class="text-red-500 hover:text-red-700 p-1" title="Удалить файл">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                                {% else %}
+                                <span class="text-muted-foreground text-xs">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted-foreground text-center py-4">Нет файлов в этой папке</p>
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% endfor %}
+        
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function getCsrfToken() {
+    return document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || 
+           document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+
+function uploadFile(contentTypeId) {
+    const fileInput = document.getElementById(`file-input-${contentTypeId}`);
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Выберите файл для загрузки');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('content_type_id', contentTypeId);
+    formData.append('file', file);
+    
+    fetch('/api/files/upload/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+        },
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Ошибка загрузки');
+        }
+    })
+    .catch(() => {
+        alert('Ошибка загрузки файла');
+    });
+}
+
+function deleteFile(filePath, button) {
+    if (!confirm('Удалить файл ' + filePath.split('/').pop() + '?')) {
+        return;
+    }
+    
+    fetch('/api/files/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify({ file_path: filePath }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const row = button.closest('tr');
+            if (row) row.remove();
+        } else {
+            alert(data.error || 'Ошибка удаления');
+        }
+    })
+    .catch(() => {
+        alert('Ошибка удаления файла');
+    });
+}
+</script>
+{% endblock %}

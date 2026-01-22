@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import pytest
 from django.contrib.auth.models import Group, User
@@ -338,3 +339,36 @@ class TestAvailableFilesView:
         response = client.get('/api/available-files/', {'folder': '/etc'})
         data = response.json()
         assert data['files'] == []
+
+
+@pytest.mark.django_db
+class TestFileListView:
+    def test_requires_login(self) -> None:
+        client = Client()
+        response = client.get('/files/')
+        assert response.status_code == 302
+
+    def test_moderator_can_access(self, moderator_user: Any) -> None:
+        client = Client()
+        client.force_login(moderator_user)
+        response = client.get('/files/')
+        assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestFileDeleteView:
+    def test_requires_login(self) -> None:
+        client = Client()
+        response = client.post('/api/files/delete/', 
+                               data='{"file_path": "test.txt"}',
+                               content_type='application/json')
+        assert response.status_code == 302
+
+    def test_path_traversal_blocked(self, moderator_user: Any) -> None:
+        client = Client()
+        client.force_login(moderator_user)
+        response = client.post('/api/files/delete/',
+                               data='{"file_path": "../etc/passwd"}',
+                               content_type='application/json')
+        data = response.json()
+        assert data['success'] is False

@@ -445,3 +445,102 @@ class AvailableFilesView(View):
         
         available_files.sort(key=lambda x: x['name'].lower())
         return JsonResponse({'files': available_files})
+
+
+class FileListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
+    template_name = 'blog/file_list.html'
+    context_object_name = 'content_types'
+
+    def get_queryset(self) -> Any:
+        return ContentType.objects.all().order_by('name')
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context: dict[str, Any] = super().get_context_data(**kwargs)
+        context['is_moderator'] = True
+        
+        files_by_type: dict[int, list[dict[str, Any]]] = {}
+        used_files = set(
+            Content.objects.exclude(video_file='').values_list('video_file', flat=True)
+        )
+        
+        for ct in context['content_types']:
+            folder_path = os.path.join(settings.MEDIA_ROOT, ct.upload_folder)
+            files = []
+            if os.path.exists(folder_path) and os.path.isdir(folder_path):
+                for filename in os.listdir(folder_path):
+                    file_path = os.path.join(folder_path, filename)
+                    if os.path.isfile(file_path):
+                        relative_path = f'{ct.upload_folder}/{filename}'
+                        files.append({
+                            'name': filename,
+                            'path': relative_path,
+                            'used': relative_path in used_files,
+                            'size': os.path.getsize(file_path),
+                        })
+            files.sort(key=lambda x: str(x['name']).lower())
+            files_by_type[ct.id] = files
+        
+        context['files_by_type'] = files_by_type
+        return context
+
+
+class FileUploadView(ModeratorRequiredMixin, View):
+    def post(self, request: HttpRequest) -> HttpResponse:
+        content_type_id = request.POST.get('content_type_id')
+        uploaded_file = request.FILES.get('file')
+        
+        if not content_type_id or not uploaded_file:
+            return JsonResponse({'success': False, 'error': 'Не указан тип или файл'}, status=400)
+        
+        try:
+            ct = ContentType.objects.get(pk=content_type_id)
+        except ContentType.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Тип не найден'}, status=404)
+        
+        folder_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, ct.upload_folder))
+        media_root = os.path.normpath(settings.MEDIA_ROOT)
+        if not folder_path.startswith(media_root + os.sep):
+            return JsonResponse({'success': False, 'error': 'Недопустимая папка'}, status=400)
+        
+        os.makedirs(folder_path, exist_ok=True)
+        
+        filename = uploaded_file.name or ''
+        if '..' in filename or '/' in filename or '\\' in filename:
+            return JsonResponse({'success': False, 'error': 'Недопустимое имя файла'}, status=400)
+        
+        if not filename:
+            return JsonResponse({'success': False, 'error': 'Пустое имя файла'}, status=400)
+        
+        file_path = os.path.join(folder_path, filename)
+        with open(file_path, 'wb+') as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+        
+        return JsonResponse({'success': True, 'filename': filename})
+
+
+class FileDeleteView(ModeratorRequiredMixin, View):
+    def post(self, request: HttpRequest) -> HttpResponse:
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Неверный формат'}, status=400)
+        
+        file_path_relative = data.get('file_path', '')
+        
+        if not file_path_relative or '..' in file_path_relative or file_path_relative.startswith('/'):
+            return JsonResponse({'success': False, 'error': 'Недопустимый путь'}, status=400)
+        
+        if Content.objects.filter(video_file=file_path_relative).exists():
+            return JsonResponse({'success': False, 'error': 'Файл используется контентом'}, status=400)
+        
+        full_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, file_path_relative))
+        media_root = os.path.normpath(settings.MEDIA_ROOT)
+        if not full_path.startswith(media_root + os.sep):
+            return JsonResponse({'success': False, 'error': 'Недопустимый путь'}, status=400)
+        
+        if not os.path.exists(full_path) or not os.path.isfile(full_path):
+            return JsonResponse({'success': False, 'error': 'Файл не найден'}, status=404)
+        
+        os.remove(full_path)
+        return JsonResponse({'success': True})
