@@ -65,10 +65,8 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
 </div>
 
 <script>
-if (typeof window._tagSelectFormInitialized === 'undefined') {
-    window._tagSelectFormInitialized = true;
-
-    function toggleTagSelectDropdown(button) {
+(function() {
+    window.toggleTagSelectDropdown = function(button) {
         const dropdown = button.closest('.tag-group-select');
         const menu = dropdown.querySelector('.dropdown-menu');
         const arrow = dropdown.querySelector('.dropdown-arrow');
@@ -84,77 +82,57 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
             menu.classList.remove('hidden');
             arrow.classList.add('rotate-180');
         }
+    };
+
+    if (!window._tagDropdownClickListenerAdded) {
+        window._tagDropdownClickListenerAdded = true;
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.tag-group-select') && !e.target.closest('.category-select-dropdown')) {
+                document.querySelectorAll('.tag-group-select .dropdown-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                    const arrow = menu.closest('.tag-group-select')?.querySelector('.dropdown-arrow');
+                    if (arrow) arrow.classList.remove('rotate-180');
+                });
+            }
+        });
     }
-    window.toggleTagSelectDropdown = toggleTagSelectDropdown;
 
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.tag-group-select') && !e.target.closest('.category-select-dropdown')) {
-            document.querySelectorAll('.tag-group-select .dropdown-menu').forEach(menu => {
-                menu.classList.add('hidden');
-                menu.closest('.tag-group-select').querySelector('.dropdown-arrow').classList.remove('rotate-180');
-            });
-        }
-    });
-
-    function handleSelectAllTagsForm(checkbox) {
+    window.handleSelectAllTagsForm = function(checkbox) {
         const dropdown = checkbox.closest('.tag-group-select');
         const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
-        
-        tagCheckboxes.forEach(cb => {
-            cb.checked = checkbox.checked;
-        });
-        
-        updateSelectedCountForm(dropdown);
-    }
-    window.handleSelectAllTagsForm = handleSelectAllTagsForm;
+        tagCheckboxes.forEach(cb => { cb.checked = checkbox.checked; });
+        window.updateSelectedCountForm(dropdown);
+    };
 
-    function handleTagCheckboxChangeForm(checkbox) {
+    window.handleTagCheckboxChangeForm = function(checkbox) {
         const dropdown = checkbox.closest('.tag-group-select');
-        updateSelectAllStateForm(dropdown);
-        updateSelectedCountForm(dropdown);
-    }
-    window.handleTagCheckboxChangeForm = handleTagCheckboxChangeForm;
+        window.updateSelectAllStateForm(dropdown);
+        window.updateSelectedCountForm(dropdown);
+    };
 
-    function updateSelectAllStateForm(dropdown) {
+    window.updateSelectAllStateForm = function(dropdown) {
         const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
         const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
-        
-        if (tagCheckboxes.length === 0) {
-            selectAllCheckbox.checked = false;
-            return;
-        }
-        
-        const allChecked = Array.from(tagCheckboxes).every(cb => cb.checked);
-        selectAllCheckbox.checked = allChecked;
-    }
-    window.updateSelectAllStateForm = updateSelectAllStateForm;
+        if (tagCheckboxes.length === 0) { selectAllCheckbox.checked = false; return; }
+        selectAllCheckbox.checked = Array.from(tagCheckboxes).every(cb => cb.checked);
+    };
 
-    function updateSelectedCountForm(dropdown) {
-        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox:checked');
+    window.updateSelectedCountForm = function(dropdown) {
+        const count = dropdown.querySelectorAll('.tag-checkbox:checked').length;
         const countBadge = dropdown.querySelector('.selected-count');
-        const count = tagCheckboxes.length;
-        
-        if (count > 0) {
-            countBadge.textContent = count;
-            countBadge.classList.remove('hidden');
-        } else {
-            countBadge.classList.add('hidden');
-        }
-    }
-    window.updateSelectedCountForm = updateSelectedCountForm;
+        if (count > 0) { countBadge.textContent = count; countBadge.classList.remove('hidden'); }
+        else { countBadge.classList.add('hidden'); }
+    };
 
-    function clearAllTagSelectsForm() {
+    window.clearAllTagSelectsForm = function() {
         document.querySelectorAll('.tag-group-select').forEach(dropdown => {
-            dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                cb.checked = false;
-            });
-            updateSelectAllStateForm(dropdown);
-            updateSelectedCountForm(dropdown);
+            dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+            window.updateSelectAllStateForm(dropdown);
+            window.updateSelectedCountForm(dropdown);
         });
-    }
-    window.clearAllTagSelectsForm = clearAllTagSelectsForm;
+    };
 
-    function updateTagGroupsVisibilityForm(categoryCodes) {
+    window.updateTagGroupsVisibilityForm = function(categoryCodes) {
         const container = document.getElementById('tag-select-container');
         if (!container) return;
         
@@ -176,11 +154,9 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
                 visibleCount++;
             } else {
                 dropdown.classList.add('hidden');
-                dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                    cb.checked = false;
-                });
-                updateSelectAllStateForm(dropdown);
-                updateSelectedCountForm(dropdown);
+                dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+                window.updateSelectAllStateForm(dropdown);
+                window.updateSelectedCountForm(dropdown);
             }
         });
         
@@ -197,24 +173,19 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
                 container.querySelector('.flex')?.classList.remove('hidden');
             }
         }
-    }
-    window.updateTagGroupsVisibilityForm = updateTagGroupsVisibilityForm;
+    };
 
-    function onCategoryChanged(categoryCode, categoryId) {
-        updateTagGroupsVisibilityForm(categoryCode);
-        
-        if (typeof onContentTypeOrCategoryChanged === 'function') {
-            onContentTypeOrCategoryChanged();
-        }
-    }
-    window.onCategoryChanged = onCategoryChanged;
+    window.onCategoryChanged = function(categoryCode, categoryId) {
+        window.updateTagGroupsVisibilityForm(categoryCode);
+        if (typeof onContentTypeOrCategoryChanged === 'function') onContentTypeOrCategoryChanged();
+    };
 
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.tag-group-select').forEach(dropdown => {
-            updateSelectAllStateForm(dropdown);
-            updateSelectedCountForm(dropdown);
+            window.updateSelectAllStateForm(dropdown);
+            window.updateSelectedCountForm(dropdown);
         });
     });
-}
+})();
 </script>
 {% endif %}
