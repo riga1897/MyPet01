@@ -71,11 +71,11 @@ class TagForm(forms.ModelForm):  # type: ignore[type-arg]
 class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
     class Meta:
         model = Content
-        fields = ['title', 'description', 'content_type', 'category', 'tags', 'thumbnail', 'video_file', 'duration']
+        fields = ['title', 'description', 'content_types', 'category', 'tags', 'thumbnail', 'video_file', 'duration']
         labels = {
             'title': 'Заголовок',
             'description': 'Описание',
-            'content_type': 'Тип контента',
+            'content_types': 'Типы контента',
             'category': 'Категория',
             'tags': 'Теги',
             'thumbnail': 'Превью',
@@ -92,8 +92,8 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
                 'rows': 4,
                 'placeholder': 'Описание контента',
             }),
-            'content_type': forms.Select(attrs={
-                'class': FORM_INPUT_CLASS,
+            'content_types': forms.CheckboxSelectMultiple(attrs={
+                'class': 'space-y-2',
             }),
             'category': forms.Select(attrs={
                 'class': FORM_INPUT_CLASS,

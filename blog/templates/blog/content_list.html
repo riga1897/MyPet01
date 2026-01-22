@@ -80,15 +80,19 @@
                             <span class="font-medium text-foreground">{{ content.title }}</span>
                         </td>
                         <td class="px-6 py-4">
-                            {% if content.content_type.code == 'video' %}
-                            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{{ content.content_type.name }}</span>
-                            {% elif content.content_type.code == 'photo' %}
-                            <span class="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded">{{ content.content_type.name }}</span>
-                            {% elif content.content_type %}
-                            <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded">{{ content.content_type.name }}</span>
-                            {% else %}
-                            <span class="text-xs text-muted-foreground">—</span>
-                            {% endif %}
+                            <div class="flex flex-wrap gap-1">
+                                {% for ct in content.content_types.all %}
+                                    {% if ct.code == 'video' %}
+                                    <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{{ ct.name }}</span>
+                                    {% elif ct.code == 'photo' %}
+                                    <span class="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded">{{ ct.name }}</span>
+                                    {% else %}
+                                    <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded">{{ ct.name }}</span>
+                                    {% endif %}
+                                {% empty %}
+                                <span class="text-xs text-muted-foreground">—</span>
+                                {% endfor %}
+                            </div>
                         </td>
                         <td class="px-6 py-4">
                             <span class="text-muted-foreground">{{ content.category.name|default:"—" }}</span>

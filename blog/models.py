@@ -144,9 +144,12 @@ class Tag(BaseModel):
 
 def content_file_upload_path(instance: 'Content', filename: str) -> str:
     """Generate upload path based on content type."""
-    if instance.content_type and instance.content_type.upload_folder:
-        folder = instance.content_type.upload_folder.strip('/')
-        return f'{folder}/{filename}'
+    content_types = instance.content_types.all() if instance.pk else []
+    if content_types:
+        first_type = content_types[0]
+        if first_type.upload_folder:
+            folder = first_type.upload_folder.strip('/')
+            return f'{folder}/{filename}'
     return f'content/{filename}'
 
 
@@ -209,13 +212,11 @@ class Content(BaseModel):
         verbose_name='Название',
     )
     description = models.TextField(blank=True, verbose_name='Описание')
-    content_type = models.ForeignKey(
+    content_types = models.ManyToManyField(
         ContentType,
-        on_delete=models.PROTECT,
-        related_name='contents',
-        verbose_name='Тип',
-        null=True,
         blank=True,
+        related_name='contents',
+        verbose_name='Типы контента',
     )
     video_file = models.FileField(
         upload_to=content_file_upload_path,
@@ -257,22 +258,30 @@ class Content(BaseModel):
         return self.title
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        self._process_content_type()
         if self.thumbnail and self._is_new_thumbnail():
             self._compress_thumbnail()
         super().save(*args, **kwargs)
         self._process_auto_fields_after_save()
 
-    def _process_content_type(self) -> None:
-        """Set duration to empty for photo content type."""
-        if self.content_type and self.content_type.is_photo:
-            self.duration = ''
+    def _has_content_type_code(self, code: str) -> bool:
+        """Check if content has a specific content type by code."""
+        if not self.pk:
+            return False
+        return self.content_types.filter(code=code).exists()
+
+    def has_video_type(self) -> bool:
+        """Check if content has video type."""
+        return self._has_content_type_code(ContentType.VIDEO_CODE)
+
+    def has_photo_type(self) -> bool:
+        """Check if content has photo type."""
+        return self._has_content_type_code(ContentType.PHOTO_CODE)
 
     def _process_auto_fields_after_save(self) -> None:
         """Process auto-duration and auto-thumbnail after initial save."""
         needs_update = False
         
-        if self.content_type and self.content_type.is_video and self.video_file:
+        if self.has_video_type() and self.video_file:
             if not self.duration:
                 duration = get_video_duration(self.video_file)
                 if duration:
@@ -285,7 +294,7 @@ class Content(BaseModel):
                     self.thumbnail = thumbnail
                     needs_update = True
         
-        elif self.content_type and self.content_type.is_photo and self.video_file:
+        elif self.has_photo_type() and self.video_file:
             if not self.thumbnail:
                 thumbnail = generate_thumbnail_from_image(self.video_file)
                 if thumbnail:
@@ -322,4 +331,4 @@ class Content(BaseModel):
 
     def has_playable_video(self) -> bool:
         """Check if content has a playable video file."""
-        return bool(self.content_type and self.content_type.is_video and self.video_file)
+        return bool(self.has_video_type() and self.video_file)

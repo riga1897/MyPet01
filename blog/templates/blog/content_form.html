@@ -40,9 +40,9 @@
                     <label class="block text-sm font-medium text-foreground mb-1">
                         Тип контента
                     </label>
-                    {% include "blog/partials/_content_type_select_dropdown.html" with content_types=content_types selected_content_type_id=selected_content_type_id has_file=has_file %}
-                    {% if form.content_type.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.content_type.errors.0 }}</p>
+                    {% include "blog/partials/_content_type_select_dropdown.html" with content_types=content_types selected_content_type_ids=selected_content_type_ids has_file=has_file %}
+                    {% if form.content_types.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.content_types.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
@@ -109,7 +109,7 @@
                     </p>
                 </div>
                 
-                <div id="duration-field" class="{% if form.content_type.value == 'photo' %}hidden{% endif %}">
+                <div id="duration-field">
                     <label for="id_duration" class="block text-sm font-medium text-foreground mb-1">
                         Длительность (необязательно)
                     </label>
@@ -142,24 +142,32 @@
     const hasExistingFile = {{ has_file|yesno:"true,false" }};
     let fileSelected = false;
     
-    function getContentTypeCode() {
-        const checked = document.querySelector('.content-type-checkbox:checked');
-        return checked ? checked.dataset.contentTypeCode : 'video';
+    function getSelectedContentTypeCodes() {
+        const checked = document.querySelectorAll('.content-type-checkbox:checked');
+        return Array.from(checked).map(cb => cb.dataset.contentTypeCode);
     }
     
     function updateFileInput() {
-        const contentTypeCode = getContentTypeCode();
+        const codes = getSelectedContentTypeCodes();
         const fileInput = document.getElementById('id_video_file');
         const fileLabel = document.getElementById('file-label');
         const fileHint = document.getElementById('file-hint');
         const durationField = document.getElementById('duration-field');
         
-        if (contentTypeCode === 'video') {
+        const hasVideo = codes.includes('video');
+        const hasPhoto = codes.includes('photo');
+        
+        if (hasVideo && hasPhoto) {
+            fileInput.accept = 'video/*,image/*';
+            fileLabel.textContent = 'Видео или фото';
+            fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV, JPG, PNG, WebP, GIF';
+            durationField.classList.remove('hidden');
+        } else if (hasVideo) {
             fileInput.accept = 'video/*';
             fileLabel.textContent = 'Видео файл';
             fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
             durationField.classList.remove('hidden');
-        } else if (contentTypeCode === 'photo') {
+        } else if (hasPhoto) {
             fileInput.accept = 'image/*';
             fileLabel.textContent = 'Фото';
             fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
@@ -172,21 +180,8 @@
         }
     }
     
-    function onContentTypeChanged(code, value) {
+    function onContentTypeChanged(codes) {
         updateFileInput();
-        
-        const fileInput = document.getElementById('id_video_file');
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-            
-            if ((code === 'photo' && !isImage) || (code === 'video' && !isVideo)) {
-                fileInput.value = '';
-                fileSelected = false;
-                alert('Выбранный файл не соответствует типу контента. Пожалуйста, выберите другой файл.');
-            }
-        }
     }
     window.onContentTypeChanged = onContentTypeChanged;
     
@@ -211,23 +206,8 @@
     }
     window.onFileSelected = onFileSelected;
     
-    function validateContentForm(event) {
-        const contentTypeInput = document.getElementById('id_content_type');
-        if (!contentTypeInput.value) {
-            event.preventDefault();
-            alert('Пожалуйста, выберите тип контента');
-            return false;
-        }
-        return true;
-    }
-    
     document.addEventListener('DOMContentLoaded', function() {
         updateFileInput();
-        
-        const form = document.getElementById('content-form');
-        if (form) {
-            form.addEventListener('submit', validateContentForm);
-        }
         
         {% if current_category_code %}
         if (typeof updateTagGroupsVisibilityForm === 'function') {

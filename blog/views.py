@@ -91,7 +91,7 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
         context.update(get_filter_context())
         context['selected_tag_ids'] = []
         context['selected_category_id'] = None
-        context['selected_content_type_id'] = None
+        context['selected_content_type_ids'] = []
         context['current_category_code'] = None
         context['has_file'] = False
         return context
@@ -115,7 +115,7 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         content = self.object
         context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
         context['selected_category_id'] = content.category_id
-        context['selected_content_type_id'] = content.content_type_id
+        context['selected_content_type_ids'] = list(content.content_types.values_list('id', flat=True))
         context['current_category_code'] = content.category.code if content.category else None
         context['has_file'] = bool(content.video_file)
         return context
