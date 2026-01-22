@@ -20,9 +20,10 @@ A personal pet website for the family. This is a Django project using a minimali
 - **Coding Workflow (TDD + QA)**:
   1. Write tests first.
   2. Implement code.
-  3. Verify with tests.
-  4. Run linters (Ruff, Mypy).
+  3. Verify with tests (`poetry run pytest`).
+  4. **ОБЯЗАТЕЛЬНО** проверить линтеры (`poetry run ruff check .` и `poetry run mypy .`).
 - **Test Coverage**: 100% code coverage is mandatory. All new code must be fully tested before merging.
+- **Linters**: Проверка линтерами обязательна перед завершением любой задачи. Код не считается готовым без прохождения Ruff и Mypy.
 - **Database Choice**: PostgreSQL is the preferred database for its robust Django support and features.
 - **Tools**: Use `mypy` for static analysis and `ruff` for linting.
 - **Design Principles**:
