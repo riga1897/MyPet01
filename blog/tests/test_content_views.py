@@ -2,18 +2,8 @@ import pytest
 from django.contrib.auth.models import User
 from django.test import Client
 
-from blog.models import Category, Content
+from blog.models import Category, Content, ContentType
 from users.models import get_or_create_moderators_group
-
-
-@pytest.fixture
-def yoga_category() -> Category:
-    """Create and return the yoga category."""
-    category, _ = Category.objects.get_or_create(
-        code='yoga',
-        defaults={'name': 'Йога', 'slug': 'yoga'},
-    )
-    return category
 
 
 @pytest.mark.django_db
@@ -40,10 +30,10 @@ class TestContentListView:
         response = client.get('/content/')
         assert response.status_code == 200
 
-    def test_shows_all_content(self) -> None:
+    def test_shows_all_content(self, video_type: ContentType) -> None:
         admin = User.objects.create_superuser(username='admin', password='test123')
-        Content.objects.create(title='Контент 1')
-        Content.objects.create(title='Контент 2')
+        Content.objects.create(title='Контент 1', content_type=video_type)
+        Content.objects.create(title='Контент 2', content_type=video_type)
         client = Client()
         client.force_login(admin)
         response = client.get('/content/')
@@ -68,7 +58,7 @@ class TestContentCreateView:
         response = client.get('/content/create/')
         assert response.status_code == 200
 
-    def test_moderator_can_create_content(self, yoga_category: Category) -> None:
+    def test_moderator_can_create_content(self, yoga_category: Category, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
@@ -77,7 +67,7 @@ class TestContentCreateView:
         response = client.post('/content/create/', {
             'title': 'Новый контент',
             'description': 'Описание',
-            'content_type': 'video',
+            'content_type': video_type.pk,
             'category': yoga_category.pk,
         })
         assert response.status_code == 302
@@ -86,34 +76,34 @@ class TestContentCreateView:
 
 @pytest.mark.django_db
 class TestContentUpdateView:
-    def test_anonymous_user_redirected(self) -> None:
-        content = Content.objects.create(title='Тест')
+    def test_anonymous_user_redirected(self, video_type: ContentType) -> None:
+        content = Content.objects.create(title='Тест', content_type=video_type)
         client = Client()
         response = client.get(f'/content/{content.pk}/edit/')
         assert response.status_code == 302
 
-    def test_moderator_can_access_edit_form(self) -> None:
+    def test_moderator_can_access_edit_form(self, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
-        content = Content.objects.create(title='Тест')
+        content = Content.objects.create(title='Тест', content_type=video_type)
         client = Client()
         client.force_login(user)
         response = client.get(f'/content/{content.pk}/edit/')
         assert response.status_code == 200
         assert 'Редактировать' in response.content.decode('utf-8')
 
-    def test_moderator_can_update_content(self, yoga_category: Category) -> None:
+    def test_moderator_can_update_content(self, yoga_category: Category, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
-        content = Content.objects.create(title='Старый заголовок')
+        content = Content.objects.create(title='Старый заголовок', content_type=video_type)
         client = Client()
         client.force_login(user)
         response = client.post(f'/content/{content.pk}/edit/', {
             'title': 'Новый заголовок',
             'description': 'Описание',
-            'content_type': 'video',
+            'content_type': video_type.pk,
             'category': yoga_category.pk,
         })
         assert response.status_code == 302
@@ -123,17 +113,17 @@ class TestContentUpdateView:
 
 @pytest.mark.django_db
 class TestContentDeleteView:
-    def test_anonymous_user_redirected(self) -> None:
-        content = Content.objects.create(title='Тест')
+    def test_anonymous_user_redirected(self, video_type: ContentType) -> None:
+        content = Content.objects.create(title='Тест', content_type=video_type)
         client = Client()
         response = client.get(f'/content/{content.pk}/delete/')
         assert response.status_code == 302
 
-    def test_moderator_can_delete_content(self) -> None:
+    def test_moderator_can_delete_content(self, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
-        content = Content.objects.create(title='Удалить меня')
+        content = Content.objects.create(title='Удалить меня', content_type=video_type)
         client = Client()
         client.force_login(user)
         response = client.post(f'/content/{content.pk}/delete/')

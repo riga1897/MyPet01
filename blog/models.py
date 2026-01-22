@@ -142,27 +142,85 @@ class Tag(BaseModel):
         super().save(*args, **kwargs)
 
 
-class Content(BaseModel):
-    class ContentType(models.TextChoices):
-        VIDEO = 'video', 'Видео'
-        PHOTO = 'photo', 'Фото'
+def content_file_upload_path(instance: 'Content', filename: str) -> str:
+    """Generate upload path based on content type."""
+    if instance.content_type and instance.content_type.upload_folder:
+        folder = instance.content_type.upload_folder.strip('/')
+        return f'{folder}/{filename}'
+    return f'content/{filename}'
 
+
+class ContentType(BaseModel):
+    """Type of content (e.g., 'Видео', 'Фото', 'Аудио')."""
+
+    VIDEO_CODE = 'video'
+    PHOTO_CODE = 'photo'
+
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Название',
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        verbose_name='Слаг',
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name='Код',
+        help_text='Уникальный код для использования в коде (например: video, photo, audio)',
+    )
+    upload_folder = models.CharField(
+        max_length=100,
+        verbose_name='Папка для файлов',
+        help_text='Папка для сохранения файлов (например: videos, photos, audio)',
+        default='content',
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Тип контента'
+        verbose_name_plural = 'Типы контента'
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_video(self) -> bool:
+        return self.code == self.VIDEO_CODE
+
+    @property
+    def is_photo(self) -> bool:
+        return self.code == self.PHOTO_CODE
+
+
+class Content(BaseModel):
     title = models.CharField(
         max_length=200,
         default='Без названия',
         verbose_name='Название',
     )
     description = models.TextField(blank=True, verbose_name='Описание')
-    content_type = models.CharField(
-        max_length=10,
-        choices=ContentType.choices,
-        default=ContentType.VIDEO,
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.PROTECT,
+        related_name='contents',
         verbose_name='Тип',
+        null=True,
+        blank=True,
     )
     video_file = models.FileField(
-        upload_to='videos/',
+        upload_to=content_file_upload_path,
         blank=True,
-        verbose_name='Видео файл',
+        verbose_name='Файл контента',
     )
     thumbnail = models.ImageField(
         upload_to='thumbnails/',
@@ -207,14 +265,14 @@ class Content(BaseModel):
 
     def _process_content_type(self) -> None:
         """Set duration to empty for photo content type."""
-        if self.content_type == self.ContentType.PHOTO:
+        if self.content_type and self.content_type.is_photo:
             self.duration = ''
 
     def _process_auto_fields_after_save(self) -> None:
         """Process auto-duration and auto-thumbnail after initial save."""
         needs_update = False
         
-        if self.content_type == self.ContentType.VIDEO and self.video_file:
+        if self.content_type and self.content_type.is_video and self.video_file:
             if not self.duration:
                 duration = get_video_duration(self.video_file)
                 if duration:
@@ -227,7 +285,7 @@ class Content(BaseModel):
                     self.thumbnail = thumbnail
                     needs_update = True
         
-        elif self.content_type == self.ContentType.PHOTO and self.video_file:
+        elif self.content_type and self.content_type.is_photo and self.video_file:
             if not self.thumbnail:
                 thumbnail = generate_thumbnail_from_image(self.video_file)
                 if thumbnail:
@@ -264,4 +322,4 @@ class Content(BaseModel):
 
     def has_playable_video(self) -> bool:
         """Check if content has a playable video file."""
-        return self.content_type == self.ContentType.VIDEO and bool(self.video_file)
+        return bool(self.content_type and self.content_type.is_video and self.video_file)

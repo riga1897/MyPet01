@@ -56,6 +56,7 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] Tag columns in content list table (dynamic per group)
 - [x] Category model (separate table instead of TextChoices)
 - [x] Tag groups can be linked to specific categories or apply to all
+- [x] ContentType model (separate table for content types with upload_folder support)
 
 ## Data Models
 ```
@@ -66,6 +67,14 @@ Category (inherits BaseModel)
   ├── name: CharField (unique)
   ├── slug: SlugField (auto-generated)
   └── code: CharField (unique, e.g. 'yoga', 'oils')
+
+ContentType (inherits BaseModel)
+  ├── name: CharField (unique)
+  ├── slug: SlugField (auto-generated)
+  ├── code: CharField (unique, e.g. 'video', 'photo', 'audio')
+  ├── upload_folder: CharField (folder for files, e.g. 'videos', 'photos')
+  ├── is_video: property (returns True if code == 'video')
+  └── is_photo: property (returns True if code == 'photo')
 
 TagGroup (inherits BaseModel)
   ├── name: CharField (unique)
@@ -80,10 +89,10 @@ Tag (inherits BaseModel)
 Content (inherits BaseModel)
   ├── title: CharField
   ├── description: TextField
-  ├── content_type: video | photo
+  ├── content_type: ForeignKey → ContentType (nullable)
   ├── category: ForeignKey → Category (nullable)
   ├── thumbnail: ImageField
-  ├── video_file: FileField
+  ├── video_file: FileField (dynamic path from ContentType.upload_folder)
   ├── duration: CharField (MM:SS)
   └── tags: ManyToMany → Tag
 ```
@@ -207,6 +216,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added ContentType model (replaces TextChoices). Content types are now manageable via admin with custom upload folders for each type.
 - 2026-01-22: Added GZipMiddleware for HTTP compression, nginx production config with gzip/static/media serving, Docker setup with gunicorn (4 workers), collectstatic in build.
 - 2026-01-22: Added thumbnail auto-compression on upload (Pillow: max 800x600, JPEG quality 85%), lazy loading for images, browser cache enabled.
 - 2026-01-22: Group filter on tag management page now uses dropdown menu with checkboxes (consistent with tag filters). Added "Выбрать все" checkbox, swapped buttons order (+Тег first), equal button widths.

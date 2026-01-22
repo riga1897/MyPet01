@@ -10,7 +10,7 @@ from blog.cache import (
     invalidate_content_cache,
     set_cached_content_list,
 )
-from blog.models import Category, Content
+from blog.models import Category, Content, ContentType
 
 
 class CacheUtilsTestCase(TestCase):
@@ -22,10 +22,18 @@ class CacheUtilsTestCase(TestCase):
             code='yoga',
             defaults={'name': 'Йога', 'slug': 'yoga'},
         )
+        self.video_type, _ = ContentType.objects.get_or_create(
+            code='video',
+            defaults={'name': 'Видео', 'slug': 'video', 'upload_folder': 'videos'},
+        )
+        self.photo_type, _ = ContentType.objects.get_or_create(
+            code='photo',
+            defaults={'name': 'Фото', 'slug': 'photo', 'upload_folder': 'photos'},
+        )
         self.content = Content.objects.create(
             title='Test Content',
             description='Test Description',
-            content_type='video',
+            content_type=self.video_type,
             category=self.yoga_category,
         )
 
@@ -75,7 +83,7 @@ class CacheUtilsTestCase(TestCase):
             Content.objects.create(
                 title=f'Content {i}',
                 description=f'Description {i}',
-                content_type='video',
+                content_type=self.video_type,
                 category=self.yoga_category,
             )
 
@@ -98,6 +106,14 @@ class CacheSignalsTestCase(TestCase):
             code='oils',
             defaults={'name': 'Эфирные масла', 'slug': 'oils'},
         )
+        self.video_type, _ = ContentType.objects.get_or_create(
+            code='video',
+            defaults={'name': 'Видео', 'slug': 'video', 'upload_folder': 'videos'},
+        )
+        self.photo_type, _ = ContentType.objects.get_or_create(
+            code='photo',
+            defaults={'name': 'Фото', 'slug': 'photo', 'upload_folder': 'photos'},
+        )
 
     def tearDown(self) -> None:
         cache.clear()
@@ -107,7 +123,7 @@ class CacheSignalsTestCase(TestCase):
         content = Content.objects.create(
             title='Test Content',
             description='Test Description',
-            content_type='video',
+            content_type=self.video_type,
             category=self.yoga_category,
         )
 
@@ -128,7 +144,7 @@ class CacheSignalsTestCase(TestCase):
         Content.objects.create(
             title='New Content',
             description='New Description',
-            content_type='photo',
+            content_type=self.photo_type,
             category=self.oils_category,
         )
 
@@ -139,7 +155,7 @@ class CacheSignalsTestCase(TestCase):
         content = Content.objects.create(
             title='Test Content',
             description='Test Description',
-            content_type='video',
+            content_type=self.video_type,
             category=self.yoga_category,
         )
 

@@ -1,6 +1,13 @@
 from django.contrib import admin
 from mypet_project.config import settings
-from .models import Category, Content, Tag, TagGroup
+from .models import Category, Content, ContentType, Tag, TagGroup
+
+
+@admin.register(ContentType)
+class ContentTypeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    list_display = ('name', 'code', 'upload_folder', 'slug', 'created_at')
+    search_fields = ('name', 'code')
+    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Category)
