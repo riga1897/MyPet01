@@ -207,11 +207,21 @@ if (typeof window._tagSelectFormInitialized === 'undefined') {
             updateSelectedCountForm(dropdown);
         });
         
-        const checkedRadio = document.querySelector('.category-radio:checked');
-        if (checkedRadio && checkedRadio.value) {
-            updateTagGroupsVisibilityForm(checkedRadio.dataset.categoryCode);
+        const checkedCheckbox = document.querySelector('.category-checkbox:checked');
+        if (checkedCheckbox && checkedCheckbox.value) {
+            updateTagGroupsVisibilityForm(checkedCheckbox.dataset.categoryCode);
         } else {
-            updateTagGroupsVisibilityForm(null);
+            const hiddenCategoryInput = document.getElementById('id_category');
+            if (hiddenCategoryInput && hiddenCategoryInput.value) {
+                const categoryCheckbox = document.querySelector('.category-checkbox[value="' + hiddenCategoryInput.value + '"]');
+                if (categoryCheckbox) {
+                    updateTagGroupsVisibilityForm(categoryCheckbox.dataset.categoryCode);
+                } else {
+                    updateTagGroupsVisibilityForm(null);
+                }
+            } else {
+                updateTagGroupsVisibilityForm(null);
+            }
         }
     });
 }

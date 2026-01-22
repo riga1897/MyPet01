@@ -143,7 +143,7 @@
     let fileSelected = false;
     
     function getContentTypeCode() {
-        const checked = document.querySelector('input[name="_content_type_radio"]:checked');
+        const checked = document.querySelector('.content-type-checkbox:checked');
         return checked ? checked.dataset.contentTypeCode : 'video';
     }
     
@@ -211,8 +211,23 @@
     }
     window.onFileSelected = onFileSelected;
     
+    function validateContentForm(event) {
+        const contentTypeInput = document.getElementById('id_content_type');
+        if (!contentTypeInput.value) {
+            event.preventDefault();
+            alert('Пожалуйста, выберите тип контента');
+            return false;
+        }
+        return true;
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
         updateFileInput();
+        
+        const form = document.getElementById('content-form');
+        if (form) {
+            form.addEventListener('submit', validateContentForm);
+        }
         
         {% if current_category_code %}
         if (typeof updateTagGroupsVisibilityForm === 'function') {

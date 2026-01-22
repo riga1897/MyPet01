@@ -1,5 +1,6 @@
 {% comment %}
-Content type select dropdown for form.
+Content type select dropdown with checkbox style for form.
+Single selection required (at least one must be selected).
 Requires:
   - content_types: QuerySet of ContentType
   - selected_content_type_id: ID of currently selected content type (optional)
@@ -7,23 +8,26 @@ Requires:
 Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with content_types=content_types selected_content_type_id=form.content_type.value %}
 {% endcomment %}
 
-<div id="content-type-select-dropdown" class="content-type-select-dropdown relative {% if has_file %}pointer-events-none opacity-50{% endif %}" data-has-file="{{ has_file|yesno:'true,false' }}">
+<div id="content-type-select-dropdown" 
+     class="content-type-select-dropdown relative inline-block {% if has_file %}pointer-events-none opacity-50{% endif %}" 
+     data-has-file="{{ has_file|yesno:'true,false' }}">
     <input type="hidden" name="content_type" id="id_content_type" value="{{ selected_content_type_id|default:'' }}">
     
     <button type="button" 
             onclick="toggleContentTypeDropdown(this)"
             {% if has_file %}disabled{% endif %}
-            class="dropdown-toggle w-full flex items-center justify-between gap-2 px-4 py-2 rounded-lg border border-border bg-card text-left hover:bg-muted transition-colors">
-        <span class="selected-content-type-name text-foreground">
+            class="dropdown-toggle flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card text-sm hover:bg-muted transition-colors">
+        <span class="selected-content-type-name">
             {% if selected_content_type_id %}
                 {% for ct in content_types %}
                     {% if ct.id|stringformat:"s" == selected_content_type_id|stringformat:"s" %}{{ ct.name }}{% endif %}
                 {% endfor %}
             {% else %}
-            Выберите тип
+            Тип контента
             {% endif %}
         </span>
-        <svg class="dropdown-arrow w-5 h-5 text-muted-foreground transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <span class="selected-indicator {% if not selected_content_type_id %}hidden{% endif %} text-xs bg-primary text-white rounded-full px-1.5">1</span>
+        <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
     </button>
@@ -32,18 +36,17 @@ Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with conten
     <p class="text-xs text-muted-foreground mt-1">(нельзя изменить после загрузки файла)</p>
     {% endif %}
     
-    <div class="dropdown-menu hidden absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+    <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 py-1">
         {% for ct in content_types %}
-        <label class="content-type-radio-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer" data-content-type-code="{{ ct.code }}">
-            <input type="radio" 
-                   name="_content_type_radio"
-                   class="content-type-radio w-4 h-4 text-primary border-border focus:ring-primary"
+        <label class="content-type-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
+            <input type="checkbox" 
+                   class="content-type-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
                    value="{{ ct.id }}"
                    data-content-type-code="{{ ct.code }}"
                    data-content-type-name="{{ ct.name }}"
                    data-upload-folder="{{ ct.upload_folder }}"
                    {% if ct.id|stringformat:"s" == selected_content_type_id|stringformat:"s" %}checked{% endif %}
-                   onchange="handleContentTypeChange(this)">
+                   onchange="handleContentTypeCheckboxChange(this)">
             <span class="text-sm">{{ ct.name }}</span>
         </label>
         {% endfor %}
@@ -62,9 +65,9 @@ if (typeof window._contentTypeSelectInitialized === 'undefined') {
         const arrow = dropdown.querySelector('.dropdown-arrow');
         const isOpen = !menu.classList.contains('hidden');
         
-        document.querySelectorAll('.content-type-select-dropdown .dropdown-menu').forEach(m => {
+        document.querySelectorAll('.content-type-select-dropdown .dropdown-menu, .category-select-dropdown .dropdown-menu, .tag-group-select .dropdown-menu').forEach(m => {
             m.classList.add('hidden');
-            const arrowEl = m.closest('.content-type-select-dropdown')?.querySelector('.dropdown-arrow');
+            const arrowEl = m.closest('.content-type-select-dropdown, .category-select-dropdown, .tag-group-select')?.querySelector('.dropdown-arrow');
             if (arrowEl) arrowEl.classList.remove('rotate-180');
         });
         
@@ -75,24 +78,35 @@ if (typeof window._contentTypeSelectInitialized === 'undefined') {
     }
     window.toggleContentTypeDropdown = toggleContentTypeDropdown;
 
-    function handleContentTypeChange(radio) {
-        const dropdown = radio.closest('.content-type-select-dropdown');
+    function handleContentTypeCheckboxChange(checkbox) {
+        const dropdown = checkbox.closest('.content-type-select-dropdown');
+        const allCheckboxes = dropdown.querySelectorAll('.content-type-checkbox');
         const hiddenInput = dropdown.querySelector('input[type="hidden"]');
         const selectedName = dropdown.querySelector('.selected-content-type-name');
-        const menu = dropdown.querySelector('.dropdown-menu');
-        const arrow = dropdown.querySelector('.dropdown-arrow');
+        const indicator = dropdown.querySelector('.selected-indicator');
         
-        hiddenInput.value = radio.value;
-        selectedName.textContent = radio.dataset.contentTypeName;
-        
-        menu.classList.add('hidden');
-        arrow.classList.remove('rotate-180');
-        
-        if (typeof onContentTypeChanged === 'function') {
-            onContentTypeChanged(radio.dataset.contentTypeCode, radio.value);
+        if (checkbox.checked) {
+            allCheckboxes.forEach(cb => {
+                if (cb !== checkbox) {
+                    cb.checked = false;
+                }
+            });
+            
+            hiddenInput.value = checkbox.value;
+            selectedName.textContent = checkbox.dataset.contentTypeName;
+            indicator.classList.remove('hidden');
+            
+            if (typeof onContentTypeChanged === 'function') {
+                onContentTypeChanged(checkbox.dataset.contentTypeCode, checkbox.value);
+            }
+        } else {
+            const anyChecked = Array.from(allCheckboxes).some(cb => cb.checked);
+            if (!anyChecked) {
+                checkbox.checked = true;
+            }
         }
     }
-    window.handleContentTypeChange = handleContentTypeChange;
+    window.handleContentTypeCheckboxChange = handleContentTypeCheckboxChange;
 
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.content-type-select-dropdown')) {
