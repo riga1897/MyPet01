@@ -7,7 +7,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from blog.forms import TagForm, TagGroupForm
-from blog.models import Category, Content, Tag, TagGroup
+from blog.models import Content, Tag, TagGroup
 from users.models import get_or_create_moderators_group
 
 
@@ -38,74 +38,6 @@ class TestTagGroupModel:
         """Test that custom slug is preserved."""
         group = TagGroup.objects.create(name='Test Group', slug='custom-slug')
         assert group.slug == 'custom-slug'
-
-    @pytest.mark.django_db
-    def test_is_visible_for_category_with_prefetch_empty_categories(
-        self, yoga_category: 'Category'
-    ) -> None:
-        """Test visibility check with prefetched empty categories (applies to all)."""
-        group = TagGroup.objects.create(name='All Group')
-        prefetched = TagGroup.objects.prefetch_related('categories').get(pk=group.pk)
-        assert prefetched.is_visible_for_category(yoga_category) is True
-
-    @pytest.mark.django_db
-    def test_is_visible_for_category_with_prefetch_matching(
-        self, yoga_category: 'Category'
-    ) -> None:
-        """Test visibility check with prefetched matching category."""
-        group = TagGroup.objects.create(name='Yoga Group')
-        group.categories.add(yoga_category)
-        prefetched = TagGroup.objects.prefetch_related('categories').get(pk=group.pk)
-        assert prefetched.is_visible_for_category(yoga_category) is True
-
-    @pytest.mark.django_db
-    def test_is_visible_for_category_with_prefetch_not_matching(
-        self, yoga_category: 'Category', oils_category: 'Category'
-    ) -> None:
-        """Test visibility check with prefetched non-matching category."""
-        group = TagGroup.objects.create(name='Oils Group')
-        group.categories.add(oils_category)
-        prefetched = TagGroup.objects.prefetch_related('categories').get(pk=group.pk)
-        assert prefetched.is_visible_for_category(yoga_category) is False
-
-    @pytest.mark.django_db
-    def test_is_visible_for_category_with_prefetch_none_category(
-        self, oils_category: 'Category'
-    ) -> None:
-        """Test visibility check with prefetched data and None category."""
-        group = TagGroup.objects.create(name='Specific Group')
-        group.categories.add(oils_category)
-        prefetched = TagGroup.objects.prefetch_related('categories').get(pk=group.pk)
-        assert prefetched.is_visible_for_category(None) is False
-
-    @pytest.mark.django_db
-    def test_is_visible_for_category_without_prefetch_not_matching(
-        self, yoga_category: 'Category', oils_category: 'Category'
-    ) -> None:
-        """Test visibility check without prefetch - DB fallback path."""
-        group = TagGroup.objects.create(name='Oils Only')
-        group.categories.add(oils_category)
-        fresh_group = TagGroup.objects.get(pk=group.pk)
-        assert fresh_group.is_visible_for_category(yoga_category) is False
-
-    @pytest.mark.django_db
-    def test_is_visible_for_category_without_prefetch_none_category(
-        self, oils_category: 'Category'
-    ) -> None:
-        """Test visibility check without prefetch and None category."""
-        group = TagGroup.objects.create(name='Specific')
-        group.categories.add(oils_category)
-        fresh_group = TagGroup.objects.get(pk=group.pk)
-        assert fresh_group.is_visible_for_category(None) is False
-
-    @pytest.mark.django_db
-    def test_is_visible_for_category_without_prefetch_empty_categories(
-        self, yoga_category: 'Category'
-    ) -> None:
-        """Test visibility check without prefetch - empty categories (applies to all)."""
-        group = TagGroup.objects.create(name='All Categories')
-        fresh_group = TagGroup.objects.get(pk=group.pk)
-        assert fresh_group.is_visible_for_category(yoga_category) is True
 
 
 class TestTagModel:

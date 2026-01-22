@@ -95,16 +95,7 @@ class TagGroup(BaseModel):
         """Check if this tag group should be visible for the given category.
         
         Empty categories = applies to all categories.
-        Uses prefetched data to avoid N+1 queries when called in a loop.
         """
-        cached_categories = getattr(self, '_prefetched_objects_cache', {}).get('categories')
-        if cached_categories is not None:
-            if not cached_categories:
-                return True
-            if category is None:
-                return False
-            return any(cat.pk == category.pk for cat in cached_categories)
-        
         if not self.categories.exists():
             return True
         if category is None:
@@ -173,11 +164,6 @@ class Content(BaseModel):
         blank=True,
         verbose_name='Видео файл',
     )
-    photo_file = models.ImageField(
-        upload_to='photos/',
-        blank=True,
-        verbose_name='Фото файл',
-    )
     thumbnail = models.ImageField(
         upload_to='thumbnails/',
         blank=True,
@@ -189,12 +175,13 @@ class Content(BaseModel):
         help_text='Формат: MM:SS',
         verbose_name='Длительность',
     )
-    categories = models.ManyToManyField(
+    category = models.ForeignKey(
         Category,
-        blank=True,
+        on_delete=models.PROTECT,
         related_name='contents',
-        verbose_name='Категории',
-        help_text='Оставьте пустым для применения ко всем категориям',
+        verbose_name='Категория',
+        null=True,
+        blank=True,
     )
     tags = models.ManyToManyField(
         Tag,
@@ -215,36 +202,40 @@ class Content(BaseModel):
         self._process_content_type()
         if self.thumbnail and self._is_new_thumbnail():
             self._compress_thumbnail()
-        self._process_auto_fields()
         super().save(*args, **kwargs)
+        self._process_auto_fields_after_save()
 
     def _process_content_type(self) -> None:
         """Set duration to empty for photo content type."""
         if self.content_type == self.ContentType.PHOTO:
             self.duration = ''
 
-    def _process_auto_fields(self) -> None:
-        """Process auto-duration and auto-thumbnail before save.
+    def _process_auto_fields_after_save(self) -> None:
+        """Process auto-duration and auto-thumbnail after initial save."""
+        needs_update = False
         
-        Generates duration and thumbnail for video/photo content when missing.
-        Works for both new and existing content.
-        """
         if self.content_type == self.ContentType.VIDEO and self.video_file:
             if not self.duration:
                 duration = get_video_duration(self.video_file)
                 if duration:
                     self.duration = duration
+                    needs_update = True
             
             if not self.thumbnail:
                 thumbnail = generate_thumbnail_from_video(self.video_file)
                 if thumbnail:
                     self.thumbnail = thumbnail
+                    needs_update = True
         
-        elif self.content_type == self.ContentType.PHOTO and self.photo_file:
+        elif self.content_type == self.ContentType.PHOTO and self.video_file:
             if not self.thumbnail:
-                thumbnail = generate_thumbnail_from_image(self.photo_file)
+                thumbnail = generate_thumbnail_from_image(self.video_file)
                 if thumbnail:
                     self.thumbnail = thumbnail
+                    needs_update = True
+        
+        if needs_update:
+            super().save(update_fields=['duration', 'thumbnail'])
 
     def _is_new_thumbnail(self) -> bool:
         """Check if thumbnail is a newly uploaded file."""

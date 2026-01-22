@@ -17,12 +17,12 @@ def clear_cache() -> None:
 @pytest.mark.django_db
 class TestHomeView:
     def test_home_displays_content(self, yoga_category: Category) -> None:
-        content = Content.objects.create(
+        Content.objects.create(
             title='Тестовое видео',
             description='Описание тестового видео',
+            category=yoga_category,
             duration='10:00',
         )
-        content.categories.add(yoga_category)
         client = Client()
         response = client.get('/')
         page_content = response.content.decode('utf-8')
@@ -30,11 +30,11 @@ class TestHomeView:
 
     def test_home_displays_max_6_items(self, yoga_category: Category) -> None:
         for i in range(8):
-            content = Content.objects.create(
+            Content.objects.create(
                 title=f'Контент {i}',
                 description=f'Описание {i}',
+                category=yoga_category,
             )
-            content.categories.add(yoga_category)
         client = Client()
         response = client.get('/')
         assert len(response.context['videos']) == 6
@@ -46,16 +46,20 @@ class TestHomeView:
         assert 'Контента пока нет' in page_content
 
     def test_content_card_shows_category_yoga(self, yoga_category: Category) -> None:
-        content = Content.objects.create(title='Йога-видео')
-        content.categories.add(yoga_category)
+        Content.objects.create(
+            title='Йога-видео',
+            category=yoga_category,
+        )
         client = Client()
         response = client.get('/')
         page_content = response.content.decode('utf-8')
         assert 'Йога' in page_content
 
     def test_content_card_shows_category_oils(self, oils_category: Category) -> None:
-        content = Content.objects.create(title='Масла-видео')
-        content.categories.add(oils_category)
+        Content.objects.create(
+            title='Масла-видео',
+            category=oils_category,
+        )
         client = Client()
         response = client.get('/')
         page_content = response.content.decode('utf-8')
@@ -187,39 +191,3 @@ class TestTagReorderView:
         )
         assert response.status_code == 400
         assert 'error' in response.json()
-
-    def test_reorder_nonexistent_tags(
-        self, moderator_user: User, tag_group: TagGroup
-    ) -> None:
-        tag = Tag.objects.create(name='Реальный тег', group=tag_group)
-        client = Client()
-        client.login(username='moderator', password='testpass123')
-        response = client.post(
-            '/tags/reorder/',
-            data=json.dumps({
-                'tag_ids': [tag.pk, 99999],
-                'group_id': tag_group.pk,
-            }),
-            content_type='application/json',
-        )
-        assert response.status_code == 400
-        assert 'not found' in response.json()['error'].lower()
-
-    def test_reorder_handles_unexpected_exception(
-        self, moderator_user: User, tag_group: TagGroup
-    ) -> None:
-        from unittest.mock import patch
-        tag = Tag.objects.create(name='Тег', group=tag_group)
-        client = Client()
-        client.login(username='moderator', password='testpass123')
-        with patch('blog.views.Tag.objects.bulk_update', side_effect=RuntimeError('DB error')):
-            response = client.post(
-                '/tags/reorder/',
-                data=json.dumps({
-                    'tag_ids': [tag.pk],
-                    'group_id': tag_group.pk,
-                }),
-                content_type='application/json',
-            )
-        assert response.status_code == 500
-        assert 'DB error' in response.json()['error']

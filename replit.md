@@ -75,24 +75,21 @@ TagGroup (inherits BaseModel)
 Tag (inherits BaseModel)
   ├── name: CharField
   ├── slug: SlugField (auto-generated)
-  ├── group: ForeignKey → TagGroup
-  └── order: PositiveIntegerField (drag-and-drop sorting)
+  └── group: ForeignKey → TagGroup
 
 Content (inherits BaseModel)
   ├── title: CharField
   ├── description: TextField
   ├── content_type: video | photo
-  ├── categories: ManyToMany → Category (multiple selection)
-  ├── thumbnail: ImageField (auto-compressed)
-  ├── video_file: FileField (uploads to videos/)
-  ├── photo_file: ImageField (uploads to photos/)
-  ├── duration: CharField (MM:SS, auto-extracted)
+  ├── category: ForeignKey → Category (nullable)
+  ├── thumbnail: ImageField
+  ├── video_file: FileField
+  ├── duration: CharField (MM:SS)
   └── tags: ManyToMany → Tag
 ```
 
 ## Frontend Structure
-- **Styles**: `static/css/styles.css` (CSS variables, utilities, dark/light theme)
-- **Base template**: `templates/base.html` (Tailwind CSS CDN + custom CSS link)
+- **Base template**: `templates/base.html` (Tailwind CSS CDN + custom CSS variables)
 - **Blog templates**: `blog/templates/blog/`
   - `index.html` — главная страница
   - `partials/_header.html` — шапка с навигацией
@@ -123,26 +120,10 @@ Content (inherits BaseModel)
 ## How to Run (Replit)
 Click the "Run" button to start the Django development server.
 
-## Deployment
-
-See `DEPLOYMENT.md` for detailed deployment instructions.
-
-### Quick Start (Docker)
-```bash
-# Development
-docker compose -f docker-compose.dev.yml up --build
-
-# Production
-cp .env.docker.example .env
-# Edit .env with real values
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-### CI/CD (GitHub Actions)
-Pipeline: `test` → `lint` → `build` → `deploy`
-- `feature/*` → tests only
-- `release/*` → deploy to preprod
-- `main` → deploy to production
+## Future Deployment (Ubuntu 24.04)
+1. Install Docker and Docker Compose on Ubuntu.
+2. Clone the repository.
+3. Run `docker-compose up --build`.
 
 ## Configuration
 Environment variables are managed via `pydantic-settings` in `mypet_project/config.py`:
@@ -226,14 +207,6 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
-- 2026-01-22: **Separate photo storage**: Added photo_file field to Content model (uploads to photos/). Fixed category filtering logic in index.html, tag_list.html, content_list.html (removed incorrect `categories.length === 0` condition). Updated form to show separate file inputs for video/photo.
-- 2026-01-22: **Test media isolation**: Created separate media_test/ folder for tests with auto-cleanup after test runs. Cleaned up 72 garbage test files from media/. Added header to moderators page for consistent UI.
-- 2026-01-22: **100% test coverage achieved**: Added 28 new tests for admin.py, TagGroup prefetch logic, Content auto-fields/thumbnail compression, services.py edge cases, TagReorderView error handling. Total: 179 tests.
-- 2026-01-22: **Database query optimization**: Fixed N+1 in TagGroup.is_visible_for_category() using prefetch cache. Optimized Content.save() to single save (was double). Added prefetch_related('groups') in ModeratorListView.
-- 2026-01-22: **Deployment preparation**: Created DEPLOYMENT.md with step-by-step deployment guide, docker-compose.dev.yml, docker-compose.prod.yml, docker-entrypoint.sh, .env.docker.example, GitHub Actions CI/CD workflow.
-- 2026-01-22: **Code optimization**: Replaced N+1 save() loop with bulk_update() in TagReorderView. Moved context['is_moderator'] to ModeratorRequiredMixin base class.
-- 2026-01-22: **CSS optimization**: Added reusable CSS components (.dropdown-toggle, .dropdown-menu, .content-card, .btn-primary, .btn-secondary, .btn-danger) to reduce Tailwind class repetition.
-- 2026-01-22: Moved all CSS styles from base.html to static/css/styles.css. Removed duplicate .dark placeholder styles. Content now supports multiple categories (ManyToMany).
 - 2026-01-22: Added GZipMiddleware for HTTP compression, nginx production config with gzip/static/media serving, Docker setup with gunicorn (4 workers), collectstatic in build.
 - 2026-01-22: Added thumbnail auto-compression on upload (Pillow: max 800x600, JPEG quality 85%), lazy loading for images, browser cache enabled.
 - 2026-01-22: Group filter on tag management page now uses dropdown menu with checkboxes (consistent with tag filters). Added "Выбрать все" checkbox, swapped buttons order (+Тег first), equal button widths.
@@ -257,19 +230,3 @@ Content cache is automatically invalidated via Django signals when:
 - 2026-01-21: Implemented frontend based on Figma design "Гармония Души" — yoga & essential oils blog.
 - 2026-01-21: Migrated from django-environ to pydantic-settings for fully typed configuration.
 - 2026-01-21: Integrated PostgreSQL, created `blog` app, configured Admin, and documented the TDD workflow in `replit.md`.
-
-## Docker Files Structure
-```
-├── Dockerfile              # Production image with gunicorn
-├── docker-compose.yaml     # Legacy (not used)
-├── docker-compose.dev.yml  # Development with DEBUG=1
-├── docker-compose.prod.yml # Production with nginx
-├── docker-entrypoint.sh    # Migrations + collectstatic + gunicorn
-├── nginx/
-│   └── nginx.conf          # Reverse proxy + gzip + static serving
-├── .env.example            # Replit environment
-├── .env.docker.example     # Docker environment
-└── .github/
-    └── workflows/
-        └── ci-cd.yml       # GitHub Actions pipeline
-```

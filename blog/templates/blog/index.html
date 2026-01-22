@@ -8,7 +8,7 @@
 <main>
     {% include 'blog/partials/_hero.html' %}
     
-    <section id="videos" class="py-7 px-4 sm:px-6 lg:px-8">
+    <section id="videos" class="py-16 px-4 sm:px-6 lg:px-8">
         <div class="container mx-auto max-w-7xl">
             <div class="text-center mb-8">
                 <h2 class="text-3xl sm:text-4xl mb-4">Контент</h2>
@@ -45,7 +45,7 @@
             
             <div id="cards-container" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 {% for video in videos %}
-                    <div class="content-card" data-categories="{% for cat in video.categories.all %}{{ cat.code|lower }},{% endfor %}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
+                    <div class="content-card" data-category="{{ video.category.code|default:''|lower }}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
                         {% include 'blog/partials/_video_card.html' with video=video %}
                     </div>
                 {% empty %}
@@ -156,12 +156,12 @@ function applyFilters() {
     const activeTagIds = typeof getSelectedTagIds === 'function' ? getSelectedTagIds() : [];
     
     cards.forEach(card => {
-        const categories = card.dataset.categories ? card.dataset.categories.split(',').filter(c => c) : [];
+        const category = card.dataset.category;
         const title = card.dataset.title;
         const description = card.dataset.description;
         const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesFilter = currentFilter === 'all' || categories.includes(currentFilter);
+        const matchesFilter = currentFilter === 'all' || category === currentFilter;
         const matchesSearch = currentSearch === '' || 
                              title.includes(currentSearch) || 
                              description.includes(currentSearch);
@@ -184,7 +184,7 @@ function applyFilters() {
     }
 }
 
-function openModal(title, description, type, videoUrl, thumbnailUrl, photoUrl) {
+function openModal(title, description, type, videoUrl, imageUrl) {
     const modal = document.getElementById('contentModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalDescription = document.getElementById('modalDescription');
@@ -204,7 +204,7 @@ function openModal(title, description, type, videoUrl, thumbnailUrl, photoUrl) {
     } else {
         imageContainer.classList.remove('hidden');
         videoContainer.classList.add('hidden');
-        imageElement.src = photoUrl || thumbnailUrl;
+        imageElement.src = imageUrl;
         imageElement.alt = title;
     }
 

@@ -13,14 +13,13 @@ def yoga_category() -> Category:
     return category
 
 
-@pytest.mark.django_db
 class TestContentForm:
     def test_form_has_all_fields(self) -> None:
         form = ContentForm()
         assert 'title' in form.fields
         assert 'description' in form.fields
         assert 'content_type' in form.fields
-        assert 'categories' in form.fields
+        assert 'category' in form.fields
         assert 'thumbnail' in form.fields
         assert 'video_file' in form.fields
         assert 'duration' in form.fields
@@ -30,14 +29,15 @@ class TestContentForm:
         assert form.fields['title'].label == 'Заголовок'
         assert form.fields['description'].label == 'Описание'
         assert form.fields['content_type'].label == 'Тип контента'
-        assert form.fields['categories'].label == 'Категории'
+        assert form.fields['category'].label == 'Категория'
 
+    @pytest.mark.django_db
     def test_valid_form_creates_content(self, yoga_category: Category) -> None:
         form = ContentForm(data={
             'title': 'Тестовый контент',
             'description': 'Описание',
             'content_type': 'video',
-            'categories': [yoga_category.pk],
+            'category': yoga_category.pk,
         })
         assert form.is_valid()
         content = form.save()

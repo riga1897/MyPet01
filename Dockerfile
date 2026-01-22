@@ -12,8 +12,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
-    postgresql-client \
-    ffmpeg \
+    redis-server \
     && rm -rf /var/lib/apt/lists/*
 
 # Install poetry
@@ -22,22 +21,15 @@ RUN pip install poetry
 # Copy project files
 COPY pyproject.toml poetry.lock* /app/
 
-# Install dependencies (without dev dependencies in production)
+# Install dependencies
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --only main
+    && poetry install --no-interaction --no-ansi
 
 # Copy the rest of the application
 COPY . /app/
 
-# Make entrypoint executable
-RUN chmod +x /app/docker-entrypoint.sh
+# Collect static files for nginx
+RUN python manage.py collectstatic --noinput
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Expose port
-EXPOSE 8000
-
-# Run the application via entrypoint
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# Run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "mypet_project.wsgi:application"]

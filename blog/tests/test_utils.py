@@ -30,22 +30,20 @@ def all_category_group(db: None) -> TagGroup:
 
 @pytest.fixture
 def yoga_content(yoga_category: Category) -> Content:
-    content = Content.objects.create(
+    return Content.objects.create(
         title='Йога контент',
         description='Описание йоги',
+        category=yoga_category,
     )
-    content.categories.add(yoga_category)
-    return content
 
 
 @pytest.fixture
 def oils_content(oils_category: Category) -> Content:
-    content = Content.objects.create(
+    return Content.objects.create(
         title='Масла контент',
         description='Описание масел',
+        category=oils_category,
     )
-    content.categories.add(oils_category)
-    return content
 
 
 @pytest.mark.django_db
@@ -116,7 +114,7 @@ class TestGetVisibleTagGroups:
         self, all_category_group: TagGroup, yoga_category: Category
     ) -> None:
         groups = TagGroup.objects.all()
-        result = get_visible_tag_groups(groups, )
+        result = get_visible_tag_groups(groups, category=yoga_category)
         assert all_category_group in result
 
     def test_specific_category_visibility(
@@ -124,7 +122,7 @@ class TestGetVisibleTagGroups:
     ) -> None:
         groups = TagGroup.objects.all()
         
-        yoga_result = get_visible_tag_groups(groups, )
+        yoga_result = get_visible_tag_groups(groups, category=yoga_category)
         assert yoga_tag_group in yoga_result
         
         oils_result = get_visible_tag_groups(groups, category=oils_category)
@@ -152,7 +150,7 @@ class TestFilterTagGroups:
     ) -> None:
         queryset = TagGroup.objects.all()
         
-        yoga_result = filter_tag_groups(queryset, )
+        yoga_result = filter_tag_groups(queryset, category=yoga_category)
         assert yoga_tag_group in yoga_result
         assert all_category_group in yoga_result
         

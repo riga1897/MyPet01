@@ -69,27 +69,17 @@ class TagForm(forms.ModelForm):  # type: ignore[type-arg]
 
 
 class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
-    select_all_categories = forms.BooleanField(
-        required=False,
-        label='Выбрать все категории',
-        widget=forms.CheckboxInput(attrs={
-            'class': CHECKBOX_CLASS,
-            'id': 'select-all-content-categories',
-        }),
-    )
-
     class Meta:
         model = Content
-        fields = ['title', 'description', 'content_type', 'categories', 'tags', 'thumbnail', 'video_file', 'photo_file', 'duration']
+        fields = ['title', 'description', 'content_type', 'category', 'tags', 'thumbnail', 'video_file', 'duration']
         labels = {
             'title': 'Заголовок',
             'description': 'Описание',
             'content_type': 'Тип контента',
-            'categories': 'Категории',
+            'category': 'Категория',
             'tags': 'Теги',
             'thumbnail': 'Превью',
             'video_file': 'Видеофайл',
-            'photo_file': 'Фото файл',
             'duration': 'Длительность',
         }
         widgets = {
@@ -105,8 +95,8 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
             'content_type': forms.Select(attrs={
                 'class': FORM_INPUT_CLASS,
             }),
-            'categories': forms.CheckboxSelectMultiple(attrs={
-                'class': 'space-y-2 category-checkboxes',
+            'category': forms.Select(attrs={
+                'class': FORM_INPUT_CLASS,
             }),
             'tags': forms.CheckboxSelectMultiple(attrs={
                 'class': 'space-y-2',
@@ -121,17 +111,4 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
             'video_file': forms.ClearableFileInput(attrs={
                 'class': FORM_INPUT_CLASS,
             }),
-            'photo_file': forms.ClearableFileInput(attrs={
-                'class': FORM_INPUT_CLASS,
-            }),
         }
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        from blog.models import Category
-        all_category_count = Category.objects.count()
-        if self.instance and self.instance.pk:
-            selected_count = self.instance.categories.count()
-            self.fields['select_all_categories'].initial = (
-                selected_count == all_category_count and all_category_count > 0
-            )

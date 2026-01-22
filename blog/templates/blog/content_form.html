@@ -63,11 +63,11 @@
                 
                 <div>
                     <label class="block text-sm font-medium text-foreground mb-1">
-                        Категории
+                        Категория
                     </label>
-                    {% include "blog/partials/_category_checkboxes.html" with categories=categories selected_category_ids=selected_category_ids %}
-                    {% if form.categories.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.categories.errors.0 }}</p>
+                    {% include "blog/partials/_category_select_dropdown.html" with categories=categories selected_category_id=selected_category_id %}
+                    {% if form.category.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.category.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
@@ -75,21 +75,21 @@
                     <label class="block text-sm font-medium text-foreground mb-1">
                         Теги
                     </label>
-                    {% include "blog/partials/_tag_select_dropdowns.html" with tag_groups=tag_groups selected_tag_ids=selected_tag_ids %}
+                    {% include "blog/partials/_tag_select_dropdowns.html" with tag_groups=tag_groups selected_tag_ids=selected_tag_ids current_category_code=current_category_code %}
                     {% if form.tags.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.tags.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
-                <div id="video-file-section" class="{% if form.content_type.value == 'photo' %}hidden{% endif %}">
+                <div id="file-upload-section">
                     <label class="block text-sm font-medium text-foreground mb-1">
-                        Видео файл
+                        <span id="file-label">Файл</span>
                     </label>
                     <input type="file" 
                            name="video_file" 
                            id="id_video_file"
                            class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                           accept="video/*"
+                           accept=""
                            onchange="onFileSelected(this)">
                     {% if object.video_file %}
                     <p class="text-sm text-muted-foreground mt-1">
@@ -99,28 +99,7 @@
                     {% if form.video_file.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.video_file.errors.0 }}</p>
                     {% endif %}
-                    <p class="text-xs text-muted-foreground mt-1">Поддерживаемые форматы: MP4, WebM, AVI, MOV</p>
-                </div>
-                
-                <div id="photo-file-section" class="{% if form.content_type.value != 'photo' %}hidden{% endif %}">
-                    <label class="block text-sm font-medium text-foreground mb-1">
-                        Фото файл
-                    </label>
-                    <input type="file" 
-                           name="photo_file" 
-                           id="id_photo_file"
-                           class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                           accept="image/*"
-                           onchange="onFileSelected(this)">
-                    {% if object.photo_file %}
-                    <p class="text-sm text-muted-foreground mt-1">
-                        Текущий файл: {{ object.photo_file.name|truncatechars:50 }}
-                    </p>
-                    {% endif %}
-                    {% if form.photo_file.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.photo_file.errors.0 }}</p>
-                    {% endif %}
-                    <p class="text-xs text-muted-foreground mt-1">Поддерживаемые форматы: JPG, PNG, WebP, GIF</p>
+                    <p id="file-hint" class="text-xs text-muted-foreground mt-1"></p>
                 </div>
                 
                 <div>
@@ -185,23 +164,39 @@
     
     function updateFileInput() {
         const contentType = getContentType();
-        const videoSection = document.getElementById('video-file-section');
-        const photoSection = document.getElementById('photo-file-section');
+        const fileInput = document.getElementById('id_video_file');
+        const fileLabel = document.getElementById('file-label');
+        const fileHint = document.getElementById('file-hint');
         const durationField = document.getElementById('duration-field');
         
         if (contentType === 'video') {
-            videoSection.classList.remove('hidden');
-            photoSection.classList.add('hidden');
+            fileInput.accept = 'video/*';
+            fileLabel.textContent = 'Видео файл';
+            fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
             durationField.classList.remove('hidden');
         } else {
-            videoSection.classList.add('hidden');
-            photoSection.classList.remove('hidden');
+            fileInput.accept = 'image/*';
+            fileLabel.textContent = 'Фото';
+            fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
             durationField.classList.add('hidden');
         }
     }
     
     function onContentTypeChange(value) {
         updateFileInput();
+        
+        const fileInput = document.getElementById('id_video_file');
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+            
+            if ((value === 'photo' && !isImage) || (value === 'video' && !isVideo)) {
+                fileInput.value = '';
+                fileSelected = false;
+                alert('Выбранный файл не соответствует типу контента. Пожалуйста, выберите другой файл.');
+            }
+        }
     }
     window.onContentTypeChange = onContentTypeChange;
     
