@@ -1,9 +1,19 @@
+import logging
+from io import BytesIO
 from typing import Any
 
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 from django.utils.text import slugify
+from PIL import Image, UnidentifiedImageError
 
 from core.models import BaseModel
+
+logger = logging.getLogger(__name__)
+
+THUMBNAIL_MAX_SIZE = (800, 600)
+THUMBNAIL_QUALITY = 85
 
 
 class Category(BaseModel):
@@ -182,3 +192,33 @@ class Content(BaseModel):
 
     def __str__(self) -> str:
         return self.title
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.thumbnail and self._is_new_thumbnail():
+            self._compress_thumbnail()
+        super().save(*args, **kwargs)
+
+    def _is_new_thumbnail(self) -> bool:
+        """Check if thumbnail is a newly uploaded file."""
+        return isinstance(self.thumbnail.file, UploadedFile)
+
+    def _compress_thumbnail(self) -> None:
+        """Compress and resize thumbnail image for optimal web performance."""
+        if not self.thumbnail.name:
+            return
+        try:
+            pil_img = Image.open(self.thumbnail)
+            if pil_img.mode in ('RGBA', 'P'):
+                pil_img = pil_img.convert('RGB')  # type: ignore[assignment]
+            pil_img.thumbnail(THUMBNAIL_MAX_SIZE, Image.Resampling.LANCZOS)
+            output = BytesIO()
+            pil_img.save(output, format='JPEG', quality=THUMBNAIL_QUALITY, optimize=True)
+            output.seek(0)
+            original_name = self.thumbnail.name.split('/')[-1]
+            name_without_ext = original_name.rsplit('.', 1)[0]
+            new_name = f"{name_without_ext}.jpg"
+            self.thumbnail = ContentFile(output.read(), name=new_name)
+        except UnidentifiedImageError:
+            logger.warning('Failed to compress thumbnail: not a valid image file')
+        except OSError as e:
+            logger.warning('Failed to compress thumbnail: %s', e)

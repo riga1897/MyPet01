@@ -35,11 +35,6 @@ waitForPort = 5000
 [userenv]
 
 [userenv.shared]
-CACHE_BACKEND = "locmem"
-CACHE_LOCATION = "mypet-cache"
-CACHE_TIMEOUT = "300"
-BROWSER_CACHE_ENABLED = "False"
-BROWSER_CACHE_MAX_AGE = "86400"
 
 [nix]
 channel = "stable-25_05"
