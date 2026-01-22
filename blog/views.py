@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
@@ -23,9 +23,6 @@ def get_filter_context() -> dict[str, Any]:
         'categories': Category.objects.all(),
         'content_types': ContentType.objects.all(),
     }
-
-if TYPE_CHECKING:
-    from django.http import HttpResponse
 
 
 class HomeView(ListView):  # type: ignore[type-arg]
@@ -285,3 +282,37 @@ class TagReorderView(ModeratorRequiredMixin, View):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+
+class CheckContentTypeCodeView(View):
+    """API endpoint to check if ContentType code is available."""
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        code = request.GET.get('code', '').strip()
+        exclude_id_str = request.GET.get('exclude_id')
+        exclude_id: int | None = None
+        
+        if exclude_id_str:
+            try:
+                exclude_id = int(exclude_id_str)
+            except (ValueError, TypeError):
+                pass
+        
+        if not code:
+            return JsonResponse({'available': True})
+        
+        queryset = ContentType.objects.filter(code=code)
+        if exclude_id:
+            queryset = queryset.exclude(pk=exclude_id)
+        
+        if not queryset.exists():
+            return JsonResponse({'available': True, 'code': code})
+        
+        from blog.models import generate_unique_code
+        suggested = generate_unique_code(ContentType, code, exclude_id)
+        
+        return JsonResponse({
+            'available': False,
+            'code': code,
+            'suggested': suggested,
+        })

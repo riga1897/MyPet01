@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.test import Client
 
-from blog.models import Category, Content, Tag, TagGroup
+from blog.models import Category, Content, ContentType, Tag, TagGroup
 
 
 @pytest.fixture(autouse=True)
@@ -191,3 +191,42 @@ class TestTagReorderView:
         )
         assert response.status_code == 400
         assert 'error' in response.json()
+
+
+@pytest.mark.django_db
+class TestCheckContentTypeCodeView:
+    def test_available_code_returns_true(self) -> None:
+        client = Client()
+        response = client.get('/api/check-contenttype-code/', {'code': 'newcode'})
+        data = response.json()
+        assert data['available'] is True
+        assert data['code'] == 'newcode'
+
+    def test_taken_code_returns_false_with_suggestion(self) -> None:
+        ContentType.objects.create(name='Existing', code='existing')
+        client = Client()
+        response = client.get('/api/check-contenttype-code/', {'code': 'existing'})
+        data = response.json()
+        assert data['available'] is False
+        assert data['code'] == 'existing'
+        assert data['suggested'] == 'existing_1'
+
+    def test_exclude_id_allows_own_code(self) -> None:
+        ct = ContentType.objects.create(name='Test', code='testcode')
+        client = Client()
+        response = client.get('/api/check-contenttype-code/', {'code': 'testcode', 'exclude_id': str(ct.pk)})
+        data = response.json()
+        assert data['available'] is True
+
+    def test_empty_code_returns_available(self) -> None:
+        client = Client()
+        response = client.get('/api/check-contenttype-code/', {'code': ''})
+        data = response.json()
+        assert data['available'] is True
+
+    def test_invalid_exclude_id_ignored(self) -> None:
+        ContentType.objects.create(name='Test', code='testcode')
+        client = Client()
+        response = client.get('/api/check-contenttype-code/', {'code': 'testcode', 'exclude_id': 'invalid'})
+        data = response.json()
+        assert data['available'] is False
