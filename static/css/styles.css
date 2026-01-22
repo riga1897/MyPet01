@@ -1,0 +1,128 @@
+/* =============================================
+   Гармония Души — Custom Styles
+   ============================================= */
+
+/* CSS Variables — Light Theme */
+:root {
+    --background: #F9FAFA;
+    --foreground: #2A3B34;
+    --card: #ffffff;
+    --card-foreground: #2A3B34;
+    --primary: #7AA9BA;
+    --primary-foreground: #ffffff;
+    --secondary: #A8B89C;
+    --secondary-foreground: #2A3B34;
+    --muted: #E8EDE7;
+    --muted-foreground: #6B7B6F;
+    --accent: #C5E1E9;
+    --accent-foreground: #2A3B34;
+    --border: rgba(168, 184, 156, 0.2);
+    --ring: #9BC4D6;
+    --radius: 0.75rem;
+}
+
+/* CSS Variables — Dark Theme */
+.dark {
+    --background: #1a1f1c;
+    --foreground: #e8ede7;
+    --card: #242a26;
+    --card-foreground: #e8ede7;
+    --primary: #7AA9BA;
+    --primary-foreground: #ffffff;
+    --secondary: #A8B89C;
+    --secondary-foreground: #1a1f1c;
+    --muted: #2f3832;
+    --muted-foreground: #9ca89f;
+    --accent: #3a4a4f;
+    --accent-foreground: #e8ede7;
+    --border: rgba(168, 184, 156, 0.15);
+    --ring: #7AA9BA;
+}
+
+/* Base Styles */
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Background Utilities */
+.bg-background { background-color: var(--background); }
+.bg-card { background-color: var(--card); }
+.bg-primary { background-color: var(--primary); }
+.bg-secondary { background-color: var(--secondary); }
+.bg-muted { background-color: var(--muted); }
+.bg-accent { background-color: var(--accent); }
+
+/* Text Utilities */
+.text-foreground { color: var(--foreground); }
+.text-card-foreground { color: var(--card-foreground); }
+.text-primary { color: var(--primary); }
+.text-primary-foreground { color: var(--primary-foreground); }
+.text-secondary { color: var(--secondary); }
+.text-secondary-foreground { color: var(--secondary-foreground); }
+.text-muted-foreground { color: var(--muted-foreground); }
+.text-accent-foreground { color: var(--accent-foreground); }
+
+/* Border Utilities */
+.border-border { border-color: var(--border); }
+
+/* Placeholder Styles — Black in Both Themes */
+input::placeholder,
+textarea::placeholder,
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder,
+input::-moz-placeholder,
+textarea::-moz-placeholder,
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+    color: #333333 !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #333333 !important;
+}
+
+/* Dark Theme Form Fields — Black Text on White Background */
+.dark input,
+.dark textarea,
+.dark select,
+.dark select option {
+    color: #333333 !important;
+    background-color: #ffffff !important;
+    -webkit-text-fill-color: #333333 !important;
+}
+
+/* Background Opacity Utilities */
+.bg-primary\/10 { background-color: rgba(122, 169, 186, 0.1); }
+.bg-primary\/90 { background-color: rgba(122, 169, 186, 0.9); }
+.bg-secondary\/10 { background-color: rgba(168, 184, 156, 0.1); }
+.bg-secondary\/20 { background-color: rgba(168, 184, 156, 0.2); }
+.bg-accent\/20 { background-color: rgba(197, 225, 233, 0.2); }
+.bg-accent\/50 { background-color: rgba(197, 225, 233, 0.5); }
+.bg-muted\/30 { background-color: rgba(232, 237, 231, 0.3); }
+
+/* Hover Utilities */
+.hover\:text-primary:hover { color: var(--primary); }
+.hover\:bg-primary\/90:hover { background-color: rgba(122, 169, 186, 0.9); }
+.hover\:bg-secondary\/90:hover { background-color: rgba(168, 184, 156, 0.9); }
+.hover\:bg-muted:hover { background-color: var(--muted); }
+
+/* Typography */
+h1, h2, h3, h4 { font-weight: 500; }
+
+/* Header Background */
+.header-bg {
+    background-color: rgba(249, 250, 250, 0.95);
+}
+.dark .header-bg {
+    background-color: rgba(26, 31, 28, 0.95);
+}
+
+/* Filter Buttons */
+.filter-btn {
+    transition: all 0.2s ease;
+}
+.filter-btn.active {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
