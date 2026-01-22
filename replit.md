@@ -54,15 +54,24 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] Tag management interface for moderators (CRUD for groups and tags)
 - [x] Tag filters on home page (dropdown per group)
 - [x] Tag columns in content list table (dynamic per group)
+- [x] Category model (separate table instead of TextChoices)
+- [x] Tag groups can be linked to specific categories or apply to all
 
 ## Data Models
 ```
 BaseModel (abstract)
   └── created_at, updated_at
 
+Category (inherits BaseModel)
+  ├── name: CharField (unique)
+  ├── slug: SlugField (auto-generated)
+  └── code: CharField (unique, e.g. 'yoga', 'oils')
+
 TagGroup (inherits BaseModel)
   ├── name: CharField (unique)
-  └── slug: SlugField (auto-generated)
+  ├── slug: SlugField (auto-generated)
+  ├── applies_to_all: BooleanField (default True)
+  └── categories: ManyToMany → Category
 
 Tag (inherits BaseModel)
   ├── name: CharField
@@ -73,7 +82,7 @@ Content (inherits BaseModel)
   ├── title: CharField
   ├── description: TextField
   ├── content_type: video | photo
-  ├── category: yoga | oils
+  ├── category: ForeignKey → Category (nullable)
   ├── thumbnail: ImageField
   ├── video_file: FileField
   ├── duration: CharField (MM:SS)
@@ -199,6 +208,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added Category model (replaces TextChoices), tag groups can be linked to specific categories or apply to all.
 - 2026-01-22: Added dynamic tag system with TagGroup and Tag models, moderator management interface, home page filters, and content list columns.
 - 2026-01-22: Added caching system (locmem/db/redis/memcached backends), browser cache middleware, and favicon.
 - 2026-01-22: Made "About blog" section tiles clickable for category filtering.

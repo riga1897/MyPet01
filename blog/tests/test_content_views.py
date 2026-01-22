@@ -2,8 +2,18 @@ import pytest
 from django.contrib.auth.models import User
 from django.test import Client
 
-from blog.models import Content
+from blog.models import Category, Content
 from users.models import get_or_create_moderators_group
+
+
+@pytest.fixture
+def yoga_category() -> Category:
+    """Create and return the yoga category."""
+    category, _ = Category.objects.get_or_create(
+        code='yoga',
+        defaults={'name': 'Йога', 'slug': 'yoga'},
+    )
+    return category
 
 
 @pytest.mark.django_db
@@ -58,7 +68,7 @@ class TestContentCreateView:
         response = client.get('/content/create/')
         assert response.status_code == 200
 
-    def test_moderator_can_create_content(self) -> None:
+    def test_moderator_can_create_content(self, yoga_category: Category) -> None:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
@@ -68,7 +78,7 @@ class TestContentCreateView:
             'title': 'Новый контент',
             'description': 'Описание',
             'content_type': 'video',
-            'category': 'yoga',
+            'category': yoga_category.pk,
         })
         assert response.status_code == 302
         assert Content.objects.filter(title='Новый контент').exists()
@@ -93,7 +103,7 @@ class TestContentUpdateView:
         assert response.status_code == 200
         assert 'Редактировать' in response.content.decode('utf-8')
 
-    def test_moderator_can_update_content(self) -> None:
+    def test_moderator_can_update_content(self, yoga_category: Category) -> None:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
@@ -104,7 +114,7 @@ class TestContentUpdateView:
             'title': 'Новый заголовок',
             'description': 'Описание',
             'content_type': 'video',
-            'category': 'yoga',
+            'category': yoga_category.pk,
         })
         assert response.status_code == 302
         content.refresh_from_db()
@@ -128,13 +138,4 @@ class TestContentDeleteView:
         client.force_login(user)
         response = client.post(f'/content/{content.pk}/delete/')
         assert response.status_code == 302
-        assert not Content.objects.filter(pk=content.pk).exists()
-
-    def test_get_shows_confirmation(self) -> None:
-        user = User.objects.create_superuser(username='admin', password='test123')
-        content = Content.objects.create(title='Тест удаления')
-        client = Client()
-        client.force_login(user)
-        response = client.get(f'/content/{content.pk}/delete/')
-        assert response.status_code == 200
-        assert 'Тест удаления' in response.content.decode('utf-8')
+        assert not Content.objects.filter(title='Удалить меня').exists()

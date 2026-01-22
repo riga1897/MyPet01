@@ -4,7 +4,7 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
-def populate_categories(apps, schema_editor):
+def populate_categories(apps, schema_editor):  # type: ignore[no-untyped-def]
     """Create initial categories and migrate existing Content."""
     Category = apps.get_model('blog', 'Category')
     Content = apps.get_model('blog', 'Content')
@@ -32,7 +32,7 @@ def populate_categories(apps, schema_editor):
             content.save()
 
 
-def reverse_categories(apps, schema_editor):
+def reverse_categories(apps, schema_editor):  # type: ignore[no-untyped-def]
     """Reverse migration - convert back to string categories."""
     Category = apps.get_model('blog', 'Category')
     Content = apps.get_model('blog', 'Content')

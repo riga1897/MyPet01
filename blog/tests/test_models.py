@@ -1,19 +1,19 @@
 import pytest
-from blog.models import Content
+from blog.models import Category, Content
 
 
 @pytest.mark.django_db
 class TestContentModel:
-    def test_content_str_returns_title(self) -> None:
+    def test_content_str_returns_title(self, yoga_category: Category) -> None:
         content = Content.objects.create(
             title='Утренняя йога',
-            category='yoga',
+            category=yoga_category,
         )
         assert str(content) == 'Утренняя йога'
 
-    def test_content_default_category_is_yoga(self) -> None:
+    def test_content_default_category_is_none(self) -> None:
         content = Content.objects.create(title='Тест')
-        assert content.category == 'yoga'
+        assert content.category is None
 
     def test_content_default_type_is_video(self) -> None:
         content = Content.objects.create(title='Тест')
@@ -26,19 +26,15 @@ class TestContentModel:
         assert contents[0] == c2
         assert contents[1] == c1
 
-    def test_content_category_choices(self) -> None:
-        assert Content.Category.YOGA.value == 'yoga'
-        assert Content.Category.OILS.value == 'oils'
-
     def test_content_type_choices(self) -> None:
         assert Content.ContentType.VIDEO.value == 'video'
         assert Content.ContentType.PHOTO.value == 'photo'
 
-    def test_content_can_be_photo(self) -> None:
+    def test_content_can_be_photo(self, yoga_category: Category) -> None:
         content = Content.objects.create(
             title='Фото йоги',
             content_type='photo',
-            category='yoga',
+            category=yoga_category,
         )
         assert content.content_type == 'photo'
 
@@ -61,3 +57,27 @@ class TestContentModel:
         assert content.description == 'Test Photo'
         assert content.content_type == 'photo'
         assert str(content) == 'Моя фотография'
+
+
+@pytest.mark.django_db
+class TestCategoryModel:
+    def test_category_str_returns_name(self) -> None:
+        category = Category.objects.create(
+            name='Тестовая категория',
+            code='test',
+        )
+        assert str(category) == 'Тестовая категория'
+
+    def test_category_slug_auto_generated(self) -> None:
+        category = Category.objects.create(
+            name='Тестовая категория',
+            code='test',
+        )
+        assert category.slug == 'тестовая-категория'
+
+    def test_category_code_is_unique(self, yoga_category: Category) -> None:
+        with pytest.raises(Exception):
+            Category.objects.create(
+                name='Другая категория',
+                code='yoga',
+            )

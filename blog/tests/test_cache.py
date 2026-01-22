@@ -10,7 +10,7 @@ from blog.cache import (
     invalidate_content_cache,
     set_cached_content_list,
 )
-from blog.models import Content
+from blog.models import Category, Content
 
 
 class CacheUtilsTestCase(TestCase):
@@ -18,11 +18,15 @@ class CacheUtilsTestCase(TestCase):
 
     def setUp(self) -> None:
         cache.clear()
+        self.yoga_category, _ = Category.objects.get_or_create(
+            code='yoga',
+            defaults={'name': 'Йога', 'slug': 'yoga'},
+        )
         self.content = Content.objects.create(
             title='Test Content',
             description='Test Description',
             content_type='video',
-            category='yoga',
+            category=self.yoga_category,
         )
 
     def tearDown(self) -> None:
@@ -72,7 +76,7 @@ class CacheUtilsTestCase(TestCase):
                 title=f'Content {i}',
                 description=f'Description {i}',
                 content_type='video',
-                category='yoga',
+                category=self.yoga_category,
             )
 
         queryset = Content.objects.all()
@@ -86,6 +90,14 @@ class CacheSignalsTestCase(TestCase):
 
     def setUp(self) -> None:
         cache.clear()
+        self.yoga_category, _ = Category.objects.get_or_create(
+            code='yoga',
+            defaults={'name': 'Йога', 'slug': 'yoga'},
+        )
+        self.oils_category, _ = Category.objects.get_or_create(
+            code='oils',
+            defaults={'name': 'Эфирные масла', 'slug': 'oils'},
+        )
 
     def tearDown(self) -> None:
         cache.clear()
@@ -96,7 +108,7 @@ class CacheSignalsTestCase(TestCase):
             title='Test Content',
             description='Test Description',
             content_type='video',
-            category='yoga',
+            category=self.yoga_category,
         )
 
         queryset = Content.objects.all()
@@ -117,7 +129,7 @@ class CacheSignalsTestCase(TestCase):
             title='New Content',
             description='New Description',
             content_type='photo',
-            category='oils',
+            category=self.oils_category,
         )
 
         self.assertIsNone(get_cached_content_list())
@@ -128,7 +140,7 @@ class CacheSignalsTestCase(TestCase):
             title='Test Content',
             description='Test Description',
             content_type='video',
-            category='yoga',
+            category=self.yoga_category,
         )
 
         queryset = Content.objects.all()

@@ -1,5 +1,16 @@
 import pytest
 from blog.forms import ContentForm
+from blog.models import Category
+
+
+@pytest.fixture
+def yoga_category() -> Category:
+    """Create and return the yoga category."""
+    category, _ = Category.objects.get_or_create(
+        code='yoga',
+        defaults={'name': 'Йога', 'slug': 'yoga'},
+    )
+    return category
 
 
 class TestContentForm:
@@ -21,12 +32,12 @@ class TestContentForm:
         assert form.fields['category'].label == 'Категория'
 
     @pytest.mark.django_db
-    def test_valid_form_creates_content(self) -> None:
+    def test_valid_form_creates_content(self, yoga_category: Category) -> None:
         form = ContentForm(data={
             'title': 'Тестовый контент',
             'description': 'Описание',
             'content_type': 'video',
-            'category': 'yoga',
+            'category': yoga_category.pk,
         })
         assert form.is_valid()
         content = form.save()
@@ -36,7 +47,6 @@ class TestContentForm:
         form = ContentForm(data={
             'description': 'Описание',
             'content_type': 'video',
-            'category': 'yoga',
         })
         assert not form.is_valid()
         assert 'title' in form.errors

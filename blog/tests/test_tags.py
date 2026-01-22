@@ -70,7 +70,7 @@ class TestTagModel:
         """Test ManyToMany relationship between Content and Tag."""
         group = TagGroup.objects.create(name='Месяц')
         tag = Tag.objects.create(name='Первый', group=group)
-        content = Content.objects.create(title='Test', category='yoga')
+        content = Content.objects.create(title='Test')
         content.tags.add(tag)
         assert tag in content.tags.all()
         assert content in tag.contents.all()
@@ -79,18 +79,21 @@ class TestTagModel:
 class TestTagGroupForm:
     """Tests for TagGroupForm."""
 
-    def test_form_has_name_field(self) -> None:
-        """Test that form has name field."""
+    def test_form_has_required_fields(self) -> None:
+        """Test that form has all required fields."""
         form = TagGroupForm()
         assert 'name' in form.fields
+        assert 'applies_to_all' in form.fields
+        assert 'categories' in form.fields
 
     @pytest.mark.django_db
     def test_valid_form_creates_tag_group(self) -> None:
         """Test that valid form creates tag group."""
-        form = TagGroupForm(data={'name': 'Новая группа'})
+        form = TagGroupForm(data={'name': 'Новая группа', 'applies_to_all': True})
         assert form.is_valid()
         group = form.save()
         assert group.name == 'Новая группа'
+        assert group.applies_to_all is True
 
 
 class TestTagForm:

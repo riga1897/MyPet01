@@ -1,5 +1,5 @@
 from django import forms
-from blog.models import Category, Content, Tag, TagGroup
+from blog.models import Content, Tag, TagGroup
 
 
 FORM_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
