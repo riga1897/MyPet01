@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Any
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -71,6 +73,22 @@ class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-ar
         return context
 
 
+def validate_existing_file(existing_file: str, content_type: ContentType | None) -> bool:
+    """Validate that existing_file is safe and exists in content_type folder."""
+    if not existing_file or not content_type:
+        return False
+    if '..' in existing_file or existing_file.startswith('/'):
+        return False
+    expected_prefix = content_type.upload_folder + '/'
+    if not existing_file.startswith(expected_prefix):
+        return False
+    full_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, existing_file))
+    media_root = os.path.normpath(settings.MEDIA_ROOT)
+    if not full_path.startswith(media_root + os.sep):
+        return False
+    return os.path.exists(full_path) and os.path.isfile(full_path)
+
+
 class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-arg]
     model = Content
     form_class = ContentForm
@@ -78,6 +96,13 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
     success_url = reverse_lazy('blog:content_list')
 
     def form_valid(self, form: ContentForm) -> HttpResponse:
+        existing_file = self.request.POST.get('existing_file', '').strip()
+        if existing_file:
+            if validate_existing_file(existing_file, form.instance.content_type):
+                form.instance.video_file = existing_file
+            else:
+                form.add_error(None, 'Выбранный файл недоступен.')
+                return self.form_invalid(form)
         messages.success(self.request, 'Контент успешно создан.')
         return super().form_valid(form)
 
@@ -101,6 +126,13 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
     success_url = reverse_lazy('blog:content_list')
 
     def form_valid(self, form: ContentForm) -> HttpResponse:
+        existing_file = self.request.POST.get('existing_file', '').strip()
+        if existing_file:
+            if validate_existing_file(existing_file, form.instance.content_type):
+                form.instance.video_file = existing_file
+            else:
+                form.add_error(None, 'Выбранный файл недоступен.')
+                return self.form_invalid(form)
         messages.success(self.request, 'Контент успешно обновлён.')
         return super().form_valid(form)
 
@@ -357,3 +389,55 @@ class CheckCategoryCodeView(View):
         
         available = not queryset.exists()
         return JsonResponse({'available': available, 'code': code})
+
+
+class AvailableFilesView(View):
+    """API endpoint to get available files for a content type folder."""
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        folder = request.GET.get('folder', '').strip()
+        exclude_content_id_str = request.GET.get('exclude_content_id')
+        exclude_content_id: int | None = None
+        
+        if exclude_content_id_str:
+            try:
+                exclude_content_id = int(exclude_content_id_str)
+            except (ValueError, TypeError):
+                pass
+        
+        if not folder or '..' in folder or folder.startswith('/'):
+            return JsonResponse({'files': []})
+        
+        folder_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, folder))
+        media_root = os.path.normpath(settings.MEDIA_ROOT)
+        if not folder_path.startswith(media_root + os.sep):
+            return JsonResponse({'files': []})
+        
+        if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+            return JsonResponse({'files': []})
+        
+        used_files = set(
+            Content.objects.exclude(
+                pk=exclude_content_id
+            ).exclude(
+                video_file=''
+            ).values_list('video_file', flat=True)
+        ) if exclude_content_id else set(
+            Content.objects.exclude(
+                video_file=''
+            ).values_list('video_file', flat=True)
+        )
+        
+        available_files = []
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            if os.path.isfile(file_path):
+                relative_path = f'{folder}/{filename}'
+                if relative_path not in used_files:
+                    available_files.append({
+                        'name': filename,
+                        'path': relative_path,
+                    })
+        
+        available_files.sort(key=lambda x: x['name'].lower())
+        return JsonResponse({'files': available_files})

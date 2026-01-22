@@ -163,3 +163,28 @@ class TestContentTypeModel:
     def test_contenttype_upload_folder_custom(self) -> None:
         ct = ContentType.objects.create(name='Документы тест', code='docs_test', upload_folder='documents')
         assert ct.upload_folder == 'documents'
+
+    def test_contenttype_has_related_content_false_when_empty(self) -> None:
+        ct = ContentType.objects.create(name='Пустой тип', code='empty_type')
+        assert ct.has_related_content() is False
+        assert ct.get_related_content_count() == 0
+
+    def test_contenttype_has_related_content_true_when_content_exists(
+        self, video_type: ContentType
+    ) -> None:
+        Content.objects.create(title='Тест', content_type=video_type)
+        assert video_type.has_related_content() is True
+        assert video_type.get_related_content_count() == 1
+
+    def test_contenttype_delete_without_content_succeeds(self) -> None:
+        ct = ContentType.objects.create(name='Удаляемый', code='deletable')
+        ct_id = ct.id
+        ct.delete()
+        assert not ContentType.objects.filter(id=ct_id).exists()
+
+    def test_contenttype_delete_with_content_raises_error(
+        self, video_type: ContentType
+    ) -> None:
+        Content.objects.create(title='Тест', content_type=video_type)
+        with pytest.raises(ValueError, match='Невозможно удалить'):
+            video_type.delete()

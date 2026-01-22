@@ -305,3 +305,36 @@ class TestCheckCategoryCodeView:
         response = client.get('/api/check-category-code/', {'code': 'testcode', 'exclude_id': 'invalid'})
         data = response.json()
         assert data['available'] is False
+
+
+@pytest.mark.django_db
+class TestAvailableFilesView:
+    def test_empty_folder_returns_empty_list(self) -> None:
+        client = Client()
+        response = client.get('/api/available-files/', {'folder': ''})
+        data = response.json()
+        assert data['files'] == []
+
+    def test_nonexistent_folder_returns_empty_list(self) -> None:
+        client = Client()
+        response = client.get('/api/available-files/', {'folder': 'nonexistent_folder_xyz'})
+        data = response.json()
+        assert data['files'] == []
+
+    def test_folder_without_param_returns_empty_list(self) -> None:
+        client = Client()
+        response = client.get('/api/available-files/')
+        data = response.json()
+        assert data['files'] == []
+
+    def test_path_traversal_blocked(self) -> None:
+        client = Client()
+        response = client.get('/api/available-files/', {'folder': '../etc'})
+        data = response.json()
+        assert data['files'] == []
+
+    def test_absolute_path_blocked(self) -> None:
+        client = Client()
+        response = client.get('/api/available-files/', {'folder': '/etc'})
+        data = response.json()
+        assert data['files'] == []

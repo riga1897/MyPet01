@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 from io import BytesIO
 from typing import Any
 
@@ -195,6 +196,32 @@ class ContentType(BaseModel):
     def is_photo(self) -> bool:
         return self.code == self.PHOTO_CODE
 
+    def has_related_content(self) -> bool:
+        """Check if any content uses this content type."""
+        from blog.models import Content
+        return Content.objects.filter(content_type=self).exists()
+
+    def get_related_content_count(self) -> int:
+        """Get count of content items using this type."""
+        from blog.models import Content
+        return Content.objects.filter(content_type=self).count()
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        """Delete content type and its upload folder if no related content exists."""
+        if self.has_related_content():
+            raise ValueError(
+                f"Невозможно удалить тип '{self.name}': "
+                f"существует {self.get_related_content_count()} записей контента"
+            )
+        result = super().delete(*args, **kwargs)
+        if self.upload_folder and '..' not in self.upload_folder:
+            folder_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, self.upload_folder))
+            media_root = os.path.normpath(settings.MEDIA_ROOT)
+            if folder_path.startswith(media_root + os.sep) and folder_path != media_root:
+                if os.path.exists(folder_path) and os.path.isdir(folder_path):
+                    shutil.rmtree(folder_path)
+        return result
+
 
 class Content(BaseModel):
     title = models.CharField(
@@ -325,3 +352,11 @@ class Content(BaseModel):
     def has_playable_video(self) -> bool:
         """Check if content has a playable video file."""
         return bool(self.has_video_type() and self.video_file)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        """Delete content and its associated thumbnail file."""
+        if self.thumbnail:
+            thumbnail_path = os.path.join(settings.MEDIA_ROOT, self.thumbnail.name)
+            if os.path.exists(thumbnail_path):
+                os.remove(thumbnail_path)
+        return super().delete(*args, **kwargs)

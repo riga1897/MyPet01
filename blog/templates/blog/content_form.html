@@ -70,12 +70,38 @@
                     <label class="block text-sm font-medium text-foreground mb-1">
                         <span id="file-label">Файл</span>
                     </label>
-                    <input type="file" 
-                           name="video_file" 
-                           id="id_video_file"
-                           class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                           accept=""
-                           onchange="onFileSelected(this)">
+                    
+                    <div class="flex gap-2 mb-2">
+                        <button type="button" id="btn-upload-new" onclick="setFileMode('upload')"
+                                class="px-3 py-1 text-sm rounded-lg border border-primary bg-primary text-primary-foreground">
+                            Загрузить новый
+                        </button>
+                        <button type="button" id="btn-select-existing" onclick="setFileMode('select')"
+                                class="px-3 py-1 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted">
+                            Выбрать из папки
+                        </button>
+                    </div>
+                    
+                    <div id="file-upload-mode">
+                        <input type="file" 
+                               name="video_file" 
+                               id="id_video_file"
+                               class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                               accept=""
+                               onchange="onFileSelected(this)">
+                    </div>
+                    
+                    <div id="file-select-mode" class="hidden">
+                        <input type="hidden" name="existing_file" id="existing_file_input" value="">
+                        <select id="existing-file-select" onchange="onExistingFileSelected(this)"
+                                class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card">
+                            <option value="">— Выберите файл —</option>
+                        </select>
+                        <p id="no-files-message" class="hidden text-sm text-muted-foreground mt-1">
+                            Нет доступных файлов в папке этого типа контента
+                        </p>
+                    </div>
+                    
                     {% if object.video_file %}
                     <p class="text-sm text-muted-foreground mt-1">
                         Текущий файл: {{ object.video_file.name|truncatechars:50 }}
@@ -140,12 +166,91 @@
 <script>
 (function() {
     const hasExistingFile = {{ has_file|yesno:"true,false" }};
+    const contentId = {{ object.pk|default:"null" }};
     let fileSelected = false;
+    let currentFileMode = 'upload';
+    
+    function getSelectedContentTypeFolder() {
+        const selected = document.querySelector('.content-type-checkbox:checked');
+        return selected ? selected.dataset.uploadFolder : '';
+    }
     
     function getSelectedContentTypeCode() {
         const selected = document.querySelector('.content-type-checkbox:checked');
         return selected ? selected.dataset.contentTypeCode : '';
     }
+    
+    function setFileMode(mode) {
+        currentFileMode = mode;
+        const uploadMode = document.getElementById('file-upload-mode');
+        const selectMode = document.getElementById('file-select-mode');
+        const btnUpload = document.getElementById('btn-upload-new');
+        const btnSelect = document.getElementById('btn-select-existing');
+        
+        if (mode === 'upload') {
+            uploadMode.classList.remove('hidden');
+            selectMode.classList.add('hidden');
+            btnUpload.classList.add('bg-primary', 'text-primary-foreground', 'border-primary');
+            btnUpload.classList.remove('bg-card', 'text-foreground', 'border-border');
+            btnSelect.classList.remove('bg-primary', 'text-primary-foreground', 'border-primary');
+            btnSelect.classList.add('bg-card', 'text-foreground', 'border-border');
+            document.getElementById('existing_file_input').value = '';
+        } else {
+            uploadMode.classList.add('hidden');
+            selectMode.classList.remove('hidden');
+            btnSelect.classList.add('bg-primary', 'text-primary-foreground', 'border-primary');
+            btnSelect.classList.remove('bg-card', 'text-foreground', 'border-border');
+            btnUpload.classList.remove('bg-primary', 'text-primary-foreground', 'border-primary');
+            btnUpload.classList.add('bg-card', 'text-foreground', 'border-border');
+            document.getElementById('id_video_file').value = '';
+            loadAvailableFiles();
+        }
+    }
+    window.setFileMode = setFileMode;
+    
+    function loadAvailableFiles() {
+        const folder = getSelectedContentTypeFolder();
+        const select = document.getElementById('existing-file-select');
+        const noFilesMsg = document.getElementById('no-files-message');
+        
+        select.innerHTML = '<option value="">— Загрузка... —</option>';
+        noFilesMsg.classList.add('hidden');
+        
+        if (!folder) {
+            select.innerHTML = '<option value="">— Сначала выберите тип контента —</option>';
+            return;
+        }
+        
+        let url = `/api/available-files/?folder=${encodeURIComponent(folder)}`;
+        if (contentId) {
+            url += `&exclude_content_id=${contentId}`;
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">— Выберите файл —</option>';
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.path;
+                        option.textContent = file.name;
+                        select.appendChild(option);
+                    });
+                    noFilesMsg.classList.add('hidden');
+                } else {
+                    noFilesMsg.classList.remove('hidden');
+                }
+            })
+            .catch(() => {
+                select.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+            });
+    }
+    
+    function onExistingFileSelected(select) {
+        document.getElementById('existing_file_input').value = select.value;
+    }
+    window.onExistingFileSelected = onExistingFileSelected;
     
     function updateFileInput() {
         const code = getSelectedContentTypeCode();
@@ -169,6 +274,10 @@
             fileLabel.textContent = 'Файл';
             fileHint.textContent = '';
             durationField.classList.add('hidden');
+        }
+        
+        if (currentFileMode === 'select') {
+            loadAvailableFiles();
         }
     }
     

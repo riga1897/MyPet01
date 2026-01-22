@@ -123,7 +123,9 @@ class TestGenerateThumbnailFromVideo:
             result = generate_thumbnail_from_video(mock_file)
 
         assert result is not None
-        assert result.name == 'video_thumbnail.jpg'
+        assert result.name is not None
+        assert result.name.startswith('video_')
+        assert result.name.endswith('.jpg')
         
         Path(tmp_path).unlink(missing_ok=True)
 
@@ -145,7 +147,9 @@ class TestGenerateThumbnailFromImage:
         result = generate_thumbnail_from_image(buffer)
 
         assert result is not None
-        assert result.name == 'image_thumbnail.jpg'
+        assert result.name is not None
+        assert result.name.startswith('photo_')
+        assert result.name.endswith('.jpg')
         assert len(result.read()) > 0
 
     def test_handles_rgba_images(self) -> None:
@@ -158,7 +162,9 @@ class TestGenerateThumbnailFromImage:
         result = generate_thumbnail_from_image(buffer)
 
         assert result is not None
-        assert result.name == 'image_thumbnail.jpg'
+        assert result.name is not None
+        assert result.name.startswith('photo_')
+        assert result.name.endswith('.jpg')
 
     def test_returns_none_for_invalid_file(self) -> None:
         """Should return None for non-image file."""

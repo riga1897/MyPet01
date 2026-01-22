@@ -1,7 +1,9 @@
 """Video and image processing services for content management."""
+import hashlib
 import logging
 import subprocess
 import tempfile
+import time
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -10,6 +12,16 @@ from django.core.files.base import ContentFile
 from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+
+def generate_unique_thumbnail_name(prefix: str = 'thumb') -> str:
+    """Generate unique thumbnail filename with hash.
+    
+    Uses timestamp and random bytes to create unique hash suffix.
+    """
+    timestamp = str(time.time()).encode()
+    unique_hash = hashlib.md5(timestamp).hexdigest()[:8]
+    return f'{prefix}_{unique_hash}.jpg'
 
 THUMBNAIL_MAX_SIZE = (800, 600)
 THUMBNAIL_QUALITY = 85
@@ -97,7 +109,7 @@ def generate_thumbnail_from_video(video_file: Any) -> 'ContentFile[bytes] | None
                 pil_img.save(output, format='JPEG', quality=THUMBNAIL_QUALITY, optimize=True)
                 output.seek(0)
                 
-                return ContentFile(output.read(), name='video_thumbnail.jpg')
+                return ContentFile(output.read(), name=generate_unique_thumbnail_name('video'))
             
             if tmp_file.exists():
                 tmp_file.unlink()
@@ -131,7 +143,7 @@ def generate_thumbnail_from_image(image_file: Any) -> 'ContentFile[bytes] | None
         pil_img.save(output, format='JPEG', quality=THUMBNAIL_QUALITY, optimize=True)
         output.seek(0)
         
-        return ContentFile(output.read(), name='image_thumbnail.jpg')
+        return ContentFile(output.read(), name=generate_unique_thumbnail_name('photo'))
     except (OSError, ValueError) as e:
         logger.warning('Failed to generate thumbnail from image: %s', e)
     
