@@ -214,6 +214,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Changed content_type selection from RadioSelect to checkboxes with "one or none" logic. Removed "Без типа" option from form.
 - 2026-01-22: Removed slug field from Category model. Added CheckCategoryCodeView API endpoint and category_transliterate.js for auto-generation and validation of Category.code.
 - 2026-01-22: Added CheckContentTypeFolderView API endpoint for upload_folder uniqueness validation. JavaScript now validates both code and folder with debounced input.
 - 2026-01-22: Reverted Content.content_types (ManyToMany) back to content_type (ForeignKey) — single content type per content for clearer file storage logic. Form uses RadioSelect widget.
