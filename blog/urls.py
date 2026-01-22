@@ -12,6 +12,7 @@ from blog.views import (
     TagGroupDeleteView,
     TagGroupUpdateView,
     TagListView,
+    TagReorderView,
     TagUpdateView,
 )
 
@@ -30,4 +31,5 @@ urlpatterns = [
     path('tags/create/', TagCreateView.as_view(), name='tag_create'),
     path('tags/<int:pk>/edit/', TagUpdateView.as_view(), name='tag_edit'),
     path('tags/<int:pk>/delete/', TagDeleteView.as_view(), name='tag_delete'),
+    path('tags/reorder/', TagReorderView.as_view(), name='tag_reorder'),
 ]

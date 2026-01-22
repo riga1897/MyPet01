@@ -106,9 +106,14 @@ class Tag(BaseModel):
         related_name='tags',
         verbose_name='Группа',
     )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Порядок',
+        help_text='Меньшее значение = выше в списке',
+    )
 
     class Meta:
-        ordering = ['group', 'name']
+        ordering = ['group', 'order', 'name']
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
         unique_together = ['group', 'name']

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import JsonResponse
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from blog.cache import get_cached_content_list, set_cached_content_list
@@ -230,3 +233,41 @@ class TagDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[type-ar
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
         return context
+
+
+class TagReorderView(ModeratorRequiredMixin, View):
+    """AJAX endpoint for reordering tags via drag-and-drop."""
+
+    def post(self, request: Any, *args: Any, **kwargs: Any) -> JsonResponse:
+        try:
+            data = json.loads(request.body)
+            tag_ids = data.get('tag_ids', [])
+            group_id = data.get('group_id')
+
+            if not tag_ids:
+                return JsonResponse({'error': 'No tag IDs provided'}, status=400)
+
+            if not group_id:
+                return JsonResponse({'error': 'No group ID provided'}, status=400)
+
+            tags = list(Tag.objects.filter(pk__in=tag_ids))
+            if len(tags) != len(tag_ids):
+                return JsonResponse({'error': 'Some tags not found'}, status=400)
+
+            for tag in tags:
+                if tag.group.pk != int(group_id):
+                    return JsonResponse(
+                        {'error': 'All tags must belong to the same group'},
+                        status=400,
+                    )
+
+            tag_id_to_order = {tag_id: order for order, tag_id in enumerate(tag_ids)}
+            for tag in tags:
+                tag.order = tag_id_to_order[tag.pk]
+                tag.save(update_fields=['order'])
+
+            return JsonResponse({'success': True})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
