@@ -305,14 +305,5 @@ class CheckContentTypeCodeView(View):
         if exclude_id:
             queryset = queryset.exclude(pk=exclude_id)
         
-        if not queryset.exists():
-            return JsonResponse({'available': True, 'code': code})
-        
-        from blog.models import generate_unique_code
-        suggested = generate_unique_code(ContentType, code, exclude_id)
-        
-        return JsonResponse({
-            'available': False,
-            'code': code,
-            'suggested': suggested,
-        })
+        available = not queryset.exists()
+        return JsonResponse({'available': available, 'code': code})

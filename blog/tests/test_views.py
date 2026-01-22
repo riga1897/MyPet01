@@ -202,14 +202,13 @@ class TestCheckContentTypeCodeView:
         assert data['available'] is True
         assert data['code'] == 'newcode'
 
-    def test_taken_code_returns_false_with_suggestion(self) -> None:
+    def test_taken_code_returns_false(self) -> None:
         ContentType.objects.create(name='Existing', code='existing')
         client = Client()
         response = client.get('/api/check-contenttype-code/', {'code': 'existing'})
         data = response.json()
         assert data['available'] is False
         assert data['code'] == 'existing'
-        assert data['suggested'] == 'existing_1'
 
     def test_exclude_id_allows_own_code(self) -> None:
         ct = ContentType.objects.create(name='Test', code='testcode')

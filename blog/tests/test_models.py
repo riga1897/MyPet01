@@ -107,17 +107,14 @@ class TestCategoryModel:
 @pytest.mark.django_db
 class TestContentTypeModel:
     def test_content_type_str_returns_name(self) -> None:
-        ct = ContentType.objects.create(name='Аудио')
+        ct = ContentType.objects.create(name='Аудио', code='audio')
         assert str(ct) == 'Аудио'
 
-    def test_code_auto_generated_from_name(self) -> None:
-        ct = ContentType.objects.create(name='Новый тип')
-        assert ct.code == 'novyy_tip'
-
-    def test_code_unique_suffix_when_duplicate(self) -> None:
-        ContentType.objects.create(name='Дубликат', code='dublikat')
-        ct2 = ContentType.objects.create(name='Дубликат Второй')
-        assert ct2.code == 'dublikat_vtoroy'
+    def test_code_is_required(self) -> None:
+        from django.core.exceptions import ValidationError
+        ct = ContentType(name='Без кода')
+        with pytest.raises(ValidationError):
+            ct.full_clean()
 
     def test_upload_folder_auto_generated_from_code(self) -> None:
         ct = ContentType.objects.create(name='Тестовый тип', code='test')

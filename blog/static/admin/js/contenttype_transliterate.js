@@ -51,7 +51,7 @@
         }
     }
 
-    async function checkCodeUniqueness(code, excludeId) {
+    async function checkCodeAvailability(code, excludeId) {
         if (!code) return { available: true };
         
         const params = new URLSearchParams({ code });
@@ -64,6 +64,23 @@
             console.error('Error checking code:', e);
             return { available: true };
         }
+    }
+
+    async function findAvailableCode(baseCode, excludeId) {
+        let result = await checkCodeAvailability(baseCode, excludeId);
+        if (result.available) {
+            return { code: baseCode, available: true };
+        }
+        
+        for (let i = 1; i <= 99; i++) {
+            const suffixedCode = `${baseCode.slice(0, 17)}_${i}`;
+            result = await checkCodeAvailability(suffixedCode, excludeId);
+            if (result.available) {
+                return { code: suffixedCode, available: true, suggested: true };
+            }
+        }
+        
+        return { code: baseCode, available: false };
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -87,18 +104,26 @@
             }
         }
 
-        const debouncedCheck = debounce(async function(code) {
+        const debouncedCheck = debounce(async function(code, autoFix = false) {
             if (!code) {
                 clearMessage(codeField);
                 return;
             }
             
-            const result = await checkCodeUniqueness(code, excludeId);
+            const result = await checkCodeAvailability(code, excludeId);
             
-            if (!result.available) {
-                showMessage(codeField, `Код занят. Предлагается: ${result.suggested}`, true);
-            } else {
+            if (result.available) {
                 showMessage(codeField, '✓ Код доступен', false);
+            } else if (autoFix) {
+                const available = await findAvailableCode(code, excludeId);
+                if (available.suggested) {
+                    updateCode(available.code);
+                    showMessage(codeField, `✓ Код изменён на: ${available.code}`, false);
+                } else {
+                    showMessage(codeField, 'Код занят', true);
+                }
+            } else {
+                showMessage(codeField, 'Код занят', true);
             }
         }, 300);
 
@@ -106,7 +131,7 @@
             if (!userEditedCode) {
                 const newCode = transliterate(nameField.value);
                 updateCode(newCode);
-                debouncedCheck(newCode);
+                debouncedCheck(newCode, true);
             }
         });
 
@@ -115,7 +140,7 @@
             if (folderField && !userEditedFolder) {
                 folderField.value = codeField.value;
             }
-            debouncedCheck(codeField.value);
+            debouncedCheck(codeField.value, false);
         });
 
         if (folderField) {
@@ -125,7 +150,7 @@
         }
 
         if (codeField.value) {
-            debouncedCheck(codeField.value);
+            debouncedCheck(codeField.value, false);
         }
     });
 })();
