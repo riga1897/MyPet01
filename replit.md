@@ -207,6 +207,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added GZipMiddleware for HTTP compression, nginx production config with gzip/static/media serving, Docker setup with gunicorn (4 workers), collectstatic in build.
 - 2026-01-22: Added thumbnail auto-compression on upload (Pillow: max 800x600, JPEG quality 85%), lazy loading for images, browser cache enabled.
 - 2026-01-22: Group filter on tag management page now uses dropdown menu with checkboxes (consistent with tag filters). Added "Выбрать все" checkbox, swapped buttons order (+Тег first), equal button widths.
 - 2026-01-22: Added drag-and-drop tag ordering on tag management page. Tags can be reordered horizontally, saved via AJAX.
