@@ -207,7 +207,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
-- 2026-01-22: Added tag filter dropdowns to tag management page (reuses _tag_filter_dropdowns.html partial, no code duplication).
+- 2026-01-22: Replaced tag filter dropdowns with simple group checkboxes on tag management page. Checked groups are shown, unchecked are hidden. "Все/Ничего" button toggles all visible checkboxes.
 - 2026-01-22: Added drag-and-drop tag ordering on tag management page. Tags can be reordered horizontally, saved via AJAX.
 - 2026-01-22: Added `order` field to Tag model for custom sorting. Tags now sorted by order within groups.
 - 2026-01-22: Simplified TagGroup model - removed applies_to_all field, empty categories now means "applies to all".
