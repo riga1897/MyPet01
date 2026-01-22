@@ -8,6 +8,9 @@ class ContentTypeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = ('name', 'code', 'upload_folder', 'created_at')
     search_fields = ('name', 'code')
 
+    class Media:
+        js = ('admin/js/contenttype_transliterate.js',)
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
