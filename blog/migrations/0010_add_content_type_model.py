@@ -1,9 +1,11 @@
+from typing import Any
+
 import blog.models
 import django.db.models.deletion
 from django.db import migrations, models
 
 
-def create_content_types_and_migrate(apps, schema_editor):
+def create_content_types_and_migrate(apps: Any, schema_editor: Any) -> None:
     ContentType = apps.get_model('blog', 'ContentType')
     Content = apps.get_model('blog', 'Content')
     
@@ -29,7 +31,7 @@ def create_content_types_and_migrate(apps, schema_editor):
     Content.objects.filter(old_content_type='photo').update(content_type_new=photo_type)
 
 
-def reverse_migration(apps, schema_editor):
+def reverse_migration(apps: Any, schema_editor: Any) -> None:
     ContentType = apps.get_model('blog', 'ContentType')
     Content = apps.get_model('blog', 'Content')
     

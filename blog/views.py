@@ -12,15 +12,16 @@ from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from blog.cache import get_cached_content_list, set_cached_content_list
 from blog.forms import ContentForm, TagForm, TagGroupForm
-from blog.models import Category, Content, Tag, TagGroup
+from blog.models import Category, Content, ContentType, Tag, TagGroup
 from users.models import is_moderator
 
 
 def get_filter_context() -> dict[str, Any]:
-    """Get common filter context (categories and tag groups)."""
+    """Get common filter context (categories, tag groups, and content types)."""
     return {
         'tag_groups': TagGroup.objects.prefetch_related('tags', 'categories').all(),
         'categories': Category.objects.all(),
+        'content_types': ContentType.objects.all(),
     }
 
 if TYPE_CHECKING:
@@ -90,7 +91,9 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
         context.update(get_filter_context())
         context['selected_tag_ids'] = []
         context['selected_category_id'] = None
+        context['selected_content_type_id'] = None
         context['current_category_code'] = None
+        context['has_file'] = False
         return context
 
 
@@ -112,6 +115,7 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         content = self.object
         context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
         context['selected_category_id'] = content.category_id
+        context['selected_content_type_id'] = content.content_type_id
         context['current_category_code'] = content.category.code if content.category else None
         context['has_file'] = bool(content.video_file)
         return context

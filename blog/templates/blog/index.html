@@ -28,6 +28,9 @@
                             {{ cat.name }}
                         </button>
                         {% endfor %}
+                        <button onclick="filterCards('nocategory')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors text-muted-foreground italic" data-filter="nocategory">
+                            Без категории
+                        </button>
                     </div>
                     
                     <div class="relative w-full sm:w-72">
@@ -115,6 +118,7 @@ function isGroupVisibleForCategory(groupId, category) {
     if (!group) return false;
     if (group.categories.length === 0) return true;
     if (category === 'all') return true;
+    if (category === 'nocategory') return group.categories.length === 0;
     return group.categories.includes(category);
 }
 
@@ -161,7 +165,9 @@ function applyFilters() {
         const description = card.dataset.description;
         const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesFilter = currentFilter === 'all' || category === currentFilter;
+        const matchesFilter = currentFilter === 'all' || 
+                              (currentFilter === 'nocategory' && category === '') ||
+                              category === currentFilter;
         const matchesSearch = currentSearch === '' || 
                              title.includes(currentSearch) || 
                              description.includes(currentSearch);

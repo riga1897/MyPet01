@@ -38,6 +38,9 @@
                             {{ cat.name }}
                         </button>
                         {% endfor %}
+                        <button onclick="filterContentCategory('nocategory')" class="content-filter-btn px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm text-muted-foreground italic" data-filter="nocategory">
+                            Без категории
+                        </button>
                     </div>
                     
                     <div class="relative w-full sm:w-64">
@@ -77,10 +80,14 @@
                             <span class="font-medium text-foreground">{{ content.title }}</span>
                         </td>
                         <td class="px-6 py-4">
-                            {% if content.content_type == 'video' %}
-                            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">Видео</span>
+                            {% if content.content_type.code == 'video' %}
+                            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{{ content.content_type.name }}</span>
+                            {% elif content.content_type.code == 'photo' %}
+                            <span class="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded">{{ content.content_type.name }}</span>
+                            {% elif content.content_type %}
+                            <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded">{{ content.content_type.name }}</span>
                             {% else %}
-                            <span class="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded">Фото</span>
+                            <span class="text-xs text-muted-foreground">—</span>
                             {% endif %}
                         </td>
                         <td class="px-6 py-4">
@@ -153,7 +160,9 @@ function applyFilters() {
         const description = row.dataset.description || '';
         const rowTags = row.dataset.tags ? row.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesCategory = currentContentCategory === 'all' || category === currentContentCategory;
+        const matchesCategory = currentContentCategory === 'all' || 
+                               (currentContentCategory === 'nocategory' && category === '') ||
+                               category === currentContentCategory;
         const matchesSearch = currentContentSearch === '' || 
                              title.includes(currentContentSearch) || 
                              description.includes(currentContentSearch);

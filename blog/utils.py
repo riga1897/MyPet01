@@ -14,6 +14,7 @@ def filter_content(
     category: Category | None = None,
     tags: list[Tag] | None = None,
     search_query: str = '',
+    no_category: bool = False,
 ) -> QuerySet[Content]:
     """Filter content queryset by category, tags, and search query.
     
@@ -22,11 +23,14 @@ def filter_content(
         category: Filter by category (None = all categories)
         tags: Filter by tags (AND logic - content must have all tags)
         search_query: Search in title and description
+        no_category: If True, filter to content without a category
         
     Returns:
         Filtered queryset
     """
-    if category:
+    if no_category:
+        queryset = queryset.filter(category__isnull=True)
+    elif category:
         queryset = queryset.filter(category=category)
     
     if tags:
@@ -68,6 +72,7 @@ def filter_tag_groups(
     queryset: QuerySet[TagGroup],
     category: Category | None = None,
     search_query: str = '',
+    no_category: bool = False,
 ) -> QuerySet[TagGroup]:
     """Filter tag groups by category and search query.
     
@@ -75,11 +80,14 @@ def filter_tag_groups(
         queryset: Base queryset to filter
         category: Filter by category (None = all)
         search_query: Search in group name and tag names
+        no_category: If True, filter to groups that apply to all categories
         
     Returns:
         Filtered queryset
     """
-    if category:
+    if no_category:
+        queryset = queryset.filter(categories__isnull=True)
+    elif category:
         queryset = queryset.filter(
             Q(categories__isnull=True) |
             Q(categories=category)

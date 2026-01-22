@@ -105,6 +105,20 @@ class TestFilterContent:
         assert yoga_content in result
         assert oils_content in result
 
+    def test_filter_no_category(
+        self, yoga_content: Content, oils_content: Content
+    ) -> None:
+        no_cat_content = Content.objects.create(
+            title='Без категории',
+            description='Контент без категории',
+            category=None,
+        )
+        queryset = Content.objects.all()
+        result = filter_content(queryset, no_category=True)
+        assert no_cat_content in result
+        assert yoga_content not in result
+        assert oils_content not in result
+
 
 @pytest.mark.django_db
 class TestGetVisibleTagGroups:
@@ -180,3 +194,11 @@ class TestFilterTagGroups:
         result = filter_tag_groups(queryset)
         assert yoga_tag_group in result
         assert all_category_group in result
+
+    def test_filter_no_category(
+        self, yoga_tag_group: TagGroup, all_category_group: TagGroup
+    ) -> None:
+        queryset = TagGroup.objects.all()
+        result = filter_tag_groups(queryset, no_category=True)
+        assert all_category_group in result
+        assert yoga_tag_group not in result

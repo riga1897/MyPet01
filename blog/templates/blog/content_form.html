@@ -40,22 +40,7 @@
                     <label class="block text-sm font-medium text-foreground mb-1">
                         Тип контента
                     </label>
-                    <div id="content-type-wrapper" class="flex gap-4">
-                        {% for choice in form.content_type %}
-                        <label class="flex items-center gap-2 cursor-pointer {% if has_file %}opacity-50{% endif %}">
-                            <input type="radio" name="content_type" value="{{ choice.data.value }}"
-                                   class="w-4 h-4 text-primary border-border focus:ring-primary"
-                                   {% if choice.data.selected %}checked{% endif %}
-                                   {% if has_file %}disabled{% endif %}
-                                   onchange="onContentTypeChange(this.value)">
-                            <span class="text-sm">{{ choice.data.label }}</span>
-                        </label>
-                        {% endfor %}
-                        {% if has_file %}
-                        <input type="hidden" name="content_type" value="{{ form.content_type.value }}">
-                        <span class="text-xs text-muted-foreground ml-2">(нельзя изменить после загрузки файла)</span>
-                        {% endif %}
-                    </div>
+                    {% include "blog/partials/_content_type_select_dropdown.html" with content_types=content_types selected_content_type_id=selected_content_type_id has_file=has_file %}
                     {% if form.content_type.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.content_type.errors.0 }}</p>
                     {% endif %}
@@ -157,32 +142,37 @@
     const hasExistingFile = {{ has_file|yesno:"true,false" }};
     let fileSelected = false;
     
-    function getContentType() {
-        const checked = document.querySelector('input[name="content_type"]:checked');
-        return checked ? checked.value : 'video';
+    function getContentTypeCode() {
+        const checked = document.querySelector('input[name="_content_type_radio"]:checked');
+        return checked ? checked.dataset.contentTypeCode : 'video';
     }
     
     function updateFileInput() {
-        const contentType = getContentType();
+        const contentTypeCode = getContentTypeCode();
         const fileInput = document.getElementById('id_video_file');
         const fileLabel = document.getElementById('file-label');
         const fileHint = document.getElementById('file-hint');
         const durationField = document.getElementById('duration-field');
         
-        if (contentType === 'video') {
+        if (contentTypeCode === 'video') {
             fileInput.accept = 'video/*';
             fileLabel.textContent = 'Видео файл';
             fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
             durationField.classList.remove('hidden');
-        } else {
+        } else if (contentTypeCode === 'photo') {
             fileInput.accept = 'image/*';
             fileLabel.textContent = 'Фото';
             fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
             durationField.classList.add('hidden');
+        } else {
+            fileInput.accept = '*/*';
+            fileLabel.textContent = 'Файл';
+            fileHint.textContent = '';
+            durationField.classList.add('hidden');
         }
     }
     
-    function onContentTypeChange(value) {
+    function onContentTypeChanged(code, value) {
         updateFileInput();
         
         const fileInput = document.getElementById('id_video_file');
@@ -191,44 +181,31 @@
             const isImage = file.type.startsWith('image/');
             const isVideo = file.type.startsWith('video/');
             
-            if ((value === 'photo' && !isImage) || (value === 'video' && !isVideo)) {
+            if ((code === 'photo' && !isImage) || (code === 'video' && !isVideo)) {
                 fileInput.value = '';
                 fileSelected = false;
                 alert('Выбранный файл не соответствует типу контента. Пожалуйста, выберите другой файл.');
             }
         }
     }
-    window.onContentTypeChange = onContentTypeChange;
+    window.onContentTypeChanged = onContentTypeChanged;
     
     function onFileSelected(input) {
         if (input.files.length > 0) {
             fileSelected = true;
             
             if (!hasExistingFile) {
-                const radios = document.querySelectorAll('input[name="content_type"]');
-                radios.forEach(radio => {
-                    radio.disabled = true;
-                    radio.closest('label').classList.add('opacity-50');
-                });
+                const dropdown = document.getElementById('content-type-select-dropdown');
+                dropdown.classList.add('pointer-events-none', 'opacity-50');
+                dropdown.dataset.hasFile = 'true';
                 
-                const wrapper = document.getElementById('content-type-wrapper');
-                let hint = wrapper.querySelector('.type-lock-hint');
+                let hint = dropdown.querySelector('.file-lock-hint');
                 if (!hint) {
-                    hint = document.createElement('span');
-                    hint.className = 'type-lock-hint text-xs text-muted-foreground ml-2';
+                    hint = document.createElement('p');
+                    hint.className = 'file-lock-hint text-xs text-muted-foreground mt-1';
                     hint.textContent = '(нельзя изменить после загрузки файла)';
-                    wrapper.appendChild(hint);
+                    dropdown.appendChild(hint);
                 }
-                
-                const contentType = getContentType();
-                let hiddenInput = wrapper.querySelector('input[type="hidden"][name="content_type"]');
-                if (!hiddenInput) {
-                    hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'content_type';
-                    wrapper.appendChild(hiddenInput);
-                }
-                hiddenInput.value = contentType;
             }
         }
     }

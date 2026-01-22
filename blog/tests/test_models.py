@@ -59,6 +59,7 @@ class TestContentModel:
             content_type=video_type,
             category=yoga_category,
         )
+        assert content.content_type is not None
         assert content.content_type.is_video is True
 
     def test_content_can_be_photo(self, yoga_category: Category, photo_type: ContentType) -> None:
@@ -67,6 +68,7 @@ class TestContentModel:
             content_type=photo_type,
             category=yoga_category,
         )
+        assert content.content_type is not None
         assert content.content_type.is_photo is True
 
     def test_create_content_video(self, video_type: ContentType) -> None:
@@ -76,6 +78,7 @@ class TestContentModel:
             content_type=video_type,
         )
         assert content.description == 'Test Video'
+        assert content.content_type is not None
         assert content.content_type.code == 'video'
         assert str(content) == 'Мое видео'
 
@@ -86,6 +89,7 @@ class TestContentModel:
             content_type=photo_type,
         )
         assert content.description == 'Test Photo'
+        assert content.content_type is not None
         assert content.content_type.code == 'photo'
         assert str(content) == 'Моя фотография'
 

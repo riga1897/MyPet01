@@ -44,6 +44,9 @@
                             {{ cat.name }}
                         </button>
                         {% endfor %}
+                        <button onclick="filterByCategory('nocategory')" class="category-filter-btn px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm text-muted-foreground italic" data-filter="nocategory">
+                            Без категории
+                        </button>
                     </div>
                     
                     <div class="relative w-full sm:w-64">
@@ -264,7 +267,10 @@ function filterByCategory(category) {
 function updateGroupCheckboxesVisibility(category) {
     document.querySelectorAll('.group-checkbox-label').forEach(label => {
         const categories = label.dataset.categories ? label.dataset.categories.split(',').filter(c => c) : [];
-        const isVisible = category === 'all' || categories.length === 0 || categories.includes(category);
+        const isVisible = category === 'all' || 
+                         categories.length === 0 || 
+                         (category === 'nocategory' && categories.length === 0) ||
+                         categories.includes(category);
         
         if (isVisible) {
             label.classList.remove('hidden');
@@ -307,6 +313,7 @@ function applyTagGroupFilters() {
         
         const matchesCategory = currentCategoryFilter === 'all' || 
                                categories.length === 0 ||
+                               (currentCategoryFilter === 'nocategory' && categories.length === 0) ||
                                categories.includes(currentCategoryFilter);
         const matchesSearch = currentTagSearch === '' || 
                              name.includes(currentTagSearch) || 
