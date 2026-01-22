@@ -6,19 +6,13 @@
 {% include "blog/partials/_header.html" %}
 
 <div class="min-h-screen p-4 pt-8">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h1 class="text-2xl font-semibold text-foreground">Управление контентом</h1>
-            <div class="flex gap-2">
-                <a href="{% url 'blog:tag_list' %}" 
-                   class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors">
-                    Теги
-                </a>
-                <a href="{% url 'blog:content_create' %}" 
-                   class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                    + Добавить контент
-                </a>
-            </div>
+            <a href="{% url 'blog:content_create' %}" 
+               class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                + Добавить контент
+            </a>
         </div>
         
         {% if messages %}
@@ -31,6 +25,33 @@
         </div>
         {% endif %}
         
+        {% if tag_groups %}
+        <div class="bg-card rounded-2xl shadow-lg p-4 mb-4">
+            <div id="content-tag-filters" class="flex flex-wrap items-center gap-3">
+                <span class="text-sm text-muted-foreground">Фильтр по тегам:</span>
+                <div class="tag-filter-row flex items-center gap-2">
+                    <select onchange="updateContentTagSelect(this)" class="content-group-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">Выберите группу</option>
+                        {% for group in tag_groups %}
+                        <option value="{{ group.id }}" data-tags='{% for tag in group.tags.all %}{"id":{{ tag.id }},"name":"{{ tag.name }}"}{% if not forloop.last %},{% endif %}{% endfor %}'>{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <select onchange="filterContentByTag()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+                        <option value="">Выберите тег</option>
+                    </select>
+                </div>
+                <button onclick="addContentTagFilter()" class="px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Добавить фильтр">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                </button>
+                <button onclick="clearContentFilters()" class="px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm">
+                    Сбросить
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="bg-card rounded-2xl shadow-lg overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-muted">
@@ -38,16 +59,14 @@
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Заголовок</th>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Тип</th>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Категория</th>
-                        {% for group in tag_groups %}
-                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">{{ group.name }}</th>
-                        {% endfor %}
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Теги</th>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Создан</th>
                         <th class="text-right px-6 py-3 text-sm font-medium text-foreground">Действия</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-border">
+                <tbody id="content-table-body" class="divide-y divide-border">
                     {% for content in contents %}
-                    <tr class="hover:bg-muted/30">
+                    <tr class="content-row hover:bg-muted/30" data-tags="{% for tag in content.tags.all %}{{ tag.id }},{% endfor %}">
                         <td class="px-6 py-4">
                             <span class="font-medium text-foreground">{{ content.title }}</span>
                         </td>
@@ -65,15 +84,15 @@
                             <span class="text-muted-foreground">Эфирные масла</span>
                             {% endif %}
                         </td>
-                        {% for group in tag_groups %}
                         <td class="px-6 py-4">
-                            {% for tag in content.tags.all %}
-                                {% if tag.group == group %}
-                                <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded">{{ tag.name }}</span>
-                                {% endif %}
-                            {% endfor %}
+                            <div class="flex flex-wrap gap-1">
+                                {% for tag in content.tags.all %}
+                                <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded" title="{{ tag.group.name }}">{{ tag.name }}</span>
+                                {% empty %}
+                                <span class="text-xs text-muted-foreground">—</span>
+                                {% endfor %}
+                            </div>
                         </td>
-                        {% endfor %}
                         <td class="px-6 py-4 text-muted-foreground">
                             {{ content.created_at|date:"d.m.Y" }}
                         </td>
@@ -86,7 +105,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="{{ tag_groups|length|add:5 }}" class="px-6 py-8 text-center text-muted-foreground">
+                        <td colspan="6" class="px-6 py-8 text-center text-muted-foreground">
                             Контента пока нет. <a href="{% url 'blog:content_create' %}" class="text-primary hover:underline">Добавить первый</a>
                         </td>
                     </tr>
@@ -96,4 +115,109 @@
         </div>
     </div>
 </div>
+
+<script>
+const tagGroupsData = {
+    {% for group in tag_groups %}
+    {{ group.id }}: [{% for tag in group.tags.all %}{"id": {{ tag.id }}, "name": "{{ tag.name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+function updateContentTagSelect(groupSelect) {
+    const row = groupSelect.closest('.tag-filter-row');
+    const tagSelect = row.querySelector('.content-tag-select');
+    const groupId = groupSelect.value;
+    
+    tagSelect.innerHTML = '<option value="">Выберите тег</option>';
+    
+    if (groupId && tagGroupsData[groupId]) {
+        tagGroupsData[groupId].forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag.id;
+            option.textContent = tag.name;
+            tagSelect.appendChild(option);
+        });
+        tagSelect.disabled = false;
+    } else {
+        tagSelect.disabled = true;
+    }
+    
+    filterContentByTag();
+}
+
+function addContentTagFilter() {
+    const container = document.getElementById('content-tag-filters');
+    const existingRows = container.querySelectorAll('.tag-filter-row');
+    
+    const newRow = document.createElement('div');
+    newRow.className = 'tag-filter-row flex items-center gap-2';
+    newRow.innerHTML = `
+        <select onchange="updateContentTagSelect(this)" class="content-group-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <option value="">Выберите группу</option>
+            {% for group in tag_groups %}
+            <option value="{{ group.id }}">{{ group.name }}</option>
+            {% endfor %}
+        </select>
+        <select onchange="filterContentByTag()" class="content-tag-select px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" disabled>
+            <option value="">Выберите тег</option>
+        </select>
+        <button onclick="removeContentTagFilter(this)" class="px-1 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Удалить фильтр">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+    `;
+    
+    const addButton = container.querySelector('button[onclick="addContentTagFilter()"]');
+    container.insertBefore(newRow, addButton);
+}
+
+function removeContentTagFilter(button) {
+    const row = button.closest('.tag-filter-row');
+    row.remove();
+    filterContentByTag();
+}
+
+function filterContentByTag() {
+    const rows = document.querySelectorAll('.content-row');
+    const filterRows = document.querySelectorAll('.tag-filter-row');
+    
+    const activeTagIds = [];
+    filterRows.forEach(row => {
+        const tagSelect = row.querySelector('.content-tag-select');
+        if (tagSelect && tagSelect.value) {
+            activeTagIds.push(tagSelect.value);
+        }
+    });
+    
+    rows.forEach(row => {
+        const rowTags = row.dataset.tags ? row.dataset.tags.split(',').filter(t => t) : [];
+        
+        if (activeTagIds.length === 0) {
+            row.classList.remove('hidden');
+        } else {
+            const matchesAll = activeTagIds.every(tagId => rowTags.includes(tagId));
+            row.classList.toggle('hidden', !matchesAll);
+        }
+    });
+}
+
+function clearContentFilters() {
+    const container = document.getElementById('content-tag-filters');
+    const filterRows = container.querySelectorAll('.tag-filter-row');
+    
+    filterRows.forEach((row, index) => {
+        if (index === 0) {
+            row.querySelector('.content-group-select').value = '';
+            const tagSelect = row.querySelector('.content-tag-select');
+            tagSelect.innerHTML = '<option value="">Выберите тег</option>';
+            tagSelect.disabled = true;
+        } else {
+            row.remove();
+        }
+    });
+    
+    filterContentByTag();
+}
+</script>
 {% endblock %}
