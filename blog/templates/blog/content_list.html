@@ -78,11 +78,7 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4">
-                            {% if content.category == 'yoga' %}
-                            <span class="text-muted-foreground">Йога</span>
-                            {% else %}
-                            <span class="text-muted-foreground">Эфирные масла</span>
-                            {% endif %}
+                            <span class="text-muted-foreground">{{ content.category.name|default:"—" }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1">

@@ -23,12 +23,11 @@
                         <button onclick="filterCards('all')" class="filter-btn active px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="all">
                             Все
                         </button>
-                        <button onclick="filterCards('yoga')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="yoga">
-                            Йога
+                        {% for cat in categories %}
+                        <button onclick="filterCards('{{ cat.code }}')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="{{ cat.code }}">
+                            {{ cat.name }}
                         </button>
-                        <button onclick="filterCards('oils')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="oils">
-                            Эфирные масла
-                        </button>
+                        {% endfor %}
                     </div>
                     
                     <div class="relative w-full sm:w-72">
@@ -69,7 +68,7 @@
             
             <div id="cards-container" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 {% for video in videos %}
-                    <div class="content-card" data-category="{{ video.category|lower }}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
+                    <div class="content-card" data-category="{{ video.category.code|default:''|lower }}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
                         {% include 'blog/partials/_video_card.html' with video=video %}
                     </div>
                 {% empty %}
@@ -126,9 +125,42 @@ let currentSearch = '';
 
 const tagGroupsData = {
     {% for group in tag_groups %}
-    {{ group.id }}: [{% for tag in group.tags.all %}{"id": {{ tag.id }}, "name": "{{ tag.name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+    {{ group.id }}: {
+        "name": "{{ group.name|escapejs }}",
+        "applies_to_all": {{ group.applies_to_all|yesno:"true,false" }},
+        "categories": [{% for cat in group.categories.all %}"{{ cat.code }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        "tags": [{% for tag in group.tags.all %}{"id": {{ tag.id }}, "name": "{{ tag.name|escapejs }}"}{% if not forloop.last %}, {% endif %}{% endfor %}]
+    }{% if not forloop.last %},{% endif %}
     {% endfor %}
 };
+
+function isGroupVisibleForCategory(groupId, category) {
+    const group = tagGroupsData[groupId];
+    if (!group) return false;
+    if (group.applies_to_all) return true;
+    if (category === 'all') return true;
+    return group.categories.includes(category);
+}
+
+function updateGroupSelectOptions() {
+    document.querySelectorAll('.group-select').forEach(select => {
+        const currentValue = select.value;
+        Array.from(select.options).forEach(option => {
+            if (option.value === '') return;
+            const groupId = parseInt(option.value);
+            const visible = isGroupVisibleForCategory(groupId, currentFilter);
+            option.style.display = visible ? '' : 'none';
+            if (!visible && select.value === option.value) {
+                select.value = '';
+                const tagSelect = select.closest('.tag-filter-row').querySelector('.tag-select');
+                if (tagSelect) {
+                    tagSelect.innerHTML = '<option value="">Тег</option>';
+                    tagSelect.disabled = true;
+                }
+            }
+        });
+    });
+}
 
 function filterCards(category) {
     currentFilter = category;
@@ -140,6 +172,7 @@ function filterCards(category) {
         }
     });
     
+    updateGroupSelectOptions();
     applyFilters();
 }
 
@@ -151,7 +184,7 @@ function updateTagSelect(groupSelect) {
     tagSelect.innerHTML = '<option value="">Тег</option>';
     
     if (groupId && tagGroupsData[groupId]) {
-        tagGroupsData[groupId].forEach(tag => {
+        tagGroupsData[groupId].tags.forEach(tag => {
             const option = document.createElement('option');
             option.value = tag.id;
             option.textContent = tag.name;

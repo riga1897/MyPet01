@@ -1,6 +1,13 @@
 from django.contrib import admin
 from mypet_project.config import settings
-from .models import Content, Tag, TagGroup
+from .models import Category, Content, Tag, TagGroup
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    list_display = ('name', 'code', 'slug', 'created_at')
+    search_fields = ('name', 'code')
+    prepopulated_fields = {'slug': ('name',)}
 
 
 class TagInline(admin.TabularInline):  # type: ignore[type-arg]
@@ -10,10 +17,18 @@ class TagInline(admin.TabularInline):  # type: ignore[type-arg]
 
 @admin.register(TagGroup)
 class TagGroupAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'slug', 'created_at')
+    list_display = ('name', 'slug', 'applies_to_all', 'get_categories', 'created_at')
+    list_filter = ('applies_to_all', 'categories')
     search_fields = ('name',)
     prepopulated_fields = {'slug': ('name',)}
+    filter_horizontal = ('categories',)
     inlines = [TagInline]
+
+    def get_categories(self, obj: TagGroup) -> str:
+        if obj.applies_to_all:
+            return 'Все'
+        return ', '.join(c.name for c in obj.categories.all())
+    get_categories.short_description = 'Категории'  # type: ignore[attr-defined]
 
 
 @admin.register(Tag)

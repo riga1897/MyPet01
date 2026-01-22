@@ -1,22 +1,35 @@
 from django import forms
-from blog.models import Content, Tag, TagGroup
+from blog.models import Category, Content, Tag, TagGroup
 
 
 FORM_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
+CHECKBOX_CLASS = 'w-4 h-4 text-primary border-border rounded focus:ring-primary'
 
 
 class TagGroupForm(forms.ModelForm):  # type: ignore[type-arg]
     class Meta:
         model = TagGroup
-        fields = ['name']
+        fields = ['name', 'applies_to_all', 'categories']
         labels = {
             'name': 'Название группы',
+            'applies_to_all': 'Применяется ко всем категориям',
+            'categories': 'Категории',
         }
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': FORM_INPUT_CLASS,
                 'placeholder': 'Например: Месяц практики',
             }),
+            'applies_to_all': forms.CheckboxInput(attrs={
+                'class': CHECKBOX_CLASS,
+            }),
+            'categories': forms.CheckboxSelectMultiple(attrs={
+                'class': 'space-y-2',
+            }),
+        }
+        help_texts = {
+            'applies_to_all': 'Если отмечено, группа будет видна для всех категорий',
+            'categories': 'Выберите категории, если группа не применяется ко всем',
         }
 
 

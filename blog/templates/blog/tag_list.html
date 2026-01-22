@@ -34,7 +34,16 @@
         {% for group in tag_groups %}
         <div class="bg-card rounded-2xl shadow-lg overflow-hidden mb-6">
             <div class="bg-muted px-6 py-3 flex items-center justify-between">
-                <h2 class="text-lg font-medium text-foreground">{{ group.name }}</h2>
+                <div class="flex items-center gap-3">
+                    <h2 class="text-lg font-medium text-foreground">{{ group.name }}</h2>
+                    <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded">
+                        {% if group.applies_to_all %}
+                        Все категории
+                        {% else %}
+                        {% for cat in group.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}Нет категорий{% endfor %}
+                        {% endif %}
+                    </span>
+                </div>
                 <div class="space-x-2">
                     <a href="{% url 'blog:taggroup_edit' group.pk %}" 
                        class="text-primary hover:underline text-sm">Редактировать</a>

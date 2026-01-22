@@ -6,6 +6,41 @@ from django.utils.text import slugify
 from core.models import BaseModel
 
 
+class Category(BaseModel):
+    """Content category (e.g., 'Йога', 'Эфирные масла')."""
+
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Название',
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        verbose_name='Слаг',
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name='Код',
+        help_text='Уникальный код для использования в коде (например: yoga, oils)',
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        super().save(*args, **kwargs)
+
+
 class TagGroup(BaseModel):
     """Group of related tags (e.g., 'Месяц практики', 'Настроение')."""
 
@@ -20,6 +55,18 @@ class TagGroup(BaseModel):
         blank=True,
         verbose_name='Слаг',
     )
+    applies_to_all = models.BooleanField(
+        default=True,
+        verbose_name='Применяется ко всем категориям',
+        help_text='Если отмечено, группа будет видна для всех категорий',
+    )
+    categories = models.ManyToManyField(
+        Category,
+        blank=True,
+        related_name='tag_groups',
+        verbose_name='Категории',
+        help_text='Выберите категории, к которым относится эта группа тегов',
+    )
 
     class Meta:
         ordering = ['name']
@@ -33,6 +80,14 @@ class TagGroup(BaseModel):
         if not self.slug:
             self.slug = slugify(self.name, allow_unicode=True)
         super().save(*args, **kwargs)
+
+    def is_visible_for_category(self, category: 'Category | None') -> bool:
+        """Check if this tag group should be visible for the given category."""
+        if self.applies_to_all:
+            return True
+        if category is None:
+            return False
+        return self.categories.filter(pk=category.pk).exists()
 
 
 class Tag(BaseModel):
@@ -74,10 +129,6 @@ class Content(BaseModel):
         VIDEO = 'video', 'Видео'
         PHOTO = 'photo', 'Фото'
 
-    class Category(models.TextChoices):
-        YOGA = 'yoga', 'Йога'
-        OILS = 'oils', 'Эфирные масла'
-
     title = models.CharField(
         max_length=200,
         default='Без названия',
@@ -106,11 +157,13 @@ class Content(BaseModel):
         help_text='Формат: MM:SS',
         verbose_name='Длительность',
     )
-    category = models.CharField(
-        max_length=10,
-        choices=Category.choices,
-        default=Category.YOGA,
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name='contents',
         verbose_name='Категория',
+        null=True,
+        blank=True,
     )
     tags = models.ManyToManyField(
         Tag,

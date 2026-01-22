@@ -9,7 +9,7 @@ from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from blog.cache import get_cached_content_list, set_cached_content_list
 from blog.forms import ContentForm, TagForm, TagGroupForm
-from blog.models import Content, Tag, TagGroup
+from blog.models import Category, Content, Tag, TagGroup
 from users.models import is_moderator
 
 if TYPE_CHECKING:
@@ -25,13 +25,18 @@ class HomeView(ListView):  # type: ignore[type-arg]
         cached = get_cached_content_list()
         if cached is not None:
             return cached
-        queryset = Content.objects.prefetch_related('tags', 'tags__group').all()
+        queryset = Content.objects.select_related('category').prefetch_related(
+            'tags', 'tags__group'
+        ).all()
         return set_cached_content_list(queryset, limit=6)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = is_moderator(self.request.user)
-        context['tag_groups'] = TagGroup.objects.prefetch_related('tags').all()
+        context['tag_groups'] = TagGroup.objects.prefetch_related(
+            'tags', 'categories'
+        ).all()
+        context['categories'] = Category.objects.all()
         return context
 
 
@@ -49,12 +54,17 @@ class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-ar
     ordering = ['-created_at']
 
     def get_queryset(self) -> Any:
-        return Content.objects.prefetch_related('tags', 'tags__group').order_by('-created_at')
+        return Content.objects.select_related('category').prefetch_related(
+            'tags', 'tags__group'
+        ).order_by('-created_at')
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
-        context['tag_groups'] = TagGroup.objects.prefetch_related('tags').all()
+        context['tag_groups'] = TagGroup.objects.prefetch_related(
+            'tags', 'categories'
+        ).all()
+        context['categories'] = Category.objects.all()
         return context
 
 
@@ -111,6 +121,9 @@ class TagListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
     model = TagGroup
     template_name = 'blog/tag_list.html'
     context_object_name = 'tag_groups'
+
+    def get_queryset(self) -> Any:
+        return TagGroup.objects.prefetch_related('tags', 'categories').all()
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
