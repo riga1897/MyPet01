@@ -24,18 +24,18 @@ class CacheUtilsTestCase(TestCase):
         )
         self.video_type, _ = ContentType.objects.get_or_create(
             code='video',
-            defaults={'name': 'Видео', 'slug': 'video', 'upload_folder': 'videos'},
+            defaults={'name': 'Видео', 'upload_folder': 'videos'},
         )
         self.photo_type, _ = ContentType.objects.get_or_create(
             code='photo',
-            defaults={'name': 'Фото', 'slug': 'photo', 'upload_folder': 'photos'},
+            defaults={'name': 'Фото', 'upload_folder': 'photos'},
         )
         self.content = Content.objects.create(
             title='Test Content',
             description='Test Description',
             category=self.yoga_category,
+            content_type=self.video_type,
         )
-        self.content.content_types.add(self.video_type)
 
     def tearDown(self) -> None:
         cache.clear()
@@ -80,12 +80,12 @@ class CacheUtilsTestCase(TestCase):
     def test_set_cached_content_list_respects_limit(self) -> None:
         """Test that set_cached_content_list respects the limit parameter."""
         for i in range(10):
-            c = Content.objects.create(
+            Content.objects.create(
                 title=f'Content {i}',
                 description=f'Description {i}',
                 category=self.yoga_category,
+                content_type=self.video_type,
             )
-            c.content_types.add(self.video_type)
 
         queryset = Content.objects.all()
         result = set_cached_content_list(queryset, limit=5)
@@ -108,11 +108,11 @@ class CacheSignalsTestCase(TestCase):
         )
         self.video_type, _ = ContentType.objects.get_or_create(
             code='video',
-            defaults={'name': 'Видео', 'slug': 'video', 'upload_folder': 'videos'},
+            defaults={'name': 'Видео', 'upload_folder': 'videos'},
         )
         self.photo_type, _ = ContentType.objects.get_or_create(
             code='photo',
-            defaults={'name': 'Фото', 'slug': 'photo', 'upload_folder': 'photos'},
+            defaults={'name': 'Фото', 'upload_folder': 'photos'},
         )
 
     def tearDown(self) -> None:
@@ -124,8 +124,8 @@ class CacheSignalsTestCase(TestCase):
             title='Test Content',
             description='Test Description',
             category=self.yoga_category,
+            content_type=self.video_type,
         )
-        content.content_types.add(self.video_type)
 
         queryset = Content.objects.all()
         set_cached_content_list(queryset, limit=6)
@@ -141,12 +141,12 @@ class CacheSignalsTestCase(TestCase):
         queryset = Content.objects.all()
         set_cached_content_list(queryset, limit=6)
 
-        c = Content.objects.create(
+        Content.objects.create(
             title='New Content',
             description='New Description',
             category=self.oils_category,
+            content_type=self.photo_type,
         )
-        c.content_types.add(self.photo_type)
 
         self.assertIsNone(get_cached_content_list())
 
@@ -156,8 +156,8 @@ class CacheSignalsTestCase(TestCase):
             title='Test Content',
             description='Test Description',
             category=self.yoga_category,
+            content_type=self.video_type,
         )
-        content.content_types.add(self.video_type)
 
         queryset = Content.objects.all()
         set_cached_content_list(queryset, limit=6)

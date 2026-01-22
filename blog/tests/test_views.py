@@ -229,3 +229,41 @@ class TestCheckContentTypeCodeView:
         response = client.get('/api/check-contenttype-code/', {'code': 'testcode', 'exclude_id': 'invalid'})
         data = response.json()
         assert data['available'] is False
+
+
+@pytest.mark.django_db
+class TestCheckContentTypeFolderView:
+    def test_available_folder_returns_true(self) -> None:
+        client = Client()
+        response = client.get('/api/check-contenttype-folder/', {'folder': 'newfolder'})
+        data = response.json()
+        assert data['available'] is True
+        assert data['folder'] == 'newfolder'
+
+    def test_taken_folder_returns_false(self) -> None:
+        ContentType.objects.create(name='Existing', code='existing', upload_folder='existing_folder')
+        client = Client()
+        response = client.get('/api/check-contenttype-folder/', {'folder': 'existing_folder'})
+        data = response.json()
+        assert data['available'] is False
+        assert data['folder'] == 'existing_folder'
+
+    def test_exclude_id_allows_own_folder(self) -> None:
+        ct = ContentType.objects.create(name='Test', code='testcode', upload_folder='testfolder')
+        client = Client()
+        response = client.get('/api/check-contenttype-folder/', {'folder': 'testfolder', 'exclude_id': str(ct.pk)})
+        data = response.json()
+        assert data['available'] is True
+
+    def test_empty_folder_returns_available(self) -> None:
+        client = Client()
+        response = client.get('/api/check-contenttype-folder/', {'folder': ''})
+        data = response.json()
+        assert data['available'] is True
+
+    def test_invalid_exclude_id_ignored(self) -> None:
+        ContentType.objects.create(name='Test', code='testcode', upload_folder='testfolder')
+        client = Client()
+        response = client.get('/api/check-contenttype-folder/', {'folder': 'testfolder', 'exclude_id': 'invalid'})
+        data = response.json()
+        assert data['available'] is False

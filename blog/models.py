@@ -147,12 +147,9 @@ class Tag(BaseModel):
 
 def content_file_upload_path(instance: 'Content', filename: str) -> str:
     """Generate upload path based on content type."""
-    content_types = list(instance.content_types.all()) if instance.pk else []
-    if content_types:
-        first_type = content_types[0]
-        if first_type.upload_folder:
-            folder = first_type.upload_folder.strip('/')
-            return f'{folder}/{filename}'
+    if instance.content_type and instance.content_type.upload_folder:
+        folder = instance.content_type.upload_folder.strip('/')
+        return f'{folder}/{filename}'
     return f'content/{filename}'
 
 
@@ -216,11 +213,13 @@ class Content(BaseModel):
         verbose_name='Название',
     )
     description = models.TextField(blank=True, verbose_name='Описание')
-    content_types = models.ManyToManyField(
+    content_type = models.ForeignKey(
         ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name='contents',
-        verbose_name='Типы контента',
+        verbose_name='Тип контента',
     )
     video_file = models.FileField(
         upload_to=content_file_upload_path,
@@ -269,9 +268,9 @@ class Content(BaseModel):
 
     def _has_content_type_code(self, code: str) -> bool:
         """Check if content has a specific content type by code."""
-        if not self.pk:
+        if not self.content_type:
             return False
-        return self.content_types.filter(code=code).exists()
+        return self.content_type.code == code
 
     def has_video_type(self) -> bool:
         """Check if content has video type."""

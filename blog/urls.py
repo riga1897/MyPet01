@@ -2,6 +2,7 @@ from django.urls import path
 
 from blog.views import (
     CheckContentTypeCodeView,
+    CheckContentTypeFolderView,
     ContentCreateView,
     ContentDeleteView,
     ContentListView,
@@ -34,4 +35,5 @@ urlpatterns = [
     path('tags/<int:pk>/delete/', TagDeleteView.as_view(), name='tag_delete'),
     path('tags/reorder/', TagReorderView.as_view(), name='tag_reorder'),
     path('api/check-contenttype-code/', CheckContentTypeCodeView.as_view(), name='check_contenttype_code'),
+    path('api/check-contenttype-folder/', CheckContentTypeFolderView.as_view(), name='check_contenttype_folder'),
 ]

@@ -33,9 +33,9 @@
 
     function showMessage(field, message, isError) {
         let msgEl = field.nextElementSibling;
-        if (!msgEl || !msgEl.classList.contains('code-status')) {
+        if (!msgEl || !msgEl.classList.contains('field-status')) {
             msgEl = document.createElement('span');
-            msgEl.classList.add('code-status');
+            msgEl.classList.add('field-status');
             msgEl.style.marginLeft = '10px';
             msgEl.style.fontSize = '11px';
             field.parentNode.insertBefore(msgEl, field.nextSibling);
@@ -46,7 +46,7 @@
 
     function clearMessage(field) {
         const msgEl = field.nextElementSibling;
-        if (msgEl && msgEl.classList.contains('code-status')) {
+        if (msgEl && msgEl.classList.contains('field-status')) {
             msgEl.textContent = '';
         }
     }
@@ -62,6 +62,21 @@
             return await response.json();
         } catch (e) {
             console.error('Error checking code:', e);
+            return { available: true };
+        }
+    }
+
+    async function checkFolderAvailability(folder, excludeId) {
+        if (!folder) return { available: true };
+        
+        const params = new URLSearchParams({ folder });
+        if (excludeId) params.append('exclude_id', excludeId);
+        
+        try {
+            const response = await fetch(`/api/check-contenttype-folder/?${params}`);
+            return await response.json();
+        } catch (e) {
+            console.error('Error checking folder:', e);
             return { available: true };
         }
     }
@@ -101,10 +116,11 @@
             codeField.value = newCode;
             if (folderField && !userEditedFolder) {
                 folderField.value = newCode;
+                debouncedCheckFolder(newCode);
             }
         }
 
-        const debouncedCheck = debounce(async function(code, autoFix = false) {
+        const debouncedCheckCode = debounce(async function(code, autoFix = false) {
             if (!code) {
                 clearMessage(codeField);
                 return;
@@ -127,11 +143,26 @@
             }
         }, 300);
 
+        const debouncedCheckFolder = debounce(async function(folder) {
+            if (!folder || !folderField) {
+                if (folderField) clearMessage(folderField);
+                return;
+            }
+            
+            const result = await checkFolderAvailability(folder, excludeId);
+            
+            if (result.available) {
+                showMessage(folderField, '✓ Папка доступна', false);
+            } else {
+                showMessage(folderField, 'Папка занята', true);
+            }
+        }, 300);
+
         nameField.addEventListener('input', function() {
             if (!userEditedCode) {
                 const newCode = transliterate(nameField.value);
                 updateCode(newCode);
-                debouncedCheck(newCode, true);
+                debouncedCheckCode(newCode, true);
             }
         });
 
@@ -139,18 +170,23 @@
             userEditedCode = codeField.value !== '';
             if (folderField && !userEditedFolder) {
                 folderField.value = codeField.value;
+                debouncedCheckFolder(codeField.value);
             }
-            debouncedCheck(codeField.value, false);
+            debouncedCheckCode(codeField.value, false);
         });
 
         if (folderField) {
             folderField.addEventListener('input', function() {
                 userEditedFolder = folderField.value !== '' && folderField.value !== codeField.value;
+                debouncedCheckFolder(folderField.value);
             });
         }
 
         if (codeField.value) {
-            debouncedCheck(codeField.value, false);
+            debouncedCheckCode(codeField.value, false);
+        }
+        if (folderField && folderField.value) {
+            debouncedCheckFolder(folderField.value);
         }
     });
 })();

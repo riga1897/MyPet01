@@ -1,10 +1,10 @@
 {% comment %}
-Content type select dropdown with multi-select (like tags).
+Content type select with radio buttons (single selection).
 Requires:
   - content_types: QuerySet of ContentType
-  - selected_content_type_ids: List of selected content type IDs (optional)
+  - selected_content_type_id: Selected content type ID (optional)
   - has_file: Boolean indicating if file is already uploaded (locks selection)
-Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with content_types=content_types selected_content_type_ids=selected_content_type_ids %}
+Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with content_types=content_types selected_content_type_id=selected_content_type_id %}
 {% endcomment %}
 
 <div id="content-type-select-dropdown" 
@@ -15,8 +15,7 @@ Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with conten
             onclick="toggleContentTypeDropdown(this)"
             {% if has_file %}disabled{% endif %}
             class="dropdown-toggle flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card text-sm hover:bg-muted transition-colors">
-        <span class="group-name">Тип контента</span>
-        <span class="selected-count hidden text-xs bg-primary text-white rounded-full px-1.5">0</span>
+        <span class="selected-type-name">{% if selected_content_type_id %}{% for ct in content_types %}{% if ct.id == selected_content_type_id %}{{ ct.name }}{% endif %}{% endfor %}{% else %}Выберите тип{% endif %}</span>
         <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -27,35 +26,32 @@ Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with conten
     {% endif %}
     
     <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 py-1">
-        <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer border-b border-border">
-            <input type="checkbox" 
-                   class="select-all-content-types w-4 h-4 text-primary border-border rounded focus:ring-primary"
-                   onchange="handleSelectAllContentTypes(this)">
-            <span class="text-sm font-medium">Выбрать все</span>
+        <label class="content-type-radio-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
+            <input type="radio" 
+                   name="content_type"
+                   class="content-type-radio w-4 h-4 text-primary border-border focus:ring-primary"
+                   value=""
+                   data-content-type-code=""
+                   data-content-type-name="Без типа"
+                   {% if not selected_content_type_id %}checked{% endif %}
+                   onchange="handleContentTypeRadioChange(this)">
+            <span class="text-sm text-muted-foreground">Без типа</span>
         </label>
         
         {% for ct in content_types %}
-        <label class="content-type-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
-            <input type="checkbox" 
-                   name="content_types"
-                   class="content-type-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+        <label class="content-type-radio-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
+            <input type="radio" 
+                   name="content_type"
+                   class="content-type-radio w-4 h-4 text-primary border-border focus:ring-primary"
                    value="{{ ct.id }}"
                    data-content-type-code="{{ ct.code }}"
                    data-content-type-name="{{ ct.name }}"
                    data-upload-folder="{{ ct.upload_folder }}"
-                   {% if ct.id in selected_content_type_ids %}checked{% endif %}
-                   onchange="handleContentTypeCheckboxChange(this)">
+                   {% if ct.id == selected_content_type_id %}checked{% endif %}
+                   onchange="handleContentTypeRadioChange(this)">
             <span class="text-sm">{{ ct.name }}</span>
         </label>
         {% endfor %}
-        
-        <div class="border-t border-border mt-1 pt-1">
-            <button type="button" 
-                    onclick="clearContentTypeSelection()" 
-                    class="w-full text-left px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted transition-colors">
-                Сбросить
-            </button>
-        </div>
     </div>
 </div>
 
@@ -84,65 +80,11 @@ if (typeof window._contentTypeSelectInitialized === 'undefined') {
     }
     window.toggleContentTypeDropdown = toggleContentTypeDropdown;
 
-    function handleSelectAllContentTypes(checkbox) {
-        const dropdown = checkbox.closest('.content-type-select-dropdown');
-        const typeCheckboxes = dropdown.querySelectorAll('.content-type-checkbox');
+    function handleContentTypeRadioChange(radio) {
+        const dropdown = radio.closest('.content-type-select-dropdown');
+        const nameSpan = dropdown.querySelector('.selected-type-name');
         
-        typeCheckboxes.forEach(cb => {
-            cb.checked = checkbox.checked;
-        });
-        
-        updateContentTypeSelectedCount(dropdown);
-        notifyContentTypeChange();
-    }
-    window.handleSelectAllContentTypes = handleSelectAllContentTypes;
-
-    function handleContentTypeCheckboxChange(checkbox) {
-        const dropdown = checkbox.closest('.content-type-select-dropdown');
-        updateContentTypeSelectAllState(dropdown);
-        updateContentTypeSelectedCount(dropdown);
-        notifyContentTypeChange();
-    }
-    window.handleContentTypeCheckboxChange = handleContentTypeCheckboxChange;
-
-    function updateContentTypeSelectAllState(dropdown) {
-        const typeCheckboxes = dropdown.querySelectorAll('.content-type-checkbox');
-        const selectAllCheckbox = dropdown.querySelector('.select-all-content-types');
-        
-        if (typeCheckboxes.length === 0) {
-            selectAllCheckbox.checked = false;
-            return;
-        }
-        
-        const allChecked = Array.from(typeCheckboxes).every(cb => cb.checked);
-        selectAllCheckbox.checked = allChecked;
-    }
-    window.updateContentTypeSelectAllState = updateContentTypeSelectAllState;
-
-    function updateContentTypeSelectedCount(dropdown) {
-        const checkedBoxes = dropdown.querySelectorAll('.content-type-checkbox:checked');
-        const countBadge = dropdown.querySelector('.selected-count');
-        const count = checkedBoxes.length;
-        
-        if (count > 0) {
-            countBadge.textContent = count;
-            countBadge.classList.remove('hidden');
-        } else {
-            countBadge.classList.add('hidden');
-        }
-    }
-    window.updateContentTypeSelectedCount = updateContentTypeSelectedCount;
-
-    function clearContentTypeSelection() {
-        const dropdown = document.querySelector('.content-type-select-dropdown');
-        if (!dropdown) return;
-        
-        dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.checked = false;
-        });
-        
-        updateContentTypeSelectAllState(dropdown);
-        updateContentTypeSelectedCount(dropdown);
+        nameSpan.textContent = radio.dataset.contentTypeName || 'Выберите тип';
         
         const menu = dropdown.querySelector('.dropdown-menu');
         const arrow = dropdown.querySelector('.dropdown-arrow');
@@ -151,13 +93,13 @@ if (typeof window._contentTypeSelectInitialized === 'undefined') {
         
         notifyContentTypeChange();
     }
-    window.clearContentTypeSelection = clearContentTypeSelection;
+    window.handleContentTypeRadioChange = handleContentTypeRadioChange;
 
     function notifyContentTypeChange() {
         if (typeof onContentTypeChanged === 'function') {
-            const checkedTypes = document.querySelectorAll('.content-type-checkbox:checked');
-            const codes = Array.from(checkedTypes).map(cb => cb.dataset.contentTypeCode);
-            onContentTypeChanged(codes);
+            const selectedRadio = document.querySelector('.content-type-radio:checked');
+            const code = selectedRadio ? selectedRadio.dataset.contentTypeCode : '';
+            onContentTypeChanged(code ? [code] : []);
         }
     }
 
@@ -168,14 +110,6 @@ if (typeof window._contentTypeSelectInitialized === 'undefined') {
                 const arrow = menu.closest('.content-type-select-dropdown')?.querySelector('.dropdown-arrow');
                 if (arrow) arrow.classList.remove('rotate-180');
             });
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const dropdown = document.querySelector('.content-type-select-dropdown');
-        if (dropdown) {
-            updateContentTypeSelectAllState(dropdown);
-            updateContentTypeSelectedCount(dropdown);
         }
     });
 }

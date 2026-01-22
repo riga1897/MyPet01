@@ -35,7 +35,7 @@ class HomeView(ListView):  # type: ignore[type-arg]
         if cached is not None:
             return cached
         queryset = Content.objects.select_related('category').prefetch_related(
-            'tags', 'tags__group', 'content_types'
+            'tags', 'tags__group', 'content_type'
         ).all()
         return set_cached_content_list(queryset, limit=6)
 
@@ -88,7 +88,7 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
         context.update(get_filter_context())
         context['selected_tag_ids'] = []
         context['selected_category_id'] = None
-        context['selected_content_type_ids'] = []
+        context['selected_content_type_id'] = None
         context['current_category_code'] = None
         context['has_file'] = False
         return context
@@ -112,7 +112,7 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         content = self.object
         context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
         context['selected_category_id'] = content.category_id
-        context['selected_content_type_ids'] = list(content.content_types.values_list('id', flat=True))
+        context['selected_content_type_id'] = content.content_type_id
         context['current_category_code'] = content.category.code if content.category else None
         context['has_file'] = bool(content.video_file)
         return context
@@ -307,3 +307,28 @@ class CheckContentTypeCodeView(View):
         
         available = not queryset.exists()
         return JsonResponse({'available': available, 'code': code})
+
+
+class CheckContentTypeFolderView(View):
+    """API endpoint to check if ContentType upload_folder is available."""
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        folder = request.GET.get('folder', '').strip()
+        exclude_id_str = request.GET.get('exclude_id')
+        exclude_id: int | None = None
+        
+        if exclude_id_str:
+            try:
+                exclude_id = int(exclude_id_str)
+            except (ValueError, TypeError):
+                pass
+        
+        if not folder:
+            return JsonResponse({'available': True})
+        
+        queryset = ContentType.objects.filter(upload_folder=folder)
+        if exclude_id:
+            queryset = queryset.exclude(pk=exclude_id)
+        
+        available = not queryset.exists()
+        return JsonResponse({'available': available, 'folder': folder})

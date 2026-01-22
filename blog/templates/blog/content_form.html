@@ -40,9 +40,9 @@
                     <label class="block text-sm font-medium text-foreground mb-1">
                         Тип контента
                     </label>
-                    {% include "blog/partials/_content_type_select_dropdown.html" with content_types=content_types selected_content_type_ids=selected_content_type_ids has_file=has_file %}
-                    {% if form.content_types.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.content_types.errors.0 }}</p>
+                    {% include "blog/partials/_content_type_select_dropdown.html" with content_types=content_types selected_content_type_id=selected_content_type_id has_file=has_file %}
+                    {% if form.content_type.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.content_type.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
@@ -142,32 +142,24 @@
     const hasExistingFile = {{ has_file|yesno:"true,false" }};
     let fileSelected = false;
     
-    function getSelectedContentTypeCodes() {
-        const checked = document.querySelectorAll('.content-type-checkbox:checked');
-        return Array.from(checked).map(cb => cb.dataset.contentTypeCode);
+    function getSelectedContentTypeCode() {
+        const selected = document.querySelector('.content-type-radio:checked');
+        return selected ? selected.dataset.contentTypeCode : '';
     }
     
     function updateFileInput() {
-        const codes = getSelectedContentTypeCodes();
+        const code = getSelectedContentTypeCode();
         const fileInput = document.getElementById('id_video_file');
         const fileLabel = document.getElementById('file-label');
         const fileHint = document.getElementById('file-hint');
         const durationField = document.getElementById('duration-field');
         
-        const hasVideo = codes.includes('video');
-        const hasPhoto = codes.includes('photo');
-        
-        if (hasVideo && hasPhoto) {
-            fileInput.accept = 'video/*,image/*';
-            fileLabel.textContent = 'Видео или фото';
-            fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV, JPG, PNG, WebP, GIF';
-            durationField.classList.remove('hidden');
-        } else if (hasVideo) {
+        if (code === 'video') {
             fileInput.accept = 'video/*';
             fileLabel.textContent = 'Видео файл';
             fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
             durationField.classList.remove('hidden');
-        } else if (hasPhoto) {
+        } else if (code === 'photo') {
             fileInput.accept = 'image/*';
             fileLabel.textContent = 'Фото';
             fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
