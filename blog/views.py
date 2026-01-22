@@ -87,6 +87,10 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
         context['action'] = 'Создать'
+        context.update(get_filter_context())
+        context['selected_tag_ids'] = []
+        context['selected_category_id'] = None
+        context['current_category_code'] = None
         return context
 
 
@@ -104,6 +108,12 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
         context['action'] = 'Редактировать'
+        context.update(get_filter_context())
+        content = self.object
+        context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
+        context['selected_category_id'] = content.category_id
+        context['current_category_code'] = content.category.code if content.category else None
+        context['has_file'] = bool(content.video_file)
         return context
 
 

@@ -1,0 +1,219 @@
+{% comment %}
+Tag select dropdowns with multi-select and "Select All" for form.
+Requires:
+  - tag_groups: QuerySet of TagGroup with prefetched tags and categories
+  - selected_tag_ids: List/QuerySet of selected tag IDs (optional)
+  - current_category_code: Code of currently selected category (optional)
+Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag_groups selected_tag_ids=selected_tag_ids %}
+{% endcomment %}
+
+{% if tag_groups %}
+<div id="tag-select-container" class="tag-select-dropdowns">
+    <div class="flex flex-wrap items-start gap-3">
+        <span class="text-sm text-muted-foreground py-2">Теги:</span>
+        
+        {% for group in tag_groups %}
+        <div class="tag-group-select relative" 
+             data-group-id="{{ group.id }}" 
+             data-categories="{% for cat in group.categories.all %}{{ cat.code }},{% endfor %}">
+            <button type="button" 
+                    onclick="toggleTagSelectDropdown(this)"
+                    class="dropdown-toggle flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card text-sm hover:bg-muted transition-colors">
+                <span class="group-name">{{ group.name }}</span>
+                <span class="selected-count hidden text-xs bg-primary text-white rounded-full px-1.5">0</span>
+                <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            
+            <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 py-1">
+                <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer border-b border-border">
+                    <input type="checkbox" 
+                           class="select-all-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                           data-group-id="{{ group.id }}"
+                           onchange="handleSelectAllTagsForm(this)">
+                    <span class="text-sm font-medium">Выбрать все</span>
+                </label>
+                
+                {% for tag in group.tags.all %}
+                <label class="tag-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
+                    <input type="checkbox" 
+                           name="tags"
+                           class="tag-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                           data-group-id="{{ group.id }}"
+                           data-tag-id="{{ tag.id }}"
+                           value="{{ tag.id }}"
+                           {% if tag.id in selected_tag_ids %}checked{% endif %}
+                           onchange="handleTagCheckboxChangeForm(this)">
+                    <span class="text-sm">{{ tag.name }}</span>
+                </label>
+                {% empty %}
+                <div class="px-3 py-2 text-sm text-muted-foreground">Нет тегов</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <button type="button" onclick="clearAllTagSelectsForm()" class="px-2 py-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors">
+            Сбросить
+        </button>
+    </div>
+    
+    <div id="no-tags-message" class="hidden text-sm text-muted-foreground py-2">
+        Сначала выберите категорию для отображения доступных тегов
+    </div>
+</div>
+
+<script>
+if (typeof window._tagSelectFormInitialized === 'undefined') {
+    window._tagSelectFormInitialized = true;
+
+    function toggleTagSelectDropdown(button) {
+        const dropdown = button.closest('.tag-group-select');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        const arrow = dropdown.querySelector('.dropdown-arrow');
+        const isOpen = !menu.classList.contains('hidden');
+        
+        document.querySelectorAll('.tag-group-select .dropdown-menu, .category-select-dropdown .dropdown-menu').forEach(m => {
+            m.classList.add('hidden');
+            const arrowEl = m.closest('.tag-group-select, .category-select-dropdown')?.querySelector('.dropdown-arrow');
+            if (arrowEl) arrowEl.classList.remove('rotate-180');
+        });
+        
+        if (!isOpen) {
+            menu.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        }
+    }
+    window.toggleTagSelectDropdown = toggleTagSelectDropdown;
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.tag-group-select') && !e.target.closest('.category-select-dropdown')) {
+            document.querySelectorAll('.tag-group-select .dropdown-menu').forEach(menu => {
+                menu.classList.add('hidden');
+                menu.closest('.tag-group-select').querySelector('.dropdown-arrow').classList.remove('rotate-180');
+            });
+        }
+    });
+
+    function handleSelectAllTagsForm(checkbox) {
+        const dropdown = checkbox.closest('.tag-group-select');
+        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
+        
+        tagCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        
+        updateSelectedCountForm(dropdown);
+    }
+    window.handleSelectAllTagsForm = handleSelectAllTagsForm;
+
+    function handleTagCheckboxChangeForm(checkbox) {
+        const dropdown = checkbox.closest('.tag-group-select');
+        updateSelectAllStateForm(dropdown);
+        updateSelectedCountForm(dropdown);
+    }
+    window.handleTagCheckboxChangeForm = handleTagCheckboxChangeForm;
+
+    function updateSelectAllStateForm(dropdown) {
+        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox');
+        const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
+        
+        if (tagCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            return;
+        }
+        
+        const allChecked = Array.from(tagCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+    window.updateSelectAllStateForm = updateSelectAllStateForm;
+
+    function updateSelectedCountForm(dropdown) {
+        const tagCheckboxes = dropdown.querySelectorAll('.tag-checkbox:checked');
+        const countBadge = dropdown.querySelector('.selected-count');
+        const count = tagCheckboxes.length;
+        
+        if (count > 0) {
+            countBadge.textContent = count;
+            countBadge.classList.remove('hidden');
+        } else {
+            countBadge.classList.add('hidden');
+        }
+    }
+    window.updateSelectedCountForm = updateSelectedCountForm;
+
+    function clearAllTagSelectsForm() {
+        document.querySelectorAll('.tag-group-select').forEach(dropdown => {
+            dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            updateSelectAllStateForm(dropdown);
+            updateSelectedCountForm(dropdown);
+        });
+    }
+    window.clearAllTagSelectsForm = clearAllTagSelectsForm;
+
+    function updateTagGroupsVisibilityForm(categoryCode) {
+        const container = document.getElementById('tag-select-container');
+        if (!container) return;
+        
+        const noTagsMessage = document.getElementById('no-tags-message');
+        const dropdowns = container.querySelectorAll('.tag-group-select');
+        let visibleCount = 0;
+        
+        dropdowns.forEach(dropdown => {
+            const categories = dropdown.dataset.categories;
+            const isVisible = categories === '' || 
+                             (categoryCode && categories.includes(categoryCode + ','));
+            
+            if (isVisible && categoryCode) {
+                dropdown.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                dropdown.classList.add('hidden');
+                dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+                updateSelectAllStateForm(dropdown);
+                updateSelectedCountForm(dropdown);
+            }
+        });
+        
+        if (noTagsMessage) {
+            if (!categoryCode) {
+                noTagsMessage.classList.remove('hidden');
+                container.querySelector('.flex')?.classList.add('hidden');
+            } else {
+                noTagsMessage.classList.add('hidden');
+                container.querySelector('.flex')?.classList.remove('hidden');
+            }
+        }
+    }
+    window.updateTagGroupsVisibilityForm = updateTagGroupsVisibilityForm;
+
+    function onCategoryChanged(categoryCode, categoryId) {
+        updateTagGroupsVisibilityForm(categoryCode);
+        
+        if (typeof onContentTypeOrCategoryChanged === 'function') {
+            onContentTypeOrCategoryChanged();
+        }
+    }
+    window.onCategoryChanged = onCategoryChanged;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.tag-group-select').forEach(dropdown => {
+            updateSelectAllStateForm(dropdown);
+            updateSelectedCountForm(dropdown);
+        });
+        
+        const checkedRadio = document.querySelector('.category-radio:checked');
+        if (checkedRadio && checkedRadio.value) {
+            updateTagGroupsVisibilityForm(checkedRadio.dataset.categoryCode);
+        } else {
+            updateTagGroupsVisibilityForm(null);
+        }
+    });
+}
+</script>
+{% endif %}

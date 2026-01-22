@@ -4,15 +4,23 @@
         {% if video.thumbnail %}
         <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
         {% else %}
-        <div class="w-full h-full flex items-center justify-center bg-muted">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="text-muted-foreground">
+        <div class="w-full h-full flex items-center justify-center bg-muted dark:bg-gray-700">
+            {% if video.has_playable_video %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="text-gray-400 dark:text-gray-500">
                 <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
+            {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="text-gray-400 dark:text-gray-500">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            {% endif %}
         </div>
         {% endif %}
         <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <div class="rounded-full bg-primary/90 p-4 backdrop-blur-sm">
-                {% if video.content_type == 'video' %}
+                {% if video.has_playable_video %}
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
                     <polygon points="5 3 19 12 5 21 5 3"/>
                 </svg>
@@ -23,7 +31,7 @@
                 {% endif %}
             </div>
         </div>
-        {% if video.duration %}
+        {% if video.has_playable_video and video.duration %}
         <div class="absolute bottom-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-xs text-white">
             {{ video.duration }}
         </div>
@@ -31,11 +39,13 @@
     </div>
     
     <div class="p-5">
+        {% if video.category %}
         <div class="mb-2">
-            <span class="inline-block px-3 py-1 rounded-full text-xs {% if video.category == 'yoga' %}bg-primary/10 text-primary{% else %}bg-secondary/10 text-secondary{% endif %}">
-                {% if video.category == 'yoga' %}Йога{% elif video.category == 'oils' %}Эфирные масла{% else %}{{ video.get_category_display }}{% endif %}
+            <span class="inline-block px-3 py-1 rounded-full text-xs {% if video.category.code == 'yoga' %}bg-primary/10 text-primary{% else %}bg-secondary/10 text-secondary{% endif %}">
+                {{ video.category.name }}
             </span>
         </div>
+        {% endif %}
         
         <h3 class="mb-2 line-clamp-2 group-hover:text-primary transition-colors text-lg font-medium">
             {{ video.title }}

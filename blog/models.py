@@ -8,6 +8,11 @@ from django.db import models
 from django.utils.text import slugify
 from PIL import Image, UnidentifiedImageError
 
+from blog.services import (
+    generate_thumbnail_from_image,
+    generate_thumbnail_from_video,
+    get_video_duration,
+)
 from core.models import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -194,9 +199,43 @@ class Content(BaseModel):
         return self.title
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        self._process_content_type()
         if self.thumbnail and self._is_new_thumbnail():
             self._compress_thumbnail()
         super().save(*args, **kwargs)
+        self._process_auto_fields_after_save()
+
+    def _process_content_type(self) -> None:
+        """Set duration to empty for photo content type."""
+        if self.content_type == self.ContentType.PHOTO:
+            self.duration = ''
+
+    def _process_auto_fields_after_save(self) -> None:
+        """Process auto-duration and auto-thumbnail after initial save."""
+        needs_update = False
+        
+        if self.content_type == self.ContentType.VIDEO and self.video_file:
+            if not self.duration:
+                duration = get_video_duration(self.video_file)
+                if duration:
+                    self.duration = duration
+                    needs_update = True
+            
+            if not self.thumbnail:
+                thumbnail = generate_thumbnail_from_video(self.video_file)
+                if thumbnail:
+                    self.thumbnail = thumbnail
+                    needs_update = True
+        
+        elif self.content_type == self.ContentType.PHOTO and self.video_file:
+            if not self.thumbnail:
+                thumbnail = generate_thumbnail_from_image(self.video_file)
+                if thumbnail:
+                    self.thumbnail = thumbnail
+                    needs_update = True
+        
+        if needs_update:
+            super().save(update_fields=['duration', 'thumbnail'])
 
     def _is_new_thumbnail(self) -> bool:
         """Check if thumbnail is a newly uploaded file."""
@@ -222,3 +261,7 @@ class Content(BaseModel):
             logger.warning('Failed to compress thumbnail: not a valid image file')
         except OSError as e:
             logger.warning('Failed to compress thumbnail: %s', e)
+
+    def has_playable_video(self) -> bool:
+        """Check if content has a playable video file."""
+        return self.content_type == self.ContentType.VIDEO and bool(self.video_file)

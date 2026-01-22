@@ -1,0 +1,138 @@
+"""Video and image processing services for content management."""
+import logging
+import subprocess
+import tempfile
+from io import BytesIO
+from pathlib import Path
+from typing import Any
+
+from django.core.files.base import ContentFile
+from PIL import Image
+
+logger = logging.getLogger(__name__)
+
+THUMBNAIL_MAX_SIZE = (800, 600)
+THUMBNAIL_QUALITY = 85
+
+
+def get_video_duration(video_file: Any) -> str:
+    """Extract video duration using ffprobe.
+    
+    Args:
+        video_file: Django file field with video content.
+    
+    Returns:
+        Duration string in MM:SS format, or empty string if extraction fails.
+    """
+    if not video_file or not hasattr(video_file, 'path'):
+        return ''
+    
+    try:
+        result = subprocess.run(
+            [
+                'ffprobe',
+                '-v', 'error',
+                '-show_entries', 'format=duration',
+                '-of', 'default=noprint_wrappers=1:nokey=1',
+                str(video_file.path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            duration_seconds = float(result.stdout.strip())
+            minutes = int(duration_seconds // 60)
+            seconds = int(duration_seconds % 60)
+            return f'{minutes}:{seconds:02d}'
+    except (subprocess.TimeoutExpired, ValueError, OSError) as e:
+        logger.warning('Failed to extract video duration: %s', e)
+    
+    return ''
+
+
+def generate_thumbnail_from_video(video_file: Any) -> 'ContentFile[bytes] | None':
+    """Generate thumbnail from first frame of video using ffmpeg.
+    
+    Args:
+        video_file: Django file field with video content.
+    
+    Returns:
+        ContentFile with JPEG thumbnail, or None if generation fails.
+    """
+    if not video_file or not hasattr(video_file, 'path'):
+        return None
+    
+    tmp_path = ''
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+            tmp_path = tmp.name
+        
+        result = subprocess.run(
+            [
+                'ffmpeg',
+                '-y',
+                '-i', str(video_file.path),
+                '-ss', '00:00:01',
+                '-vframes', '1',
+                '-q:v', '2',
+                tmp_path,
+            ],
+            capture_output=True,
+            timeout=60,
+        )
+        
+        if result.returncode == 0:
+            tmp_file = Path(tmp_path)
+            if tmp_file.exists() and tmp_file.stat().st_size > 0:
+                thumbnail_data = tmp_file.read_bytes()
+                tmp_file.unlink()
+                
+                pil_img = Image.open(BytesIO(thumbnail_data))
+                if pil_img.mode in ('RGBA', 'P'):
+                    pil_img = pil_img.convert('RGB')  # type: ignore[assignment]
+                pil_img.thumbnail(THUMBNAIL_MAX_SIZE, Image.Resampling.LANCZOS)
+                
+                output = BytesIO()
+                pil_img.save(output, format='JPEG', quality=THUMBNAIL_QUALITY, optimize=True)
+                output.seek(0)
+                
+                return ContentFile(output.read(), name='video_thumbnail.jpg')
+            
+            if tmp_file.exists():
+                tmp_file.unlink()
+    except (subprocess.TimeoutExpired, OSError) as e:
+        logger.warning('Failed to generate thumbnail from video: %s', e)
+        if tmp_path:
+            Path(tmp_path).unlink(missing_ok=True)
+    
+    return None
+
+
+def generate_thumbnail_from_image(image_file: Any) -> 'ContentFile[bytes] | None':
+    """Generate thumbnail from uploaded image (resize and compress).
+    
+    Args:
+        image_file: Django file field with image content.
+    
+    Returns:
+        ContentFile with JPEG thumbnail, or None if generation fails.
+    """
+    if not image_file:
+        return None
+    
+    try:
+        pil_img = Image.open(image_file)
+        if pil_img.mode in ('RGBA', 'P'):
+            pil_img = pil_img.convert('RGB')  # type: ignore[assignment]
+        pil_img.thumbnail(THUMBNAIL_MAX_SIZE, Image.Resampling.LANCZOS)
+        
+        output = BytesIO()
+        pil_img.save(output, format='JPEG', quality=THUMBNAIL_QUALITY, optimize=True)
+        output.seek(0)
+        
+        return ContentFile(output.read(), name='image_thumbnail.jpg')
+    except (OSError, ValueError) as e:
+        logger.warning('Failed to generate thumbnail from image: %s', e)
+    
+    return None

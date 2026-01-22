@@ -13,20 +13,129 @@
         </div>
         
         <div class="bg-card rounded-2xl shadow-lg p-8">
-            <form method="post" enctype="multipart/form-data" class="space-y-4">
+            <form method="post" enctype="multipart/form-data" class="space-y-5" id="content-form">
                 {% csrf_token %}
                 
-                {% for field in form %}
                 <div>
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-foreground mb-1">
-                        {{ field.label }}
+                    <label for="id_title" class="block text-sm font-medium text-foreground mb-1">
+                        Заголовок
                     </label>
-                    {{ field }}
-                    {% if field.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ field.errors.0 }}</p>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.title.errors.0 }}</p>
                     {% endif %}
                 </div>
-                {% endfor %}
+                
+                <div>
+                    <label for="id_description" class="block text-sm font-medium text-foreground mb-1">
+                        Описание
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-foreground mb-1">
+                        Тип контента
+                    </label>
+                    <div id="content-type-wrapper" class="flex gap-4">
+                        {% for choice in form.content_type %}
+                        <label class="flex items-center gap-2 cursor-pointer {% if has_file %}opacity-50{% endif %}">
+                            <input type="radio" name="content_type" value="{{ choice.data.value }}"
+                                   class="w-4 h-4 text-primary border-border focus:ring-primary"
+                                   {% if choice.data.selected %}checked{% endif %}
+                                   {% if has_file %}disabled{% endif %}
+                                   onchange="onContentTypeChange(this.value)">
+                            <span class="text-sm">{{ choice.data.label }}</span>
+                        </label>
+                        {% endfor %}
+                        {% if has_file %}
+                        <input type="hidden" name="content_type" value="{{ form.content_type.value }}">
+                        <span class="text-xs text-muted-foreground ml-2">(нельзя изменить после загрузки файла)</span>
+                        {% endif %}
+                    </div>
+                    {% if form.content_type.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.content_type.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-foreground mb-1">
+                        Категория
+                    </label>
+                    {% include "blog/partials/_category_select_dropdown.html" with categories=categories selected_category_id=selected_category_id %}
+                    {% if form.category.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-foreground mb-1">
+                        Теги
+                    </label>
+                    {% include "blog/partials/_tag_select_dropdowns.html" with tag_groups=tag_groups selected_tag_ids=selected_tag_ids current_category_code=current_category_code %}
+                    {% if form.tags.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.tags.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div id="file-upload-section">
+                    <label class="block text-sm font-medium text-foreground mb-1">
+                        <span id="file-label">Файл</span>
+                    </label>
+                    <input type="file" 
+                           name="video_file" 
+                           id="id_video_file"
+                           class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                           accept=""
+                           onchange="onFileSelected(this)">
+                    {% if object.video_file %}
+                    <p class="text-sm text-muted-foreground mt-1">
+                        Текущий файл: {{ object.video_file.name|truncatechars:50 }}
+                    </p>
+                    {% endif %}
+                    {% if form.video_file.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.video_file.errors.0 }}</p>
+                    {% endif %}
+                    <p id="file-hint" class="text-xs text-muted-foreground mt-1"></p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-foreground mb-1">
+                        Миниатюра (необязательно)
+                    </label>
+                    <input type="file" 
+                           name="thumbnail" 
+                           id="id_thumbnail"
+                           class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                           accept="image/*">
+                    {% if object.thumbnail %}
+                    <p class="text-sm text-muted-foreground mt-1">
+                        Текущая миниатюра: {{ object.thumbnail.name|truncatechars:50 }}
+                    </p>
+                    {% endif %}
+                    {% if form.thumbnail.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.thumbnail.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Если не выбрана, будет сгенерирована автоматически
+                    </p>
+                </div>
+                
+                <div id="duration-field" class="{% if form.content_type.value == 'photo' %}hidden{% endif %}">
+                    <label for="id_duration" class="block text-sm font-medium text-foreground mb-1">
+                        Длительность (необязательно)
+                    </label>
+                    {{ form.duration }}
+                    {% if form.duration.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.duration.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Формат: MM:SS. Если не указана, будет определена автоматически из видео.
+                    </p>
+                </div>
                 
                 <div class="flex gap-4 pt-4">
                     <button type="submit" 
@@ -42,4 +151,98 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const hasExistingFile = {{ has_file|yesno:"true,false" }};
+    let fileSelected = false;
+    
+    function getContentType() {
+        const checked = document.querySelector('input[name="content_type"]:checked');
+        return checked ? checked.value : 'video';
+    }
+    
+    function updateFileInput() {
+        const contentType = getContentType();
+        const fileInput = document.getElementById('id_video_file');
+        const fileLabel = document.getElementById('file-label');
+        const fileHint = document.getElementById('file-hint');
+        const durationField = document.getElementById('duration-field');
+        
+        if (contentType === 'video') {
+            fileInput.accept = 'video/*';
+            fileLabel.textContent = 'Видео файл';
+            fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
+            durationField.classList.remove('hidden');
+        } else {
+            fileInput.accept = 'image/*';
+            fileLabel.textContent = 'Фото';
+            fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
+            durationField.classList.add('hidden');
+        }
+    }
+    
+    function onContentTypeChange(value) {
+        updateFileInput();
+        
+        const fileInput = document.getElementById('id_video_file');
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+            
+            if ((value === 'photo' && !isImage) || (value === 'video' && !isVideo)) {
+                fileInput.value = '';
+                fileSelected = false;
+                alert('Выбранный файл не соответствует типу контента. Пожалуйста, выберите другой файл.');
+            }
+        }
+    }
+    window.onContentTypeChange = onContentTypeChange;
+    
+    function onFileSelected(input) {
+        if (input.files.length > 0) {
+            fileSelected = true;
+            
+            if (!hasExistingFile) {
+                const radios = document.querySelectorAll('input[name="content_type"]');
+                radios.forEach(radio => {
+                    radio.disabled = true;
+                    radio.closest('label').classList.add('opacity-50');
+                });
+                
+                const wrapper = document.getElementById('content-type-wrapper');
+                let hint = wrapper.querySelector('.type-lock-hint');
+                if (!hint) {
+                    hint = document.createElement('span');
+                    hint.className = 'type-lock-hint text-xs text-muted-foreground ml-2';
+                    hint.textContent = '(нельзя изменить после загрузки файла)';
+                    wrapper.appendChild(hint);
+                }
+                
+                const contentType = getContentType();
+                let hiddenInput = wrapper.querySelector('input[type="hidden"][name="content_type"]');
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'content_type';
+                    wrapper.appendChild(hiddenInput);
+                }
+                hiddenInput.value = contentType;
+            }
+        }
+    }
+    window.onFileSelected = onFileSelected;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        updateFileInput();
+        
+        {% if current_category_code %}
+        if (typeof updateTagGroupsVisibilityForm === 'function') {
+            updateTagGroupsVisibilityForm('{{ current_category_code }}');
+        }
+        {% endif %}
+    });
+})();
+</script>
 {% endblock %}
