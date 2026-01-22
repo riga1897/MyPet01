@@ -75,16 +75,17 @@ TagGroup (inherits BaseModel)
 Tag (inherits BaseModel)
   ├── name: CharField
   ├── slug: SlugField (auto-generated)
-  └── group: ForeignKey → TagGroup
+  ├── group: ForeignKey → TagGroup
+  └── order: PositiveIntegerField (drag-and-drop sorting)
 
 Content (inherits BaseModel)
   ├── title: CharField
   ├── description: TextField
   ├── content_type: video | photo
-  ├── category: ForeignKey → Category (nullable)
-  ├── thumbnail: ImageField
+  ├── categories: ManyToMany → Category (multiple selection)
+  ├── thumbnail: ImageField (auto-compressed)
   ├── video_file: FileField
-  ├── duration: CharField (MM:SS)
+  ├── duration: CharField (MM:SS, auto-extracted)
   └── tags: ManyToMany → Tag
 ```
 
@@ -121,10 +122,26 @@ Content (inherits BaseModel)
 ## How to Run (Replit)
 Click the "Run" button to start the Django development server.
 
-## Future Deployment (Ubuntu 24.04)
-1. Install Docker and Docker Compose on Ubuntu.
-2. Clone the repository.
-3. Run `docker-compose up --build`.
+## Deployment
+
+See `DEPLOYMENT.md` for detailed deployment instructions.
+
+### Quick Start (Docker)
+```bash
+# Development
+docker compose -f docker-compose.dev.yml up --build
+
+# Production
+cp .env.docker.example .env
+# Edit .env with real values
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### CI/CD (GitHub Actions)
+Pipeline: `test` → `lint` → `build` → `deploy`
+- `feature/*` → tests only
+- `release/*` → deploy to preprod
+- `main` → deploy to production
 
 ## Configuration
 Environment variables are managed via `pydantic-settings` in `mypet_project/config.py`:
@@ -208,6 +225,9 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: **Deployment preparation**: Created DEPLOYMENT.md with step-by-step deployment guide, docker-compose.dev.yml, docker-compose.prod.yml, docker-entrypoint.sh, .env.docker.example, GitHub Actions CI/CD workflow.
+- 2026-01-22: **Code optimization**: Replaced N+1 save() loop with bulk_update() in TagReorderView. Moved context['is_moderator'] to ModeratorRequiredMixin base class.
+- 2026-01-22: **CSS optimization**: Added reusable CSS components (.dropdown-toggle, .dropdown-menu, .content-card, .btn-primary, .btn-secondary, .btn-danger) to reduce Tailwind class repetition.
 - 2026-01-22: Moved all CSS styles from base.html to static/css/styles.css. Removed duplicate .dark placeholder styles. Content now supports multiple categories (ManyToMany).
 - 2026-01-22: Added GZipMiddleware for HTTP compression, nginx production config with gzip/static/media serving, Docker setup with gunicorn (4 workers), collectstatic in build.
 - 2026-01-22: Added thumbnail auto-compression on upload (Pillow: max 800x600, JPEG quality 85%), lazy loading for images, browser cache enabled.
@@ -232,3 +252,19 @@ Content cache is automatically invalidated via Django signals when:
 - 2026-01-21: Implemented frontend based on Figma design "Гармония Души" — yoga & essential oils blog.
 - 2026-01-21: Migrated from django-environ to pydantic-settings for fully typed configuration.
 - 2026-01-21: Integrated PostgreSQL, created `blog` app, configured Admin, and documented the TDD workflow in `replit.md`.
+
+## Docker Files Structure
+```
+├── Dockerfile              # Production image with gunicorn
+├── docker-compose.yaml     # Legacy (not used)
+├── docker-compose.dev.yml  # Development with DEBUG=1
+├── docker-compose.prod.yml # Production with nginx
+├── docker-entrypoint.sh    # Migrations + collectstatic + gunicorn
+├── nginx/
+│   └── nginx.conf          # Reverse proxy + gzip + static serving
+├── .env.example            # Replit environment
+├── .env.docker.example     # Docker environment
+└── .github/
+    └── workflows/
+        └── ci-cd.yml       # GitHub Actions pipeline
+```

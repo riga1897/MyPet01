@@ -54,6 +54,11 @@ class ModeratorRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self) -> bool:
         return is_moderator(self.request.user)
 
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context: dict[str, Any] = super().get_context_data(**kwargs)  # type: ignore[misc]
+        context['is_moderator'] = True
+        return context
+
 
 class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
     model = Content
@@ -68,7 +73,6 @@ class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-ar
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context.update(get_filter_context())
         return context
 
@@ -85,7 +89,6 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Создать'
         context.update(get_filter_context())
         context['selected_tag_ids'] = []
@@ -106,7 +109,6 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Редактировать'
         context.update(get_filter_context())
         content = self.object
@@ -125,11 +127,6 @@ class ContentDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[typ
         messages.success(self.request, 'Контент успешно удалён.')
         return super().form_valid(form)
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        return context
-
 
 class TagListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
     model = TagGroup
@@ -141,7 +138,6 @@ class TagListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context.update(get_filter_context())
         return context
 
@@ -158,7 +154,6 @@ class TagGroupCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[ty
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Создать группу'
         return context
 
@@ -175,7 +170,6 @@ class TagGroupUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[ty
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Редактировать группу'
         return context
 
@@ -188,11 +182,6 @@ class TagGroupDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[ty
     def form_valid(self, form: Any) -> HttpResponse:
         messages.success(self.request, 'Группа тегов успешно удалена.')
         return super().form_valid(form)
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        return context
 
 
 class TagCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-arg]
@@ -207,7 +196,6 @@ class TagCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-ar
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Создать тег'
         return context
 
@@ -224,7 +212,6 @@ class TagUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[type-ar
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Редактировать тег'
         return context
 
@@ -237,11 +224,6 @@ class TagDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[type-ar
     def form_valid(self, form: Any) -> HttpResponse:
         messages.success(self.request, 'Тег успешно удалён.')
         return super().form_valid(form)
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        return context
 
 
 class TagReorderView(ModeratorRequiredMixin, View):
@@ -273,7 +255,7 @@ class TagReorderView(ModeratorRequiredMixin, View):
             tag_id_to_order = {tag_id: order for order, tag_id in enumerate(tag_ids)}
             for tag in tags:
                 tag.order = tag_id_to_order[tag.pk]
-                tag.save(update_fields=['order'])
+            Tag.objects.bulk_update(tags, ['order'])
 
             return JsonResponse({'success': True})
         except json.JSONDecodeError:
