@@ -6,13 +6,19 @@
 {% include "blog/partials/_header.html" %}
 
 <div class="min-h-screen p-4 pt-8">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex items-center justify-between mb-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h1 class="text-2xl font-semibold text-foreground">Управление контентом</h1>
-            <a href="{% url 'blog:content_create' %}" 
-               class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                + Добавить контент
-            </a>
+            <div class="flex gap-2">
+                <a href="{% url 'blog:tag_list' %}" 
+                   class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors">
+                    Теги
+                </a>
+                <a href="{% url 'blog:content_create' %}" 
+                   class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                    + Добавить контент
+                </a>
+            </div>
         </div>
         
         {% if messages %}
@@ -25,13 +31,16 @@
         </div>
         {% endif %}
         
-        <div class="bg-card rounded-2xl shadow-lg overflow-hidden">
+        <div class="bg-card rounded-2xl shadow-lg overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-muted">
                     <tr>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Заголовок</th>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Тип</th>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Категория</th>
+                        {% for group in tag_groups %}
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">{{ group.name }}</th>
+                        {% endfor %}
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Создан</th>
                         <th class="text-right px-6 py-3 text-sm font-medium text-foreground">Действия</th>
                     </tr>
@@ -56,6 +65,15 @@
                             <span class="text-muted-foreground">Эфирные масла</span>
                             {% endif %}
                         </td>
+                        {% for group in tag_groups %}
+                        <td class="px-6 py-4">
+                            {% for tag in content.tags.all %}
+                                {% if tag.group == group %}
+                                <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded">{{ tag.name }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        {% endfor %}
                         <td class="px-6 py-4 text-muted-foreground">
                             {{ content.created_at|date:"d.m.Y" }}
                         </td>
@@ -68,7 +86,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                        <td colspan="{{ tag_groups|length|add:5 }}" class="px-6 py-8 text-center text-muted-foreground">
                             Контента пока нет. <a href="{% url 'blog:content_create' %}" class="text-primary hover:underline">Добавить первый</a>
                         </td>
                     </tr>

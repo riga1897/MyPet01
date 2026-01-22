@@ -50,11 +50,24 @@ A personal pet website for the family. This is a Django project using a minimali
 - [x] SEO optimization (meta tags, Open Graph)
 - [x] Favicon for the website
 - [x] Caching system (server-side + browser cache control)
+- [x] Dynamic tag system (TagGroup → Tag → Content ManyToMany)
+- [x] Tag management interface for moderators (CRUD for groups and tags)
+- [x] Tag filters on home page (dropdown per group)
+- [x] Tag columns in content list table (dynamic per group)
 
 ## Data Models
 ```
 BaseModel (abstract)
   └── created_at, updated_at
+
+TagGroup (inherits BaseModel)
+  ├── name: CharField (unique)
+  └── slug: SlugField (auto-generated)
+
+Tag (inherits BaseModel)
+  ├── name: CharField
+  ├── slug: SlugField (auto-generated)
+  └── group: ForeignKey → TagGroup
 
 Content (inherits BaseModel)
   ├── title: CharField
@@ -63,7 +76,8 @@ Content (inherits BaseModel)
   ├── category: yoga | oils
   ├── thumbnail: ImageField
   ├── video_file: FileField
-  └── duration: CharField (MM:SS)
+  ├── duration: CharField (MM:SS)
+  └── tags: ManyToMany → Tag
 ```
 
 ## Frontend Structure
@@ -185,6 +199,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Added dynamic tag system with TagGroup and Tag models, moderator management interface, home page filters, and content list columns.
 - 2026-01-22: Added caching system (locmem/db/redis/memcached backends), browser cache middleware, and favicon.
 - 2026-01-22: Made "About blog" section tiles clickable for category filtering.
 - 2026-01-21: Added mobile menu, category filters, search, dark theme, and SEO meta tags.

@@ -17,32 +17,52 @@
                 </p>
             </div>
             
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-                <div class="flex flex-wrap justify-center gap-2">
-                    <button onclick="filterCards('all')" class="filter-btn active px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="all">
-                        Все
-                    </button>
-                    <button onclick="filterCards('yoga')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="yoga">
-                        Йога
-                    </button>
-                    <button onclick="filterCards('oils')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="oils">
-                        Эфирные масла
-                    </button>
+            <div class="flex flex-col gap-4 mb-8">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="filterCards('all')" class="filter-btn active px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="all">
+                            Все
+                        </button>
+                        <button onclick="filterCards('yoga')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="yoga">
+                            Йога
+                        </button>
+                        <button onclick="filterCards('oils')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="oils">
+                            Эфирные масла
+                        </button>
+                    </div>
+                    
+                    <div class="relative w-full sm:w-72">
+                        <input type="text" id="searchInput" placeholder="Поиск..." 
+                               class="w-full px-4 py-2 pl-10 rounded-full border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/50"
+                               oninput="searchCards(this.value)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </div>
                 </div>
                 
-                <div class="relative w-full sm:w-72">
-                    <input type="text" id="searchInput" placeholder="Поиск..." 
-                           class="w-full px-4 py-2 pl-10 rounded-full border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/50"
-                           oninput="searchCards(this.value)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                    </svg>
+                {% if tag_groups %}
+                <div class="flex flex-wrap items-center gap-4">
+                    {% for group in tag_groups %}
+                    {% if group.tags.all %}
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-muted-foreground">{{ group.name }}:</span>
+                        <select onchange="filterByTag(this.value)" class="tag-filter px-3 py-1.5 rounded-full border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" data-group="{{ group.slug }}">
+                            <option value="">Все</option>
+                            {% for tag in group.tags.all %}
+                            <option value="{{ tag.id }}">{{ tag.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
                 </div>
+                {% endif %}
             </div>
             
             <div id="cards-container" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 {% for video in videos %}
-                    <div class="content-card" data-category="{{ video.category|lower }}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}">
+                    <div class="content-card" data-category="{{ video.category|lower }}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
                         {% include 'blog/partials/_video_card.html' with video=video %}
                     </div>
                 {% empty %}
@@ -96,6 +116,7 @@
 <script>
 let currentFilter = 'all';
 let currentSearch = '';
+let currentTagFilters = {};
 
 function filterCards(category) {
     currentFilter = category;
@@ -106,6 +127,19 @@ function filterCards(category) {
             btn.classList.add('active');
         }
     });
+    
+    applyFilters();
+}
+
+function filterByTag(tagId) {
+    const select = event.target;
+    const groupSlug = select.dataset.group;
+    
+    if (tagId === '') {
+        delete currentTagFilters[groupSlug];
+    } else {
+        currentTagFilters[groupSlug] = tagId;
+    }
     
     applyFilters();
 }
@@ -129,17 +163,22 @@ function applyFilters() {
     const container = document.getElementById('cards-container');
     let visibleCount = 0;
     
+    const activeTagIds = Object.values(currentTagFilters);
+    
     cards.forEach(card => {
         const category = card.dataset.category;
         const title = card.dataset.title;
         const description = card.dataset.description;
+        const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
         
         const matchesFilter = currentFilter === 'all' || category === currentFilter;
         const matchesSearch = currentSearch === '' || 
                              title.includes(currentSearch) || 
                              description.includes(currentSearch);
+        const matchesTags = activeTagIds.length === 0 || 
+                           activeTagIds.every(tagId => cardTags.includes(tagId));
         
-        if (matchesFilter && matchesSearch) {
+        if (matchesFilter && matchesSearch && matchesTags) {
             card.classList.remove('hidden');
             visibleCount++;
         } else {

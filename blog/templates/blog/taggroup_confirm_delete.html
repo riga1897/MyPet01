@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Удалить группу тегов — Гармония Души{% endblock %}
+
+{% block content %}
+{% include "blog/partials/_header.html" %}
+
+<div class="min-h-screen p-4 pt-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-semibold text-foreground">Удалить группу тегов</h1>
+            <a href="{% url 'blog:tag_list' %}" class="text-primary hover:underline">← Назад к тегам</a>
+        </div>
+        
+        <div class="bg-card rounded-2xl shadow-lg p-8">
+            <p class="text-foreground mb-6">
+                Вы уверены, что хотите удалить группу "<strong>{{ object.name }}</strong>"?
+                <br><br>
+                <span class="text-red-600">Все теги в этой группе также будут удалены!</span>
+            </p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="flex gap-4">
+                    <button type="submit" 
+                        class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                        Удалить
+                    </button>
+                    <a href="{% url 'blog:tag_list' %}" 
+                       class="bg-muted text-foreground px-6 py-2 rounded-lg hover:bg-muted/80 transition-colors">
+                        Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

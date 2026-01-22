@@ -6,6 +6,13 @@ from blog.views import (
     ContentListView,
     ContentUpdateView,
     HomeView,
+    TagCreateView,
+    TagDeleteView,
+    TagGroupCreateView,
+    TagGroupDeleteView,
+    TagGroupUpdateView,
+    TagListView,
+    TagUpdateView,
 )
 
 app_name = 'blog'
@@ -16,4 +23,11 @@ urlpatterns = [
     path('content/create/', ContentCreateView.as_view(), name='content_create'),
     path('content/<int:pk>/edit/', ContentUpdateView.as_view(), name='content_edit'),
     path('content/<int:pk>/delete/', ContentDeleteView.as_view(), name='content_delete'),
+    path('tags/', TagListView.as_view(), name='tag_list'),
+    path('tags/group/create/', TagGroupCreateView.as_view(), name='taggroup_create'),
+    path('tags/group/<int:pk>/edit/', TagGroupUpdateView.as_view(), name='taggroup_edit'),
+    path('tags/group/<int:pk>/delete/', TagGroupDeleteView.as_view(), name='taggroup_delete'),
+    path('tags/create/', TagCreateView.as_view(), name='tag_create'),
+    path('tags/<int:pk>/edit/', TagUpdateView.as_view(), name='tag_edit'),
+    path('tags/<int:pk>/delete/', TagDeleteView.as_view(), name='tag_delete'),
 ]
