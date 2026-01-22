@@ -5,9 +5,8 @@ from .models import Category, Content, ContentType, Tag, TagGroup
 
 @admin.register(ContentType)
 class ContentTypeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'code', 'upload_folder', 'slug', 'created_at')
+    list_display = ('name', 'code', 'upload_folder', 'created_at')
     search_fields = ('name', 'code')
-    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Category)

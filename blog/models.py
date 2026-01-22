@@ -164,12 +164,6 @@ class ContentType(BaseModel):
         unique=True,
         verbose_name='Название',
     )
-    slug = models.SlugField(
-        max_length=100,
-        unique=True,
-        blank=True,
-        verbose_name='Слаг',
-    )
     code = models.CharField(
         max_length=20,
         unique=True,
@@ -179,8 +173,8 @@ class ContentType(BaseModel):
     upload_folder = models.CharField(
         max_length=100,
         verbose_name='Папка для файлов',
-        help_text='Папка для сохранения файлов (например: videos, photos, audio)',
-        default='content',
+        help_text='Папка для сохранения файлов (по умолчанию = код)',
+        blank=True,
     )
 
     class Meta:
@@ -192,9 +186,18 @@ class ContentType(BaseModel):
         return self.name
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
+        if not self.upload_folder:
+            self.upload_folder = self.code
+        self._ensure_upload_folder_exists()
         super().save(*args, **kwargs)
+
+    def _ensure_upload_folder_exists(self) -> None:
+        """Create upload folder in media directory if it doesn't exist."""
+        from django.conf import settings
+        import os
+        folder_path = os.path.join(settings.MEDIA_ROOT, self.upload_folder)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path, exist_ok=True)
 
     @property
     def is_video(self) -> bool:

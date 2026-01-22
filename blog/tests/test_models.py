@@ -107,12 +107,16 @@ class TestCategoryModel:
 @pytest.mark.django_db
 class TestContentTypeModel:
     def test_content_type_str_returns_name(self) -> None:
-        ct = ContentType.objects.create(name='Аудио', code='audio', upload_folder='audio')
+        ct = ContentType.objects.create(name='Аудио', code='audio')
         assert str(ct) == 'Аудио'
 
-    def test_content_type_slug_auto_generated(self) -> None:
-        ct = ContentType.objects.create(name='Тестовый тип', code='test', upload_folder='test')
-        assert ct.slug == 'тестовый-тип'
+    def test_upload_folder_auto_generated_from_code(self) -> None:
+        ct = ContentType.objects.create(name='Тестовый тип', code='test')
+        assert ct.upload_folder == 'test'
+
+    def test_upload_folder_can_be_custom(self) -> None:
+        ct = ContentType.objects.create(name='Аудио', code='audio', upload_folder='audio_files')
+        assert ct.upload_folder == 'audio_files'
 
     def test_is_video_property(self, video_type: ContentType) -> None:
         assert video_type.is_video is True
