@@ -118,6 +118,13 @@ class TestContentTypeModel:
         ct = ContentType.objects.create(name='Аудио', code='audio', upload_folder='audio_files')
         assert ct.upload_folder == 'audio_files'
 
+    def test_upload_folder_created_on_save(self, settings: object) -> None:
+        import os
+        from django.conf import settings as django_settings
+        ct = ContentType.objects.create(name='Новый тип', code='newtype')
+        folder_path = os.path.join(django_settings.MEDIA_ROOT, ct.upload_folder)
+        assert os.path.exists(folder_path)
+
     def test_is_video_property(self, video_type: ContentType) -> None:
         assert video_type.is_video is True
         assert video_type.is_photo is False

@@ -70,9 +70,8 @@ Category (inherits BaseModel)
 
 ContentType (inherits BaseModel)
   ├── name: CharField (unique)
-  ├── slug: SlugField (auto-generated)
   ├── code: CharField (unique, e.g. 'video', 'photo', 'audio')
-  ├── upload_folder: CharField (folder for files, e.g. 'videos', 'photos')
+  ├── upload_folder: CharField (default=code, auto-creates folder in media/)
   ├── is_video: property (returns True if code == 'video')
   └── is_photo: property (returns True if code == 'photo')
 
@@ -216,6 +215,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Simplified ContentType model: removed slug field, upload_folder now defaults to code value, auto-creates folder in media/ on save.
 - 2026-01-22: Changed Content.content_type from ForeignKey to ManyToMany (content_types). Content can now have multiple types, no types, or all types selected — matching the tag selection pattern.
 - 2026-01-22: Added ContentType model (replaces TextChoices). Content types are now manageable via admin with custom upload folders for each type.
 - 2026-01-22: Added GZipMiddleware for HTTP compression, nginx production config with gzip/static/media serving, Docker setup with gunicorn (4 workers), collectstatic in build.
