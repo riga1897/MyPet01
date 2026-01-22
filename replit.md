@@ -89,7 +89,8 @@ Content (inherits BaseModel)
 ```
 
 ## Frontend Structure
-- **Base template**: `templates/base.html` (Tailwind CSS CDN + custom CSS variables)
+- **Styles**: `static/css/styles.css` (CSS variables, utilities, dark/light theme)
+- **Base template**: `templates/base.html` (Tailwind CSS CDN + custom CSS link)
 - **Blog templates**: `blog/templates/blog/`
   - `index.html` — главная страница
   - `partials/_header.html` — шапка с навигацией
@@ -207,6 +208,7 @@ Content cache is automatically invalidated via Django signals when:
 - [ ] Комментарии к видео/фото
 
 ## Recent Changes
+- 2026-01-22: Moved all CSS styles from base.html to static/css/styles.css. Removed duplicate .dark placeholder styles. Content now supports multiple categories (ManyToMany).
 - 2026-01-22: Added GZipMiddleware for HTTP compression, nginx production config with gzip/static/media serving, Docker setup with gunicorn (4 workers), collectstatic in build.
 - 2026-01-22: Added thumbnail auto-compression on upload (Pillow: max 800x600, JPEG quality 85%), lazy loading for images, browser cache enabled.
 - 2026-01-22: Group filter on tag management page now uses dropdown menu with checkboxes (consistent with tag filters). Added "Выбрать все" checkbox, swapped buttons order (+Тег first), equal button widths.
