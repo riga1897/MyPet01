@@ -28,5 +28,8 @@ RUN poetry config virtualenvs.create false \
 # Copy the rest of the application
 COPY . /app/
 
+# Collect static files for nginx
+RUN python manage.py collectstatic --noinput
+
 # Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "mypet_project.wsgi:application"]
