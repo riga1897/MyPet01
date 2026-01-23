@@ -22,8 +22,7 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="flex gap-4">
-                    <button type="submit" 
-                        class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                    <button type="submit" class="btn-danger">
                         Удалить
                     </button>
                     <a href="{% url 'blog:tag_list' %}" 

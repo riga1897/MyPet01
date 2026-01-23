@@ -220,3 +220,47 @@
 .btn-tab-inactive:hover {
     background-color: var(--muted);
 }
+
+/* Danger Button */
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.5rem;
+    min-width: 140px;
+    background-color: #dc2626;
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+/* Alert Success */
+.alert-success {
+    padding: 0.75rem 1rem;
+    background-color: #dcfce7;
+    border: 1px solid #4ade80;
+    color: #15803d;
+    border-radius: 0.5rem;
+}
+
+/* Form Input */
+.form-input {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background-color: var(--card);
+}
+
+.form-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary);
+}

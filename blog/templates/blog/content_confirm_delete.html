@@ -17,8 +17,7 @@
         <form method="post" class="space-y-4">
             {% csrf_token %}
             <div class="flex gap-4">
-                <button type="submit" 
-                    class="flex-1 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                <button type="submit" class="btn-danger flex-1">
                     Удалить
                 </button>
                 <a href="{% url 'blog:content_list' %}" 
