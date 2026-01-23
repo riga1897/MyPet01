@@ -71,24 +71,46 @@
                         <span id="file-label">Файл</span>
                     </label>
                     
-                    <div id="file-no-selection">
-                        <button type="button" id="btn-upload-file" onclick="openFileDialog()"
-                                class="px-4 py-2 text-sm rounded-lg border border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                    <div id="file-mode-buttons" class="flex gap-2 mb-2">
+                        <button type="button" id="btn-file-upload-mode" onclick="setFileMode('upload')"
+                                class="px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground">
                             Загрузить
+                        </button>
+                        <button type="button" id="btn-file-select-mode" onclick="setFileMode('select')"
+                                class="px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted">
+                            Выбрать из имеющихся
                         </button>
                     </div>
                     
-                    <div id="file-selected-display" class="hidden flex items-center gap-2 p-3 bg-muted rounded-lg">
-                        <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <span id="file-name-display" class="text-sm text-foreground flex-1 truncate"></span>
-                        <button type="button" onclick="clearFileSelection()" 
-                                class="text-red-500 hover:text-red-700 p-1 flex-shrink-0" title="Убрать файл">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    <div id="file-upload-mode">
+                        <div id="file-upload-area" class="hidden">
+                            <button type="button" onclick="openFileDialog()"
+                                    class="w-full px-4 py-3 text-sm rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-muted/50 transition-colors text-muted-foreground">
+                                Нажмите для выбора файла
+                            </button>
+                        </div>
+                        <div id="file-selected-display" class="hidden flex items-center gap-2 p-3 bg-muted rounded-lg">
+                            <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                        </button>
+                            <span id="file-name-display" class="text-sm text-foreground flex-1 truncate"></span>
+                            <button type="button" onclick="clearFileSelection()" 
+                                    class="text-red-500 hover:text-red-700 p-1 flex-shrink-0" title="Убрать файл">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="file-select-mode" class="hidden">
+                        <select id="existing-file-select" onchange="onExistingFileSelected(this)"
+                                class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card">
+                            <option value="">— Сначала выберите тип контента —</option>
+                        </select>
+                        <p id="no-files-message" class="hidden text-sm text-muted-foreground mt-1">
+                            Нет доступных файлов в папке этого типа контента
+                        </p>
                     </div>
                     
                     <input type="file" 
@@ -122,24 +144,46 @@
                         Миниатюра (необязательно)
                     </label>
                     
-                    <div id="thumb-no-selection">
-                        <button type="button" id="btn-upload-thumb" onclick="openThumbDialog()"
-                                class="px-4 py-2 text-sm rounded-lg border border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                    <div id="thumb-mode-buttons" class="flex gap-2 mb-2">
+                        <button type="button" id="btn-thumb-upload-mode" onclick="setThumbMode('upload')"
+                                class="px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground">
                             Загрузить
+                        </button>
+                        <button type="button" id="btn-thumb-select-mode" onclick="setThumbMode('select')"
+                                class="px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted">
+                            Выбрать из имеющихся
                         </button>
                     </div>
                     
-                    <div id="thumb-selected-display" class="hidden flex items-center gap-2 p-3 bg-muted rounded-lg">
-                        <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <span id="thumb-name-display" class="text-sm text-foreground flex-1 truncate"></span>
-                        <button type="button" onclick="clearThumbSelection()" 
-                                class="text-red-500 hover:text-red-700 p-1 flex-shrink-0" title="Убрать миниатюру">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    <div id="thumb-upload-mode">
+                        <div id="thumb-upload-area" class="hidden">
+                            <button type="button" onclick="openThumbDialog()"
+                                    class="w-full px-4 py-3 text-sm rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-muted/50 transition-colors text-muted-foreground">
+                                Нажмите для выбора изображения
+                            </button>
+                        </div>
+                        <div id="thumb-selected-display" class="hidden flex items-center gap-2 p-3 bg-muted rounded-lg">
+                            <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                        </button>
+                            <span id="thumb-name-display" class="text-sm text-foreground flex-1 truncate"></span>
+                            <button type="button" onclick="clearThumbSelection()" 
+                                    class="text-red-500 hover:text-red-700 p-1 flex-shrink-0" title="Убрать миниатюру">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="thumb-select-mode" class="hidden">
+                        <select id="existing-thumb-select" onchange="onExistingThumbSelected(this)"
+                                class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card">
+                            <option value="">— Выберите миниатюру —</option>
+                            {% for thumb in available_thumbnails %}
+                            <option value="{{ thumb }}">{{ thumb }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
                     <input type="file" 
@@ -201,6 +245,8 @@
     const hasExistingFile = {{ has_file|yesno:"true,false" }};
     const contentId = {{ object.pk|default:"null" }};
     let fileSelected = false;
+    let currentFileMode = 'upload';
+    let currentThumbMode = 'upload';
     
     function getSelectedContentTypeFolder() {
         const selected = document.querySelector('.content-type-checkbox:checked');
@@ -233,6 +279,108 @@
         }, 3000);
     }
     
+    function setFileMode(mode) {
+        currentFileMode = mode;
+        const uploadBtn = document.getElementById('btn-file-upload-mode');
+        const selectBtn = document.getElementById('btn-file-select-mode');
+        const uploadMode = document.getElementById('file-upload-mode');
+        const selectMode = document.getElementById('file-select-mode');
+        const uploadArea = document.getElementById('file-upload-area');
+        
+        if (mode === 'upload') {
+            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
+            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
+            uploadMode.classList.remove('hidden');
+            selectMode.classList.add('hidden');
+            uploadArea.classList.remove('hidden');
+        } else {
+            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
+            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
+            uploadMode.classList.add('hidden');
+            selectMode.classList.remove('hidden');
+            loadAvailableFiles();
+        }
+    }
+    window.setFileMode = setFileMode;
+    
+    function setThumbMode(mode) {
+        currentThumbMode = mode;
+        const uploadBtn = document.getElementById('btn-thumb-upload-mode');
+        const selectBtn = document.getElementById('btn-thumb-select-mode');
+        const uploadMode = document.getElementById('thumb-upload-mode');
+        const selectMode = document.getElementById('thumb-select-mode');
+        const uploadArea = document.getElementById('thumb-upload-area');
+        
+        if (mode === 'upload') {
+            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
+            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
+            uploadMode.classList.remove('hidden');
+            selectMode.classList.add('hidden');
+            uploadArea.classList.remove('hidden');
+        } else {
+            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
+            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
+            uploadMode.classList.add('hidden');
+            selectMode.classList.remove('hidden');
+        }
+    }
+    window.setThumbMode = setThumbMode;
+    
+    function loadAvailableFiles() {
+        const folder = getSelectedContentTypeFolder();
+        const select = document.getElementById('existing-file-select');
+        const noFilesMsg = document.getElementById('no-files-message');
+        
+        select.innerHTML = '<option value="">— Загрузка... —</option>';
+        noFilesMsg.classList.add('hidden');
+        
+        if (!folder) {
+            select.innerHTML = '<option value="">— Сначала выберите тип контента —</option>';
+            return;
+        }
+        
+        fetch(`{% url 'blog:available_files' %}?folder=${encodeURIComponent(folder)}&content_id=${contentId || ''}`)
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">— Выберите файл —</option>';
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.path;
+                        option.textContent = file.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">— Нет доступных файлов —</option>';
+                    noFilesMsg.classList.remove('hidden');
+                }
+            })
+            .catch(() => {
+                select.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+            });
+    }
+    window.loadAvailableFiles = loadAvailableFiles;
+    
+    function onExistingFileSelected(select) {
+        const existingFileInput = document.getElementById('existing_file_input');
+        existingFileInput.value = select.value;
+        
+        if (select.value) {
+            const dropdown = document.getElementById('content-type-select-dropdown');
+            if (!hasExistingFile) {
+                dropdown.classList.add('pointer-events-none', 'opacity-50');
+                dropdown.dataset.hasFile = 'true';
+            }
+        }
+    }
+    window.onExistingFileSelected = onExistingFileSelected;
+    
+    function onExistingThumbSelected(select) {
+        const existingThumbInput = document.getElementById('existing_thumbnail_input');
+        existingThumbInput.value = select.value;
+    }
+    window.onExistingThumbSelected = onExistingThumbSelected;
+    
     function openFileDialog() {
         const contentTypeCode = getSelectedContentTypeCode();
         if (!contentTypeCode) {
@@ -247,7 +395,7 @@
         document.getElementById('id_video_file').value = '';
         document.getElementById('existing_file_input').value = '';
         document.getElementById('file-selected-display').classList.add('hidden');
-        document.getElementById('file-no-selection').classList.remove('hidden');
+        document.getElementById('file-upload-area').classList.remove('hidden');
         fileSelected = false;
         
         const dropdown = document.getElementById('content-type-select-dropdown');
@@ -303,9 +451,9 @@
         if (existingSelect) existingSelect.value = '';
         
         const fileSelectedDisplay = document.getElementById('file-selected-display');
-        const fileNoSelection = document.getElementById('file-no-selection');
+        const fileUploadArea = document.getElementById('file-upload-area');
         if (fileSelectedDisplay) fileSelectedDisplay.classList.add('hidden');
-        if (fileNoSelection) fileNoSelection.classList.remove('hidden');
+        if (fileUploadArea && currentFileMode === 'upload') fileUploadArea.classList.remove('hidden');
         
         const dropdown = document.getElementById('content-type-select-dropdown');
         if (dropdown && !hasExistingFile) {
@@ -337,7 +485,7 @@
             const fileName = input.files[0].name;
             document.getElementById('file-name-display').textContent = fileName;
             document.getElementById('file-selected-display').classList.remove('hidden');
-            document.getElementById('file-no-selection').classList.add('hidden');
+            document.getElementById('file-upload-area').classList.add('hidden');
             
             if (!hasExistingFile) {
                 const dropdown = document.getElementById('content-type-select-dropdown');
@@ -366,7 +514,7 @@
             const fileName = input.files[0].name;
             document.getElementById('thumb-name-display').textContent = fileName;
             document.getElementById('thumb-selected-display').classList.remove('hidden');
-            document.getElementById('thumb-no-selection').classList.add('hidden');
+            document.getElementById('thumb-upload-area').classList.add('hidden');
         }
     }
     window.onThumbSelected = onThumbSelected;
@@ -375,7 +523,7 @@
         document.getElementById('id_thumbnail').value = '';
         document.getElementById('existing_thumbnail_input').value = '';
         document.getElementById('thumb-selected-display').classList.add('hidden');
-        document.getElementById('thumb-no-selection').classList.remove('hidden');
+        document.getElementById('thumb-upload-area').classList.remove('hidden');
     }
     window.clearThumbSelection = clearThumbSelection;
     
@@ -390,6 +538,11 @@
         }
     }
     window.detachThumbnail = detachThumbnail;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        setFileMode('upload');
+        setThumbMode('upload');
+    });
     
     function setupFormUpload() {
         const form = document.getElementById('content-form');
