@@ -43,6 +43,7 @@ class ModeratorListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-
             moderators_group.user_set.values_list('id', flat=True)
         )
         context['group_name'] = MODERATORS_GROUP_NAME
+        context['is_moderator'] = True
         return context
 
 

@@ -334,6 +334,38 @@
     }
     
     function onContentTypeChanged(codes) {
+        const fileInput = document.getElementById('id_video_file');
+        const existingFileInput = document.getElementById('existing_file_input');
+        const existingSelect = document.getElementById('existing-file-select');
+        
+        if (fileInput) fileInput.value = '';
+        if (existingFileInput) existingFileInput.value = '';
+        if (existingSelect) existingSelect.value = '';
+        
+        const selectedDisplay = document.getElementById('selected-file-display');
+        const selectContainer = document.getElementById('file-select-container');
+        if (selectedDisplay) selectedDisplay.classList.add('hidden');
+        if (selectContainer) selectContainer.classList.remove('hidden');
+        
+        const dropdown = document.getElementById('content-type-select-dropdown');
+        if (dropdown && !hasExistingFile) {
+            dropdown.classList.remove('pointer-events-none', 'opacity-50');
+            dropdown.dataset.hasFile = 'false';
+            const hint = dropdown.querySelector('.file-lock-hint');
+            if (hint) hint.remove();
+        }
+        
+        let typeHint = document.getElementById('file-type-change-hint');
+        if (!typeHint) {
+            typeHint = document.createElement('p');
+            typeHint.id = 'file-type-change-hint';
+            typeHint.className = 'text-sm text-amber-600 mt-2';
+            const fileSection = document.getElementById('file-upload-section');
+            if (fileSection) fileSection.appendChild(typeHint);
+        }
+        typeHint.textContent = 'Тип изменён. Выберите файл соответствующего типа.';
+        setTimeout(() => { if (typeHint) typeHint.textContent = ''; }, 5000);
+        
         updateFileInput();
     }
     window.onContentTypeChanged = onContentTypeChanged;

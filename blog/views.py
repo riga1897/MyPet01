@@ -511,9 +511,12 @@ class FileListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
         
-        used_files = set(
-            Content.objects.exclude(video_file='').values_list('video_file', flat=True)
-        )
+        file_to_content: dict[str, dict[str, Any]] = {}
+        for content in Content.objects.exclude(video_file='').select_related():
+            file_to_content[str(content.video_file)] = {
+                'id': content.pk,
+                'title': content.title,
+            }
         
         all_files: list[dict[str, Any]] = []
         for ct in context['content_types']:
@@ -523,10 +526,13 @@ class FileListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
                     file_path = os.path.join(folder_path, filename)
                     if os.path.isfile(file_path):
                         relative_path = f'{ct.upload_folder}/{filename}'
+                        content_info = file_to_content.get(relative_path)
                         all_files.append({
                             'name': filename,
                             'path': relative_path,
-                            'used': relative_path in used_files,
+                            'used': content_info is not None,
+                            'content_id': content_info['id'] if content_info else None,
+                            'content_title': content_info['title'] if content_info else None,
                             'size': os.path.getsize(file_path),
                             'type_id': ct.id,
                             'type_name': ct.name,

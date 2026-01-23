@@ -93,7 +93,15 @@
                         <tr class="border-b border-border hover:bg-muted/30 file-row" 
                             data-name="{{ file.name|lower }}" 
                             data-type="{{ file.type_id }}">
-                            <td class="py-2 px-3">{{ file.name }}</td>
+                            <td class="py-2 px-3">
+                                {% if file.used and file.content_id %}
+                                <a href="{% url 'blog:content_edit' file.content_id %}" 
+                                   class="text-primary hover:underline" 
+                                   title="Редактировать: {{ file.content_title }}">{{ file.name }}</a>
+                                {% else %}
+                                {{ file.name }}
+                                {% endif %}
+                            </td>
                             <td class="py-2 px-3 text-muted-foreground">{{ file.type_name }}</td>
                             <td class="py-2 px-3 text-muted-foreground">{{ file.size|filesizeformat }}</td>
                             <td class="py-2 px-3">
