@@ -37,7 +37,7 @@
                 {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag_groups %}
             </div>
             
-            <div id="cards-container" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div id="cards-container" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
                 {% for video in videos %}
                     <div class="content-card" data-category="{% for cat in video.categories.all %}{{ cat.code|lower }},{% endfor %}" data-title="{{ video.title|lower }}" data-description="{{ video.description|lower }}" data-tags="{% for tag in video.tags.all %}{{ tag.id }},{% endfor %}">
                         {% include 'blog/partials/_video_card.html' with video=video %}
