@@ -62,6 +62,13 @@
         
         <div class="flex items-center justify-between text-xs text-muted-foreground">
             <span>{{ video.updated_at|date:"d F Y" }}</span>
+            {% if is_moderator %}
+            <a href="{% url 'blog:content_edit' video.pk %}" 
+               onclick="event.stopPropagation()" 
+               class="text-primary hover:text-primary/80 transition-colors">
+                Редактировать
+            </a>
+            {% endif %}
         </div>
     </div>
 </article>

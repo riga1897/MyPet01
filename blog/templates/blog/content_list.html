@@ -67,7 +67,7 @@
                         data-description="{{ content.description|lower }}"
                         data-tags="{% for tag in content.tags.all %}{{ tag.id }},{% endfor %}">
                         <td class="px-6 py-4">
-                            <span class="font-medium text-foreground">{{ content.title }}</span>
+                            <a href="{% url 'blog:content_edit' content.pk %}" class="font-medium text-foreground hover:text-primary transition-colors">{{ content.title }}</a>
                         </td>
                         <td class="px-6 py-4">
                             {% if content.content_type %}
