@@ -1,13 +1,14 @@
 # План консолидации .btn-primary
 
-## CSS Классы (добавить в static/css/components.css)
+## CSS Классы (добавлены в static/css/components.css)
 
 | Класс | Размер | Использование |
 |-------|--------|---------------|
 | `.btn-primary` | `px-6 py-2` | Стандартные кнопки форм |
-| `.btn-primary-sm` | `px-4 py-2` или `px-3 py-1.5 text-sm` | Маленькие кнопки в списках, табы |
+| `.btn-primary-sm` | `px-4 py-2` | Маленькие кнопки в списках, табы |
 | `.btn-primary-lg` | `px-8 py-3 rounded-xl` | Hero секция |
 | `.btn-primary-full` | `w-full py-2 px-4` | Кнопки на полную ширину (login) |
+| `.btn-tab-inactive` | `px-3 py-1.5` | Неактивные табы (файл/миниатюра) |
 
 ## Базовые стили (общие для всех):
 ```css
@@ -19,50 +20,47 @@ bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-col
 ## Чеклист по файлам
 
 ### 1. blog/templates/blog/tag_form.html
-- [ ] Строка 33: Кнопка "Сохранить" → `.btn-primary`
+- [x] Строка 33: Кнопка "Сохранить" → `.btn-primary`
 
 ### 2. blog/templates/blog/taggroup_form.html  
-- [ ] Строка 52: Кнопка "Сохранить" → `.btn-primary`
+- [x] Строка 52: Кнопка "Сохранить" → `.btn-primary`
 
 ### 3. blog/templates/blog/content_form.html
-- [ ] Строка 76: Таб "Загрузить" (file) → `.btn-primary-sm`
-- [ ] Строка 149: Таб "Загрузить" (thumbnail) → `.btn-primary-sm`
-- [ ] Строка 230: Кнопка "Сохранить" → `.btn-primary`
-- [ ] Строка 291 (JS): uploadBtn → `.btn-primary-sm`
-- [ ] Строка 298 (JS): selectBtn → `.btn-primary-sm`
-- [ ] Строка 315 (JS): uploadBtn → `.btn-primary-sm`
-- [ ] Строка 322 (JS): selectBtn → `.btn-primary-sm`
+- [x] Строка 76: Таб "Загрузить" (file) → `.btn-primary-sm`
+- [x] Строка 149: Таб "Загрузить" (thumbnail) → `.btn-primary-sm`
+- [x] Строка 230: Кнопка "Сохранить" → `.btn-primary`
+- [x] JS: uploadBtn/selectBtn → `.btn-primary-sm` / `.btn-tab-inactive`
 
 ### 4. blog/templates/blog/tag_list.html
-- [ ] Строка 14: Кнопка "Добавить" → `.btn-primary-sm`
+- [x] Строка 14: Кнопка "+ Тег" → `.btn-primary-sm`
 
 ### 5. blog/templates/blog/content_list.html
-- [ ] Строка 13: Кнопка "Добавить" → `.btn-primary-sm`
+- [x] Строка 13: Кнопка "+ Добавить контент" → `.btn-primary-sm`
 
 ### 6. blog/templates/blog/file_list.html
-- [ ] Строка 51: Input file → оставить inline (file: pseudo-element)
-- [ ] Строка 56: Кнопка "Загрузить" → `.btn-primary-sm`
+- [x] Строка 51: Input file → оставить inline (file: pseudo-element)
+- [x] Строка 56: Кнопка "Загрузить" → `.btn-primary-sm`
 
 ### 7. blog/templates/blog/partials/_hero.html
-- [ ] Строка 22: Ссылка "Смотреть" → `.btn-primary-lg`
+- [x] Строка 22: Ссылка "Смотреть" → `.btn-primary-lg`
 
 ### 8. users/templates/users/login.html
-- [ ] Строка 36: Кнопка "Войти" → `.btn-primary-full`
+- [x] Строка 36: Кнопка "Войти" → `.btn-primary-full`
 
 ### 9. users/templates/users/moderator_list.html
-- [ ] Строка 47: Бейдж "Модератор" → НЕ КНОПКА, оставить inline
+- [x] Строка 47: Бейдж "Модератор" → НЕ КНОПКА, оставить inline
 
 ---
 
 ## Прогресс
 
-- [ ] CSS классы добавлены в components.css
-- [ ] tag_form.html обновлён
-- [ ] taggroup_form.html обновлён
-- [ ] content_form.html обновлён (HTML + JS)
-- [ ] tag_list.html обновлён
-- [ ] content_list.html обновлён
-- [ ] file_list.html обновлён
-- [ ] _hero.html обновлён
-- [ ] login.html обновлён
-- [ ] Визуальная проверка выполнена
+- [x] CSS классы добавлены в components.css
+- [x] tag_form.html обновлён
+- [x] taggroup_form.html обновлён
+- [x] content_form.html обновлён (HTML + JS)
+- [x] tag_list.html обновлён
+- [x] content_list.html обновлён
+- [x] file_list.html обновлён
+- [x] _hero.html обновлён
+- [x] login.html обновлён
+- [x] Визуальная проверка выполнена

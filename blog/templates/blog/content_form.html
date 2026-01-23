@@ -73,11 +73,11 @@
                     
                     <div id="file-mode-buttons" class="flex gap-2 mb-2">
                         <button type="button" id="btn-file-upload-mode" onclick="setFileMode('upload')"
-                                class="px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground">
+                                class="btn-primary-sm">
                             Загрузить
                         </button>
                         <button type="button" id="btn-file-select-mode" onclick="setFileMode('select')"
-                                class="px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted">
+                                class="btn-tab-inactive">
                             Выбрать из имеющихся
                         </button>
                     </div>
@@ -146,11 +146,11 @@
                     
                     <div id="thumb-mode-buttons" class="flex gap-2 mb-2">
                         <button type="button" id="btn-thumb-upload-mode" onclick="setThumbMode('upload')"
-                                class="px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground">
+                                class="btn-primary-sm">
                             Загрузить
                         </button>
                         <button type="button" id="btn-thumb-select-mode" onclick="setThumbMode('select')"
-                                class="px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted">
+                                class="btn-tab-inactive">
                             Выбрать из имеющихся
                         </button>
                     </div>
@@ -226,8 +226,7 @@
                 </div>
                 
                 <div id="submit-buttons" class="flex gap-4 pt-4">
-                    <button type="submit" id="submit-btn"
-                        class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                    <button type="submit" id="submit-btn" class="btn-primary">
                         Сохранить
                     </button>
                     <a href="{% url 'blog:content_list' %}" 
@@ -288,14 +287,14 @@
         const uploadArea = document.getElementById('file-upload-area');
         
         if (mode === 'upload') {
-            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
-            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
+            uploadBtn.className = 'btn-primary-sm';
+            selectBtn.className = 'btn-tab-inactive';
             uploadMode.classList.remove('hidden');
             selectMode.classList.add('hidden');
             uploadArea.classList.remove('hidden');
         } else {
-            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
-            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
+            uploadBtn.className = 'btn-tab-inactive';
+            selectBtn.className = 'btn-primary-sm';
             uploadMode.classList.add('hidden');
             selectMode.classList.remove('hidden');
             loadAvailableFiles();
@@ -312,14 +311,14 @@
         const uploadArea = document.getElementById('thumb-upload-area');
         
         if (mode === 'upload') {
-            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
-            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
+            uploadBtn.className = 'btn-primary-sm';
+            selectBtn.className = 'btn-tab-inactive';
             uploadMode.classList.remove('hidden');
             selectMode.classList.add('hidden');
             uploadArea.classList.remove('hidden');
         } else {
-            uploadBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted';
-            selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
+            uploadBtn.className = 'btn-tab-inactive';
+            selectBtn.className = 'btn-primary-sm';
             uploadMode.classList.add('hidden');
             selectMode.classList.remove('hidden');
             loadAvailableThumbnails();
