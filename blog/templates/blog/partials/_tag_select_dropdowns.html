@@ -18,7 +18,7 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
              data-categories="{% for cat in group.categories.all %}{{ cat.code }},{% endfor %}">
             <button type="button" 
                     onclick="toggleTagSelectDropdown(this)"
-                    class="dropdown-toggle flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card text-sm hover:bg-muted transition-colors">
+                    class="dropdown-toggle">
                 <span class="group-name">{{ group.name }}</span>
                 <span class="selected-count hidden text-xs bg-primary text-white rounded-full px-1.5">0</span>
                 <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -26,7 +26,7 @@ Usage: {% include 'blog/partials/_tag_select_dropdowns.html' with tag_groups=tag
                 </svg>
             </button>
             
-            <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-xl dark:ring-1 dark:ring-white/20 z-50 py-1">
+            <div class="dropdown-menu hidden">
                 <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer border-b border-border">
                     <input type="checkbox" 
                            class="select-all-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"

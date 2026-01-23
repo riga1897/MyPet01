@@ -1,0 +1,40 @@
+/* Components CSS - Unified styles for reusable components */
+
+/* Dropdown Menu - works with Tailwind 'hidden' class for JS toggle */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    min-width: 180px;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.dark .dropdown-menu {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+/* Dropdown Toggle Button */
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.dropdown-toggle:hover {
+    background-color: var(--muted);
+}
