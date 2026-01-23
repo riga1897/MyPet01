@@ -30,20 +30,22 @@ def all_category_group(db: None) -> TagGroup:
 
 @pytest.fixture
 def yoga_content(yoga_category: Category) -> Content:
-    return Content.objects.create(
+    content = Content.objects.create(
         title='Йога контент',
         description='Описание йоги',
-        category=yoga_category,
     )
+    content.categories.add(yoga_category)
+    return content
 
 
 @pytest.fixture
 def oils_content(oils_category: Category) -> Content:
-    return Content.objects.create(
+    content = Content.objects.create(
         title='Масла контент',
         description='Описание масел',
-        category=oils_category,
     )
+    content.categories.add(oils_category)
+    return content
 
 
 @pytest.mark.django_db
@@ -111,7 +113,6 @@ class TestFilterContent:
         no_cat_content = Content.objects.create(
             title='Без категории',
             description='Контент без категории',
-            category=None,
         )
         queryset = Content.objects.all()
         result = filter_content(queryset, no_category=True)

@@ -19,25 +19,12 @@ class TestTagGroupModel:
         """Test creating a tag group."""
         group = TagGroup.objects.create(name='Месяц практики')
         assert group.name == 'Месяц практики'
-        assert group.slug == 'месяц-практики'
 
     @pytest.mark.django_db
     def test_tag_group_str(self) -> None:
         """Test tag group string representation."""
         group = TagGroup.objects.create(name='Настроение')
         assert str(group) == 'Настроение'
-
-    @pytest.mark.django_db
-    def test_tag_group_slug_auto_generated(self) -> None:
-        """Test that slug is auto-generated from name."""
-        group = TagGroup.objects.create(name='Test Group')
-        assert group.slug == 'test-group'
-
-    @pytest.mark.django_db
-    def test_tag_group_custom_slug(self) -> None:
-        """Test that custom slug is preserved."""
-        group = TagGroup.objects.create(name='Test Group', slug='custom-slug')
-        assert group.slug == 'custom-slug'
 
 
 class TestTagModel:
@@ -57,13 +44,6 @@ class TestTagModel:
         group = TagGroup.objects.create(name='Месяц')
         tag = Tag.objects.create(name='Первый', group=group)
         assert str(tag) == 'Месяц: Первый'
-
-    @pytest.mark.django_db
-    def test_tag_slug_auto_generated(self) -> None:
-        """Test that slug is auto-generated from name."""
-        group = TagGroup.objects.create(name='Test')
-        tag = Tag.objects.create(name='Tag Name', group=group)
-        assert tag.slug == 'tag-name'
 
     @pytest.mark.django_db
     def test_content_tags_relationship(self) -> None:

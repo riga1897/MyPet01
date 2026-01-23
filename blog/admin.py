@@ -57,10 +57,9 @@ class TagInline(admin.TabularInline):  # type: ignore[type-arg]
 
 @admin.register(TagGroup)
 class TagGroupAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'slug', 'get_categories', 'created_at')
+    list_display = ('name', 'get_categories', 'created_at')
     list_filter = ('categories',)
     search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
     filter_horizontal = ('categories',)
     inlines = [TagInline]
 
@@ -74,19 +73,22 @@ class TagGroupAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'group', 'slug', 'created_at')
+    list_display = ('name', 'group', 'created_at')
     list_filter = ('group',)
     search_fields = ('name', 'group__name')
-    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Content)
 class ContentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('title', 'content_type', 'category', 'duration', 'created_at')
-    list_filter = ('content_type', 'category', 'tags', 'created_at')
+    list_display = ('title', 'content_type', 'get_categories', 'duration', 'created_at')
+    list_filter = ('content_type', 'categories', 'tags', 'created_at')
     search_fields = ('title', 'description')
-    filter_horizontal = ('tags',)
+    filter_horizontal = ('categories', 'tags')
     show_facets = (
         admin.ShowFacets.ALWAYS if settings.admin_show_facets
         else admin.ShowFacets.NEVER
     )
+
+    @admin.display(description='Категории')
+    def get_categories(self, obj: Content) -> str:
+        return ', '.join(cat.name for cat in obj.categories.all())

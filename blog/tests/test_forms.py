@@ -11,7 +11,7 @@ class TestContentForm:
         assert 'title' in form.fields
         assert 'description' in form.fields
         assert 'content_type' in form.fields
-        assert 'category' in form.fields
+        assert 'categories' in form.fields
         assert 'thumbnail' in form.fields
         assert 'video_file' in form.fields
 
@@ -20,7 +20,7 @@ class TestContentForm:
         assert form.fields['title'].label == 'Заголовок'
         assert form.fields['description'].label == 'Описание'
         assert form.fields['content_type'].label == 'Тип контента'
-        assert form.fields['category'].label == 'Категория'
+        assert form.fields['categories'].label == 'Категории'
 
     @pytest.mark.django_db
     def test_valid_form_creates_content(self, yoga_category: Category, video_type: ContentType) -> None:
@@ -28,7 +28,7 @@ class TestContentForm:
             'title': 'Тестовый контент',
             'description': 'Описание',
             'content_type': video_type.pk,
-            'category': yoga_category.pk,
+            'categories': [yoga_category.pk],
         })
         assert form.is_valid(), form.errors
         content = form.save()
@@ -40,7 +40,7 @@ class TestContentForm:
         form = ContentForm(data={
             'title': 'Контент без типа',
             'description': 'Описание',
-            'category': yoga_category.pk,
+            'categories': [yoga_category.pk],
         })
         assert form.is_valid(), form.errors
         content = form.save()
@@ -61,14 +61,15 @@ class TestContentForm:
         file_content = b'test video content for hashing'
         uploaded_file = SimpleUploadedFile('my_video.mp4', file_content)
         
+        from django.utils.datastructures import MultiValueDict
         form = ContentForm(
             data={
                 'title': 'Видео с хэшем',
                 'description': 'Тест',
                 'content_type': video_type.pk,
-                'category': yoga_category.pk,
+                'categories': [yoga_category.pk],
             },
-            files={'video_file': uploaded_file}
+            files=MultiValueDict({'video_file': [uploaded_file]})
         )
         assert form.is_valid(), form.errors
         content = form.save()
@@ -85,7 +86,7 @@ class TestContentForm:
         form = ContentForm(data={
             'title': 'Контент без файла',
             'description': 'Описание',
-            'category': yoga_category.pk,
+            'categories': [yoga_category.pk],
         })
         assert form.is_valid(), form.errors
         content = form.save()

@@ -7,14 +7,14 @@ class TestContentModel:
     def test_content_str_returns_title(self, yoga_category: Category, video_type: ContentType) -> None:
         content = Content.objects.create(
             title='Утренняя йога',
-            category=yoga_category,
             content_type=video_type,
         )
+        content.categories.add(yoga_category)
         assert str(content) == 'Утренняя йога'
 
     def test_content_default_category_is_none(self) -> None:
         content = Content.objects.create(title='Тест')
-        assert content.category is None
+        assert content.categories.count() == 0
 
     def test_content_default_type_is_none(self) -> None:
         content = Content.objects.create(title='Тест')
@@ -30,18 +30,18 @@ class TestContentModel:
     def test_content_can_be_video(self, yoga_category: Category, video_type: ContentType) -> None:
         content = Content.objects.create(
             title='Видео йоги',
-            category=yoga_category,
             content_type=video_type,
         )
+        content.categories.add(yoga_category)
         assert content.content_type is not None
         assert content.content_type.is_video is True
 
     def test_content_can_be_photo(self, yoga_category: Category, photo_type: ContentType) -> None:
         content = Content.objects.create(
             title='Фото йоги',
-            category=yoga_category,
             content_type=photo_type,
         )
+        content.categories.add(yoga_category)
         assert content.content_type is not None
         assert content.content_type.is_photo is True
 
@@ -89,10 +89,6 @@ class TestTagGroupModel:
         group = TagGroup.objects.create(name='Тестовая группа')
         assert str(group) == 'Тестовая группа'
 
-    def test_taggroup_slug_auto_generated(self) -> None:
-        group = TagGroup.objects.create(name='Месяц практики')
-        assert group.slug == 'месяц-практики'
-
     def test_taggroup_is_visible_for_category_when_empty(self, yoga_category: Category) -> None:
         group = TagGroup.objects.create(name='Универсальная группа')
         assert group.is_visible_for_category(yoga_category) is True
@@ -118,11 +114,6 @@ class TestTagModel:
         group = TagGroup.objects.create(name='Месяц')
         tag = Tag.objects.create(name='Первый', group=group)
         assert str(tag) == 'Месяц: Первый'
-
-    def test_tag_slug_auto_generated(self) -> None:
-        group = TagGroup.objects.create(name='Группа')
-        tag = Tag.objects.create(name='Расслабление', group=group)
-        assert tag.slug == 'расслабление'
 
     def test_tag_ordering(self) -> None:
         group = TagGroup.objects.create(name='Группа')

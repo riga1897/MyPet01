@@ -7,7 +7,7 @@ def yoga_category() -> Category:
     """Create and return the yoga category."""
     category, _ = Category.objects.get_or_create(
         code='yoga',
-        defaults={'name': 'Йога', 'slug': 'yoga'},
+        defaults={'name': 'Йога'},
     )
     return category
 
@@ -17,7 +17,7 @@ def oils_category() -> Category:
     """Create and return the oils category."""
     category, _ = Category.objects.get_or_create(
         code='oils',
-        defaults={'name': 'Эфирные масла', 'slug': 'oils'},
+        defaults={'name': 'Эфирные масла'},
     )
     return category
 

@@ -54,8 +54,8 @@ class HomeView(ListView):  # type: ignore[type-arg]
         cached = get_cached_content_list()
         if cached is not None:
             return cached
-        queryset = Content.objects.select_related('category').prefetch_related(
-            'tags', 'tags__group', 'content_type'
+        queryset = Content.objects.select_related('content_type').prefetch_related(
+            'categories', 'tags', 'tags__group'
         ).all()
         return set_cached_content_list(queryset, limit=6)
 
@@ -80,8 +80,8 @@ class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-ar
     ordering = ['-created_at']
 
     def get_queryset(self) -> Any:
-        return Content.objects.select_related('category').prefetch_related(
-            'tags', 'tags__group'
+        return Content.objects.select_related('content_type').prefetch_related(
+            'categories', 'tags', 'tags__group'
         ).order_by('-created_at')
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
@@ -154,7 +154,7 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
         context['action'] = 'Создать'
         context.update(get_filter_context())
         context['selected_tag_ids'] = []
-        context['selected_category_id'] = None
+        context['selected_category_ids'] = []
         context['selected_content_type_id'] = None
         context['current_category_code'] = None
         context['has_file'] = False
@@ -199,9 +199,10 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         context.update(get_filter_context())
         content = self.object
         context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
-        context['selected_category_id'] = content.category_id
+        context['selected_category_ids'] = list(content.categories.values_list('id', flat=True))
         context['selected_content_type_id'] = content.content_type_id
-        context['current_category_code'] = content.category.code if content.category else None
+        first_category = content.categories.first()
+        context['current_category_code'] = first_category.code if first_category else None
         context['has_file'] = bool(content.video_file)
         context['available_thumbnails'] = get_available_thumbnails()
         return context

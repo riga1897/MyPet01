@@ -1,45 +1,41 @@
 {% comment %}
-Category select dropdown with checkbox style for form.
-Single selection, empty selection means "No category" (NULL in database).
+Category select dropdown with multi-select and "Select All" for form.
 Requires:
   - categories: QuerySet of Category
-  - selected_category_id: ID of currently selected category (optional)
-  - field_name: Form field name (default: 'category')
-Usage: {% include 'blog/partials/_category_select_dropdown.html' with categories=categories selected_category_id=form.category.value %}
+  - selected_category_ids: List of selected category IDs (optional)
+Usage: {% include 'blog/partials/_category_select_dropdown.html' with categories=categories selected_category_ids=selected_category_ids %}
 {% endcomment %}
 
-<div id="category-select-dropdown" 
-     class="category-select-dropdown relative inline-block" 
-     data-field-name="{{ field_name|default:'category' }}">
-    <input type="hidden" name="{{ field_name|default:'category' }}" id="id_category" value="{{ selected_category_id|default:'' }}">
-    
+{% if categories %}
+<div id="category-select-container" class="category-select-dropdown relative inline-block">
     <button type="button" 
             onclick="toggleCategoryDropdown(this)"
             class="dropdown-toggle flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card text-sm hover:bg-muted transition-colors">
-        <span class="selected-category-name">
-            {% if selected_category_id %}
-                {% for cat in categories %}
-                    {% if cat.id|stringformat:"s" == selected_category_id|stringformat:"s" %}{{ cat.name }}{% endif %}
-                {% endfor %}
-            {% else %}
-            Категория
-            {% endif %}
-        </span>
-        <span class="selected-indicator {% if not selected_category_id %}hidden{% endif %} text-xs bg-primary text-white rounded-full px-1.5">1</span>
+        <span class="selected-category-name">Категории</span>
+        <span class="selected-count hidden text-xs bg-primary text-white rounded-full px-1.5">0</span>
         <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
     </button>
     
     <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 py-1">
+        <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer border-b border-border">
+            <input type="checkbox" 
+                   class="select-all-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                   id="category-select-all"
+                   onchange="handleSelectAllCategories(this)">
+            <span class="text-sm font-medium">Выбрать все</span>
+        </label>
+        
         {% for category in categories %}
         <label class="category-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
             <input type="checkbox" 
+                   name="categories"
                    class="category-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
                    value="{{ category.id }}"
                    data-category-code="{{ category.code }}"
                    data-category-name="{{ category.name }}"
-                   {% if category.id|stringformat:"s" == selected_category_id|stringformat:"s" %}checked{% endif %}
+                   {% if category.id in selected_category_ids %}checked{% endif %}
                    onchange="handleCategoryCheckboxChange(this)">
             <span class="text-sm">{{ category.name }}</span>
         </label>
@@ -78,47 +74,74 @@ if (typeof window._categorySelectInitialized === 'undefined') {
     }
     window.toggleCategoryDropdown = toggleCategoryDropdown;
 
+    function handleSelectAllCategories(checkbox) {
+        const dropdown = checkbox.closest('.category-select-dropdown');
+        const categoryCheckboxes = dropdown.querySelectorAll('.category-checkbox');
+        
+        categoryCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        
+        updateCategorySelectedCount(dropdown);
+        notifyCategoryChange();
+    }
+    window.handleSelectAllCategories = handleSelectAllCategories;
+
     function handleCategoryCheckboxChange(checkbox) {
         const dropdown = checkbox.closest('.category-select-dropdown');
-        const allCheckboxes = dropdown.querySelectorAll('.category-checkbox');
-        const hiddenInput = dropdown.querySelector('input[type="hidden"]');
-        const selectedName = dropdown.querySelector('.selected-category-name');
-        const indicator = dropdown.querySelector('.selected-indicator');
-        
-        if (checkbox.checked) {
-            allCheckboxes.forEach(cb => {
-                if (cb !== checkbox) {
-                    cb.checked = false;
-                }
-            });
-            
-            hiddenInput.value = checkbox.value;
-            selectedName.textContent = checkbox.dataset.categoryName;
-            indicator.classList.remove('hidden');
-            
-            if (typeof onCategoryChanged === 'function') {
-                onCategoryChanged(checkbox.dataset.categoryCode, checkbox.value);
-            }
-        } else {
-            hiddenInput.value = '';
-            selectedName.textContent = 'Категория';
-            indicator.classList.add('hidden');
-            
-            if (typeof onCategoryChanged === 'function') {
-                onCategoryChanged('', '');
-            }
-        }
+        updateSelectAllCategoryState(dropdown);
+        updateCategorySelectedCount(dropdown);
+        notifyCategoryChange();
     }
     window.handleCategoryCheckboxChange = handleCategoryCheckboxChange;
+
+    function updateSelectAllCategoryState(dropdown) {
+        const categoryCheckboxes = dropdown.querySelectorAll('.category-checkbox');
+        const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
+        
+        if (categoryCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            return;
+        }
+        
+        const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+    window.updateSelectAllCategoryState = updateSelectAllCategoryState;
+
+    function updateCategorySelectedCount(dropdown) {
+        const checkedBoxes = dropdown.querySelectorAll('.category-checkbox:checked');
+        const countBadge = dropdown.querySelector('.selected-count');
+        const count = checkedBoxes.length;
+        
+        if (count > 0) {
+            countBadge.textContent = count;
+            countBadge.classList.remove('hidden');
+        } else {
+            countBadge.classList.add('hidden');
+        }
+    }
+    window.updateCategorySelectedCount = updateCategorySelectedCount;
+
+    function notifyCategoryChange() {
+        const checkedBoxes = document.querySelectorAll('.category-checkbox:checked');
+        const codes = Array.from(checkedBoxes).map(cb => cb.dataset.categoryCode);
+        
+        if (typeof onCategoryChanged === 'function') {
+            onCategoryChanged(codes.length > 0 ? codes[0] : '', '');
+        }
+        
+        if (typeof onContentTypeOrCategoryChanged === 'function') {
+            onContentTypeOrCategoryChanged();
+        }
+    }
 
     function clearCategorySelection() {
         const dropdown = document.querySelector('.category-select-dropdown');
         if (!dropdown) return;
         
         const allCheckboxes = dropdown.querySelectorAll('.category-checkbox');
-        const hiddenInput = dropdown.querySelector('input[type="hidden"]');
-        const selectedName = dropdown.querySelector('.selected-category-name');
-        const indicator = dropdown.querySelector('.selected-indicator');
+        const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
         const menu = dropdown.querySelector('.dropdown-menu');
         const arrow = dropdown.querySelector('.dropdown-arrow');
         
@@ -126,16 +149,14 @@ if (typeof window._categorySelectInitialized === 'undefined') {
             cb.checked = false;
         });
         
-        hiddenInput.value = '';
-        selectedName.textContent = 'Категория';
-        indicator.classList.add('hidden');
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        
+        updateCategorySelectedCount(dropdown);
         
         menu.classList.add('hidden');
         arrow.classList.remove('rotate-180');
         
-        if (typeof onCategoryChanged === 'function') {
-            onCategoryChanged('', '');
-        }
+        notifyCategoryChange();
     }
     window.clearCategorySelection = clearCategorySelection;
 
@@ -148,5 +169,14 @@ if (typeof window._categorySelectInitialized === 'undefined') {
             });
         }
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.category-select-dropdown');
+        if (dropdown) {
+            updateSelectAllCategoryState(dropdown);
+            updateCategorySelectedCount(dropdown);
+        }
+    });
 }
 </script>
+{% endif %}

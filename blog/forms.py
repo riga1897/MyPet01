@@ -74,12 +74,12 @@ class TagForm(forms.ModelForm):  # type: ignore[type-arg]
 class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
     class Meta:
         model = Content
-        fields = ['title', 'description', 'content_type', 'category', 'tags', 'thumbnail', 'video_file']
+        fields = ['title', 'description', 'content_type', 'categories', 'tags', 'thumbnail', 'video_file']
         labels = {
             'title': 'Заголовок',
             'description': 'Описание',
             'content_type': 'Тип контента',
-            'category': 'Категория',
+            'categories': 'Категории',
             'tags': 'Теги',
             'thumbnail': 'Превью',
             'video_file': 'Файл',
@@ -97,8 +97,8 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
             'content_type': forms.RadioSelect(attrs={
                 'class': 'space-y-2',
             }),
-            'category': forms.Select(attrs={
-                'class': FORM_INPUT_CLASS,
+            'categories': forms.CheckboxSelectMultiple(attrs={
+                'class': 'space-y-2',
             }),
             'tags': forms.CheckboxSelectMultiple(attrs={
                 'class': 'space-y-2',

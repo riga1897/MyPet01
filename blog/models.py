@@ -8,7 +8,6 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import UploadedFile
 from django.db import models
-from django.utils.text import slugify
 from PIL import Image, UnidentifiedImageError
 
 from blog.services import (
@@ -58,12 +57,6 @@ class TagGroup(BaseModel):
         unique=True,
         verbose_name='Название группы',
     )
-    slug = models.SlugField(
-        max_length=100,
-        unique=True,
-        blank=True,
-        verbose_name='Слаг',
-    )
     categories = models.ManyToManyField(
         Category,
         blank=True,
@@ -79,11 +72,6 @@ class TagGroup(BaseModel):
 
     def __str__(self) -> str:
         return self.name
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-        super().save(*args, **kwargs)
 
     def is_visible_for_category(self, category: 'Category | None') -> bool:
         """Check if this tag group should be visible for the given category.
@@ -103,11 +91,6 @@ class Tag(BaseModel):
     name = models.CharField(
         max_length=100,
         verbose_name='Название тега',
-    )
-    slug = models.SlugField(
-        max_length=100,
-        blank=True,
-        verbose_name='Слаг',
     )
     group = models.ForeignKey(
         TagGroup,
@@ -129,11 +112,6 @@ class Tag(BaseModel):
 
     def __str__(self) -> str:
         return f'{self.group.name}: {self.name}'
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-        super().save(*args, **kwargs)
 
 
 def content_file_upload_path(instance: 'Content', filename: str) -> str:
@@ -254,13 +232,11 @@ class Content(BaseModel):
         help_text='Формат: MM:SS',
         verbose_name='Длительность',
     )
-    category = models.ForeignKey(
+    categories = models.ManyToManyField(
         Category,
-        on_delete=models.PROTECT,
-        related_name='contents',
-        verbose_name='Категория',
-        null=True,
         blank=True,
+        related_name='contents',
+        verbose_name='Категории',
     )
     tags = models.ManyToManyField(
         Tag,

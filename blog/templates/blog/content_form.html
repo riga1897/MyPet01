@@ -50,9 +50,9 @@
                     <label class="block text-sm font-medium text-foreground mb-1">
                         Категория
                     </label>
-                    {% include "blog/partials/_category_select_dropdown.html" with categories=categories selected_category_id=selected_category_id %}
-                    {% if form.category.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.category.errors.0 }}</p>
+                    {% include "blog/partials/_category_select_dropdown.html" with categories=categories selected_category_ids=selected_category_ids %}
+                    {% if form.categories.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.categories.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
@@ -227,6 +227,7 @@
             btnSelect.classList.remove('bg-primary', 'text-primary-foreground', 'border-primary');
             btnSelect.classList.add('bg-card', 'text-foreground', 'border-border');
             document.getElementById('existing_file_input').value = '';
+            setTimeout(() => document.getElementById('id_video_file').click(), 50);
         } else {
             uploadMode.classList.add('hidden');
             selectMode.classList.remove('hidden');
@@ -408,6 +409,7 @@
             uploadMode.classList.remove('hidden');
             selectMode.classList.add('hidden');
             document.getElementById('existing_thumbnail_input').value = '';
+            setTimeout(() => document.getElementById('id_thumbnail').click(), 50);
         } else {
             selectBtn.classList.add('bg-primary', 'text-primary-foreground', 'border-primary');
             selectBtn.classList.remove('bg-card', 'text-foreground', 'border-border');
