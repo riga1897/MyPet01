@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import shutil
+import tempfile
 from typing import Any
 
 from django.conf import settings
@@ -554,19 +557,41 @@ class FileUploadView(ModeratorRequiredMixin, View):
         
         os.makedirs(folder_path, exist_ok=True)
         
-        filename = uploaded_file.name or ''
-        if '..' in filename or '/' in filename or '\\' in filename:
+        original_filename = uploaded_file.name or ''
+        if '..' in original_filename or '/' in original_filename or '\\' in original_filename:
             return JsonResponse({'success': False, 'error': 'Недопустимое имя файла'}, status=400)
         
-        if not filename:
+        if not original_filename:
             return JsonResponse({'success': False, 'error': 'Пустое имя файла'}, status=400)
         
-        file_path = os.path.join(folder_path, filename)
-        with open(file_path, 'wb+') as destination:
-            for chunk in uploaded_file.chunks():
-                destination.write(chunk)
-        
-        return JsonResponse({'success': True, 'filename': filename})
+        md5_hash = hashlib.md5()
+        temp_fd, temp_path = tempfile.mkstemp(dir=folder_path)
+        try:
+            with os.fdopen(temp_fd, 'wb') as temp_file:
+                for chunk in uploaded_file.chunks():
+                    md5_hash.update(chunk)
+                    temp_file.write(chunk)
+            
+            content_hash = md5_hash.hexdigest()[:8]
+            name_part, ext = os.path.splitext(original_filename)
+            hashed_filename = f'{name_part}_{content_hash}{ext}'
+            file_path = os.path.join(folder_path, hashed_filename)
+            
+            if os.path.exists(file_path):
+                os.remove(temp_path)
+                return JsonResponse({
+                    'success': True,
+                    'filename': hashed_filename,
+                    'existing': True,
+                    'message': 'Файл уже существует'
+                })
+            
+            shutil.move(temp_path, file_path)
+            return JsonResponse({'success': True, 'filename': hashed_filename})
+        except Exception:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise
 
 
 class FileDeleteView(ModeratorRequiredMixin, View):
