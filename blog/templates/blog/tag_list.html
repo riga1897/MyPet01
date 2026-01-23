@@ -36,17 +36,7 @@
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm text-muted-foreground">Категория:</span>
-                        <button onclick="filterByCategory('all')" class="category-filter-btn active px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm" data-filter="all">
-                            Все
-                        </button>
-                        {% for cat in categories %}
-                        <button onclick="filterByCategory('{{ cat.code }}')" class="category-filter-btn px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm" data-filter="{{ cat.code }}">
-                            {{ cat.name }}
-                        </button>
-                        {% endfor %}
-                        <button onclick="filterByCategory('nocategory')" class="category-filter-btn px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm text-muted-foreground italic" data-filter="nocategory">
-                            Без категории
-                        </button>
+                        {% include 'blog/partials/_category_filter_dropdown.html' with categories=categories %}
                     </div>
                     
                     <div class="relative w-full sm:w-64">
@@ -170,7 +160,6 @@
 </div>
 
 <script>
-let currentCategoryFilter = 'all';
 let currentTagSearch = '';
 
 function toggleGroupDropdown(button) {
@@ -248,29 +237,21 @@ function clearAllGroupFilters() {
     applyFilters();
 }
 
-function filterByCategory(category) {
-    currentCategoryFilter = category;
+function updateGroupCheckboxesVisibility() {
+    const selectedCats = getSelectedCategoryFilters();
+    const allSelected = document.querySelectorAll('.category-filter-checkbox').length === selectedCats.length;
     
-    document.querySelectorAll('.category-filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.filter === category) {
-            btn.classList.add('active');
-        }
-    });
-    
-    updateGroupCheckboxesVisibility(category);
-    updateGroupSelectAllState();
-    updateGroupSelectedCount();
-    applyFilters();
-}
-
-function updateGroupCheckboxesVisibility(category) {
     document.querySelectorAll('.group-checkbox-label').forEach(label => {
         const categories = label.dataset.categories ? label.dataset.categories.split(',').filter(c => c) : [];
-        const isVisible = category === 'all' || 
-                         categories.length === 0 || 
-                         (category === 'nocategory' && categories.length === 0) ||
-                         categories.includes(category);
+        let isVisible = allSelected;
+        
+        if (!isVisible) {
+            if (categories.length === 0) {
+                isVisible = selectedCats.includes('nocategory');
+            } else {
+                isVisible = categories.some(cat => selectedCats.includes(cat));
+            }
+        }
         
         if (isVisible) {
             label.classList.remove('hidden');
@@ -307,14 +288,11 @@ function applyTagGroupFilters() {
     
     cards.forEach(card => {
         const groupId = card.dataset.groupId;
-        const categories = card.dataset.categories ? card.dataset.categories.split(',').filter(c => c) : [];
+        const categories = card.dataset.categories || '';
         const name = card.dataset.name || '';
         const tags = card.dataset.tags || '';
         
-        const matchesCategory = currentCategoryFilter === 'all' || 
-                               categories.length === 0 ||
-                               (currentCategoryFilter === 'nocategory' && categories.length === 0) ||
-                               categories.includes(currentCategoryFilter);
+        const matchesCategory = matchesCategoryFilter(categories);
         const matchesSearch = currentTagSearch === '' || 
                              name.includes(currentTagSearch) || 
                              tags.includes(currentTagSearch);
@@ -336,7 +314,7 @@ function applyTagGroupFilters() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    updateGroupCheckboxesVisibility(currentCategoryFilter);
+    updateGroupCheckboxesVisibility();
     updateGroupSelectAllState();
     updateGroupSelectedCount();
 });
@@ -434,5 +412,15 @@ function showNotification(message, type) {
         setTimeout(() => notification.remove(), 300);
     }, 2000);
 }
+</script>
+{% include 'blog/partials/_category_filter_js.html' %}
+<script>
+const originalApplyCategoryFilter = applyCategoryFilter;
+applyCategoryFilter = function() {
+    updateGroupCheckboxesVisibility();
+    updateGroupSelectAllState();
+    updateGroupSelectedCount();
+    originalApplyCategoryFilter();
+};
 </script>
 {% endblock %}

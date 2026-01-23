@@ -30,17 +30,7 @@
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm text-muted-foreground">Категория:</span>
-                        <button onclick="filterContentCategory('all')" class="content-filter-btn active px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm" data-filter="all">
-                            Все
-                        </button>
-                        {% for cat in categories %}
-                        <button onclick="filterContentCategory('{{ cat.code }}')" class="content-filter-btn px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm" data-filter="{{ cat.code }}">
-                            {{ cat.name }}
-                        </button>
-                        {% endfor %}
-                        <button onclick="filterContentCategory('nocategory')" class="content-filter-btn px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors text-sm text-muted-foreground italic" data-filter="nocategory">
-                            Без категории
-                        </button>
+                        {% include 'blog/partials/_category_filter_dropdown.html' with categories=categories %}
                     </div>
                     
                     <div class="relative w-full sm:w-64">
@@ -128,24 +118,7 @@
 </div>
 
 <script>
-let currentContentCategory = 'all';
 let currentContentSearch = '';
-
-function filterContentCategory(category) {
-    currentContentCategory = category;
-    
-    document.querySelectorAll('.content-filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.filter === category) {
-            btn.classList.add('active');
-        }
-    });
-    
-    if (typeof updateTagDropdownsVisibility === 'function') {
-        updateTagDropdownsVisibility(category);
-    }
-    applyFilters();
-}
 
 function searchContent(query) {
     currentContentSearch = query.toLowerCase().trim();
@@ -162,9 +135,7 @@ function applyFilters() {
         const description = row.dataset.description || '';
         const rowTags = row.dataset.tags ? row.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesCategory = currentContentCategory === 'all' || 
-                               (currentContentCategory === 'nocategory' && category === '') ||
-                               category === currentContentCategory;
+        const matchesCategory = matchesCategoryFilter(category);
         const matchesSearch = currentContentSearch === '' || 
                              title.includes(currentContentSearch) || 
                              description.includes(currentContentSearch);
@@ -180,15 +151,14 @@ function applyFilters() {
 }
 
 function clearContentFilters() {
-    currentContentCategory = 'all';
     currentContentSearch = '';
     
-    document.querySelectorAll('.content-filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.filter === 'all') {
-            btn.classList.add('active');
-        }
+    document.querySelectorAll('.category-filter-checkbox').forEach(cb => {
+        cb.checked = true;
     });
+    document.getElementById('category-filter-select-all').checked = true;
+    initCategoryFilters();
+    updateCategoryFilterCount();
     
     document.getElementById('contentSearchInput').value = '';
     
@@ -199,4 +169,5 @@ function clearContentFilters() {
     applyFilters();
 }
 </script>
+{% include 'blog/partials/_category_filter_js.html' %}
 {% endblock %}

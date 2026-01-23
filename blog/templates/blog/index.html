@@ -20,17 +20,7 @@
             <div class="flex flex-col gap-4 mb-8">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="flex flex-wrap justify-center gap-2">
-                        <button onclick="filterCards('all')" class="filter-btn active px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="all">
-                            Все
-                        </button>
-                        {% for cat in categories %}
-                        <button onclick="filterCards('{{ cat.code }}')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors" data-filter="{{ cat.code }}">
-                            {{ cat.name }}
-                        </button>
-                        {% endfor %}
-                        <button onclick="filterCards('nocategory')" class="filter-btn px-4 py-2 rounded-full border border-border hover:bg-muted transition-colors text-muted-foreground italic" data-filter="nocategory">
-                            Без категории
-                        </button>
+                        {% include 'blog/partials/_category_filter_dropdown.html' with categories=categories %}
                     </div>
                     
                     <div class="relative w-full sm:w-72">
@@ -100,7 +90,6 @@
 </div>
 
 <script>
-let currentFilter = 'all';
 let currentSearch = '';
 
 const tagGroupsData = {
@@ -122,28 +111,22 @@ function isGroupVisibleForCategory(groupId, category) {
     return group.categories.includes(category);
 }
 
-function filterCards(category) {
-    currentFilter = category;
-    
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.filter === category) {
-            btn.classList.add('active');
-        }
-    });
-    
-    if (typeof updateTagDropdownsVisibility === 'function') {
-        updateTagDropdownsVisibility(category);
-    }
-    applyFilters();
-}
 
 function filterFromAbout(category) {
     const videosSection = document.getElementById('videos');
     if (videosSection) {
         videosSection.scrollIntoView({ behavior: 'smooth' });
     }
-    setTimeout(() => filterCards(category), 300);
+    setTimeout(() => {
+        document.querySelectorAll('.category-filter-checkbox').forEach(cb => {
+            cb.checked = cb.dataset.categoryCode === category;
+        });
+        selectedCategoryFilters.clear();
+        selectedCategoryFilters.add(category);
+        updateCategoryFilterSelectAllState();
+        updateCategoryFilterCount();
+        applyFilters();
+    }, 300);
 }
 
 function searchCards(query) {
@@ -165,9 +148,7 @@ function applyFilters() {
         const description = card.dataset.description;
         const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
         
-        const matchesFilter = currentFilter === 'all' || 
-                              (currentFilter === 'nocategory' && category === '') ||
-                              category === currentFilter;
+        const matchesFilter = matchesCategoryFilter(category);
         const matchesSearch = currentSearch === '' || 
                              title.includes(currentSearch) || 
                              description.includes(currentSearch);
@@ -235,6 +216,8 @@ document.addEventListener('keydown', function(event) {
     }
 });
 </script>
+
+{% include 'blog/partials/_category_filter_js.html' %}
 
 {% include 'blog/partials/_footer.html' %}
 {% endblock %}
