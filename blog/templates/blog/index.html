@@ -184,16 +184,19 @@ function openModal(title, description, type, videoUrl, imageUrl) {
     modalTitle.textContent = title;
     modalDescription.textContent = description;
 
-    if (type === 'video') {
+    if (type === 'True' && videoUrl) {
         videoContainer.classList.remove('hidden');
         imageContainer.classList.add('hidden');
         videoElement.src = videoUrl;
         videoElement.play();
-    } else {
+    } else if (imageUrl) {
         imageContainer.classList.remove('hidden');
         videoContainer.classList.add('hidden');
         imageElement.src = imageUrl;
         imageElement.alt = title;
+    } else {
+        imageContainer.classList.add('hidden');
+        videoContainer.classList.add('hidden');
     }
 
     modal.classList.remove('hidden');
