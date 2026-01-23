@@ -44,7 +44,7 @@
                         <td class="px-6 py-4 text-muted-foreground">{{ user.email|default:"—" }}</td>
                         <td class="px-6 py-4">
                             {% if user.id in moderator_ids or user.is_superuser %}
-                            <span class="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded">Модератор</span>
+                            <span class="text-xs bg-primary text-primary-foreground px-2 py-1 rounded font-medium">Модератор</span>
                             {% else %}
                             <span class="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">Пользователь</span>
                             {% endif %}
