@@ -67,7 +67,7 @@
                         data-description="{{ content.description|lower }}"
                         data-tags="{% for tag in content.tags.all %}{{ tag.id }},{% endfor %}">
                         <td class="px-6 py-4">
-                            <a href="{% url 'blog:content_edit' content.pk %}" class="font-medium text-foreground hover:text-primary transition-colors">{{ content.title }}</a>
+                            <a href="{% url 'blog:content_edit' content.pk %}" class="font-medium text-primary underline hover:text-primary/80 transition-colors">{{ content.title }}</a>
                         </td>
                         <td class="px-6 py-4">
                             {% if content.content_type %}
@@ -97,9 +97,7 @@
                         <td class="px-6 py-4 text-muted-foreground">
                             {{ content.updated_at|date:"d.m.Y" }}
                         </td>
-                        <td class="px-6 py-4 text-right space-x-2">
-                            <a href="{% url 'blog:content_edit' content.pk %}" 
-                               class="text-primary hover:underline text-sm">Редактировать</a>
+                        <td class="px-6 py-4 text-right">
                             <a href="{% url 'blog:content_delete' content.pk %}" 
                                class="text-red-600 hover:text-red-800 text-sm">Удалить</a>
                         </td>
