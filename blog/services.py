@@ -27,42 +27,6 @@ THUMBNAIL_MAX_SIZE = (800, 600)
 THUMBNAIL_QUALITY = 85
 
 
-def get_video_duration(video_file: Any) -> str:
-    """Extract video duration using ffprobe.
-    
-    Args:
-        video_file: Django file field with video content.
-    
-    Returns:
-        Duration string in MM:SS format, or empty string if extraction fails.
-    """
-    if not video_file or not hasattr(video_file, 'path'):
-        return ''
-    
-    try:
-        result = subprocess.run(
-            [
-                'ffprobe',
-                '-v', 'error',
-                '-show_entries', 'format=duration',
-                '-of', 'default=noprint_wrappers=1:nokey=1',
-                str(video_file.path),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            duration_seconds = float(result.stdout.strip())
-            minutes = int(duration_seconds // 60)
-            seconds = int(duration_seconds % 60)
-            return f'{minutes}:{seconds:02d}'
-    except (subprocess.TimeoutExpired, ValueError, OSError) as e:
-        logger.warning('Failed to extract video duration: %s', e)
-    
-    return ''
-
-
 def generate_thumbnail_from_video(video_file: Any) -> 'ContentFile[bytes] | None':
     """Generate thumbnail from first frame of video using ffmpeg.
     

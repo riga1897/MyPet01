@@ -84,7 +84,7 @@ class TagAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 @admin.register(Content)
 class ContentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('title', 'content_type', 'get_categories', 'duration', 'updated_at', 'created_at')
+    list_display = ('title', 'content_type', 'get_categories', 'updated_at', 'created_at')
     list_filter = ('content_type', 'categories', 'tags', 'created_at', 'updated_at')
     search_fields = ('title', 'description')
     filter_horizontal = ('categories', 'tags')

@@ -13,7 +13,6 @@ from PIL import Image, UnidentifiedImageError
 from blog.services import (
     generate_thumbnail_from_image,
     generate_thumbnail_from_video,
-    get_video_duration,
 )
 from core.models import BaseModel
 
@@ -226,12 +225,6 @@ class Content(BaseModel):
         blank=True,
         verbose_name='Обложка',
     )
-    duration = models.CharField(
-        max_length=10,
-        blank=True,
-        help_text='Формат: MM:SS',
-        verbose_name='Длительность',
-    )
     categories = models.ManyToManyField(
         Category,
         blank=True,
@@ -274,16 +267,10 @@ class Content(BaseModel):
         return self._has_content_type_code(ContentType.PHOTO_CODE)
 
     def _process_auto_fields_after_save(self) -> None:
-        """Process auto-duration and auto-thumbnail after initial save."""
+        """Process auto-thumbnail after initial save."""
         needs_update = False
         
         if self.has_video_type() and self.video_file:
-            if not self.duration:
-                duration = get_video_duration(self.video_file)
-                if duration:
-                    self.duration = duration
-                    needs_update = True
-            
             if not self.thumbnail:
                 thumbnail = generate_thumbnail_from_video(self.video_file)
                 if thumbnail:
@@ -298,7 +285,7 @@ class Content(BaseModel):
                     needs_update = True
         
         if needs_update:
-            super().save(update_fields=['duration', 'thumbnail'])
+            super().save(update_fields=['thumbnail'])
 
     def _is_new_thumbnail(self) -> bool:
         """Check if thumbnail is a newly uploaded file."""

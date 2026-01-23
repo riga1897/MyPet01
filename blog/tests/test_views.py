@@ -21,7 +21,6 @@ class TestHomeView:
         content = Content.objects.create(
             title='Тестовое видео',
             description='Описание тестового видео',
-            duration='10:00',
         )
         content.categories.add(yoga_category)
         client = Client()

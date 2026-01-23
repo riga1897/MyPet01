@@ -12,66 +12,7 @@ from blog.services import (
     generate_hashed_filename,
     generate_thumbnail_from_image,
     generate_thumbnail_from_video,
-    get_video_duration,
 )
-
-
-class TestGetVideoDuration:
-    """Tests for get_video_duration function."""
-
-    def test_returns_empty_string_when_no_file(self) -> None:
-        """Should return empty string when video_file is None."""
-        assert get_video_duration(None) == ''
-
-    def test_returns_empty_string_when_no_path_attribute(self) -> None:
-        """Should return empty string when video_file has no path attribute."""
-        mock_file = MagicMock(spec=[])
-        assert get_video_duration(mock_file) == ''
-
-    @patch('blog.services.subprocess.run')
-    def test_returns_formatted_duration_on_success(
-        self, mock_run: MagicMock
-    ) -> None:
-        """Should return MM:SS format when ffprobe succeeds."""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout='125.5\n',
-        )
-        mock_file = MagicMock()
-        mock_file.path = '/path/to/video.mp4'
-
-        result = get_video_duration(mock_file)
-
-        assert result == '2:05'
-        mock_run.assert_called_once()
-
-    @patch('blog.services.subprocess.run')
-    def test_returns_empty_string_on_ffprobe_failure(
-        self, mock_run: MagicMock
-    ) -> None:
-        """Should return empty string when ffprobe fails."""
-        mock_run.return_value = MagicMock(
-            returncode=1,
-            stdout='',
-        )
-        mock_file = MagicMock()
-        mock_file.path = '/path/to/video.mp4'
-
-        result = get_video_duration(mock_file)
-
-        assert result == ''
-
-    @patch('blog.services.subprocess.run')
-    def test_handles_timeout(self, mock_run: MagicMock) -> None:
-        """Should return empty string on timeout."""
-        import subprocess
-        mock_run.side_effect = subprocess.TimeoutExpired('ffprobe', 30)
-        mock_file = MagicMock()
-        mock_file.path = '/path/to/video.mp4'
-
-        result = get_video_duration(mock_file)
-
-        assert result == ''
 
 
 class TestGenerateThumbnailFromVideo:
