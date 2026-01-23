@@ -151,9 +151,18 @@
                     <input type="hidden" name="existing_thumbnail" id="existing_thumbnail_input" value="">
                     
                     {% if object.thumbnail %}
-                    <p class="text-sm text-muted-foreground mt-1">
-                        Текущая миниатюра: {{ object.thumbnail.name|truncatechars:50 }}
-                    </p>
+                    <div id="current-thumbnail-info" class="flex items-center gap-2 mt-1">
+                        <p class="text-sm text-muted-foreground">
+                            Текущая миниатюра: {{ object.thumbnail.name|truncatechars:50 }}
+                        </p>
+                        <button type="button" onclick="detachThumbnail()" 
+                                class="text-red-500 hover:text-red-700 p-0.5 flex-shrink-0" title="Открепить миниатюру">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <input type="hidden" name="detach_thumbnail" id="detach_thumbnail_input" value="">
                     {% endif %}
                     {% if form.thumbnail.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.thumbnail.errors.0 }}</p>
@@ -371,6 +380,18 @@
         document.getElementById('thumb-no-selection').classList.remove('hidden');
     }
     window.clearThumbSelection = clearThumbSelection;
+    
+    function detachThumbnail() {
+        const detachInput = document.getElementById('detach_thumbnail_input');
+        if (detachInput) {
+            detachInput.value = 'true';
+        }
+        const currentInfo = document.getElementById('current-thumbnail-info');
+        if (currentInfo) {
+            currentInfo.classList.add('hidden');
+        }
+    }
+    window.detachThumbnail = detachThumbnail;
     
     function setupFormUpload() {
         const form = document.getElementById('content-form');

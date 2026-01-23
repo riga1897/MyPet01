@@ -181,13 +181,17 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
                     form.add_error(None, 'Выбранный файл недоступен.')
                     return self.form_invalid(form)
         
-        existing_thumbnail = self.request.POST.get('existing_thumbnail', '').strip()
-        if existing_thumbnail:
-            if validate_existing_thumbnail(existing_thumbnail):
-                form.instance.thumbnail = existing_thumbnail
-            else:
-                form.add_error(None, 'Выбранная миниатюра недоступна.')
-                return self.form_invalid(form)
+        detach_thumbnail = self.request.POST.get('detach_thumbnail', '').strip()
+        if detach_thumbnail == 'true':
+            form.instance.thumbnail = ''
+        else:
+            existing_thumbnail = self.request.POST.get('existing_thumbnail', '').strip()
+            if existing_thumbnail:
+                if validate_existing_thumbnail(existing_thumbnail):
+                    form.instance.thumbnail = existing_thumbnail
+                else:
+                    form.add_error(None, 'Выбранная миниатюра недоступна.')
+                    return self.form_invalid(form)
         
         messages.success(self.request, 'Контент успешно обновлён.')
         return super().form_valid(form)

@@ -110,6 +110,26 @@ class TestContentUpdateView:
         content.refresh_from_db()
         assert content.title == 'Новый заголовок'
 
+    def test_detach_thumbnail_clears_thumbnail(self, video_type: ContentType) -> None:
+        user = User.objects.create_user(username='mod', password='test123')
+        group = get_or_create_moderators_group()
+        user.groups.add(group)
+        content = Content.objects.create(title='С миниатюрой', content_type=video_type)
+        Content.objects.filter(pk=content.pk).update(thumbnail='thumbnails/test.jpg')
+        content.refresh_from_db()
+        assert content.thumbnail == 'thumbnails/test.jpg'
+        client = Client()
+        client.force_login(user)
+        response = client.post(f'/content/{content.pk}/edit/', {
+            'title': 'С миниатюрой',
+            'description': '',
+            'content_type': video_type.pk,
+            'detach_thumbnail': 'true',
+        })
+        assert response.status_code == 302
+        content.refresh_from_db()
+        assert content.thumbnail == ''
+
 
 @pytest.mark.django_db
 class TestContentDeleteView:
