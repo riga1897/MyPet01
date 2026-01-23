@@ -1,4 +1,4 @@
-<article class="group overflow-hidden rounded-2xl bg-card border border-border transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer" 
+<article class="group h-full flex flex-col overflow-hidden rounded-2xl bg-card border border-border transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer" 
          onclick="openModal('{{ video.title|escapejs }}', '{{ video.description|escapejs }}', '{{ video.has_playable_video }}', '{% if video.video_file %}{{ video.video_file.url|escapejs }}{% endif %}', '{% if video.thumbnail %}{{ video.thumbnail.url|escapejs }}{% endif %}')">
     <div class="relative aspect-video overflow-hidden bg-muted">
         {% if video.thumbnail %}
@@ -41,7 +41,7 @@
         </div>
     </div>
     
-    <div class="p-5">
+    <div class="p-5 flex-1 flex flex-col">
         {% if video.categories.all %}
         <div class="mb-2 flex flex-wrap gap-1">
             {% for cat in video.categories.all %}
@@ -56,11 +56,11 @@
             {{ video.title }}
         </h3>
         
-        <p class="text-muted-foreground line-clamp-2 mb-3 text-sm">
+        <p class="text-muted-foreground line-clamp-2 mb-3 text-sm flex-1">
             {{ video.description }}
         </p>
         
-        <div class="flex items-center justify-between text-xs text-muted-foreground">
+        <div class="flex items-center justify-between text-xs text-muted-foreground mt-auto">
             <span>{{ video.updated_at|date:"d F Y" }}</span>
             {% if is_moderator %}
             <a href="{% url 'blog:content_edit' video.pk %}" 
