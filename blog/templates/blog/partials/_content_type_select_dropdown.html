@@ -27,7 +27,7 @@ Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with conten
     <p class="text-xs text-muted-foreground mt-1">(нельзя изменить после загрузки файла)</p>
     {% endif %}
     
-    <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-lg z-50 py-1">
+    <div class="dropdown-menu hidden absolute top-full left-0 mt-1 min-w-[180px] bg-card border border-border rounded-lg shadow-xl z-50 py-1">
         {% for ct in content_types %}
         <label class="content-type-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
             <input type="checkbox" 
