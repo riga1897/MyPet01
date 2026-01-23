@@ -45,6 +45,7 @@
     align-items: center;
     justify-content: center;
     padding: 0.5rem 1.5rem;
+    min-width: 140px;
     background-color: var(--primary);
     color: var(--primary-foreground);
     border-radius: 0.5rem;
@@ -64,12 +65,34 @@
     cursor: not-allowed;
 }
 
+/* Secondary Button - Base styles */
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.5rem;
+    min-width: 140px;
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background-color: color-mix(in srgb, var(--secondary) 90%, black);
+}
+
 /* Primary Button - Small */
 .btn-primary-sm {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0.5rem 1rem;
+    min-width: 120px;
     background-color: var(--primary);
     color: var(--primary-foreground);
     border-radius: 0.5rem;
@@ -91,12 +114,36 @@
     cursor: not-allowed;
 }
 
+/* Secondary Button - Small */
+.btn-secondary-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    min-width: 120px;
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-secondary-sm:hover {
+    background-color: color-mix(in srgb, var(--secondary) 90%, black);
+}
+
 /* Primary Button - Large (Hero) */
 .btn-primary-lg {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0.75rem 2rem;
+    min-width: 160px;
     background-color: var(--primary);
     color: var(--primary-foreground);
     border-radius: 0.75rem;
@@ -109,6 +156,27 @@
 
 .btn-primary-lg:hover {
     background-color: color-mix(in srgb, var(--primary) 90%, black);
+}
+
+/* Secondary Button - Large (Hero) */
+.btn-secondary-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    min-width: 160px;
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-secondary-lg:hover {
+    background-color: color-mix(in srgb, var(--secondary) 90%, black);
 }
 
 /* Primary Button - Full Width */
