@@ -151,18 +151,16 @@
                     <input type="hidden" name="existing_thumbnail" id="existing_thumbnail_input" value="">
                     
                     {% if object.thumbnail %}
-                    <div id="current-thumbnail-info" class="flex items-center gap-2 mt-1">
-                        <p class="text-sm text-muted-foreground">
-                            Текущая миниатюра: {{ object.thumbnail.name|truncatechars:50 }}
-                        </p>
+                    <div id="current-thumbnail-info" class="flex items-center gap-2 mt-1 p-2 bg-muted rounded-lg">
+                        <span class="text-sm text-foreground flex-1">{{ object.thumbnail.name|truncatechars:50 }}</span>
                         <button type="button" onclick="detachThumbnail()" 
-                                class="text-red-500 hover:text-red-700 p-0.5 flex-shrink-0" title="Открепить миниатюру">
+                                class="text-red-500 hover:text-red-700 p-1" title="Открепить миниатюру">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
+                        <input type="hidden" name="detach_thumbnail" id="detach_thumbnail_input" value="">
                     </div>
-                    <input type="hidden" name="detach_thumbnail" id="detach_thumbnail_input" value="">
                     {% endif %}
                     {% if form.thumbnail.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.thumbnail.errors.0 }}</p>
