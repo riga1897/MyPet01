@@ -65,7 +65,7 @@
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Тип</th>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Категория</th>
                         <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Теги</th>
-                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Создан</th>
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Обновлен</th>
                         <th class="text-right px-6 py-3 text-sm font-medium text-foreground">Действия</th>
                     </tr>
                 </thead>
@@ -105,7 +105,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-muted-foreground">
-                            {{ content.created_at|date:"d.m.Y" }}
+                            {{ content.updated_at|date:"d.m.Y" }}
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
                             <a href="{% url 'blog:content_edit' content.pk %}" 

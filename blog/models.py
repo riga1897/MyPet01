@@ -355,8 +355,8 @@ class Content(BaseModel):
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
         """Delete content and its associated thumbnail file."""
-        if self.thumbnail:
-            thumbnail_path = os.path.join(settings.MEDIA_ROOT, self.thumbnail.name)
+        if self.thumbnail and self.thumbnail.name:
+            thumbnail_path = os.path.join(settings.MEDIA_ROOT, str(self.thumbnail.name))
             if os.path.exists(thumbnail_path):
                 os.remove(thumbnail_path)
         return super().delete(*args, **kwargs)

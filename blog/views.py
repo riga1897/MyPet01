@@ -27,6 +27,21 @@ def get_filter_context() -> dict[str, Any]:
     }
 
 
+def get_available_thumbnails() -> list[str]:
+    """Get list of available thumbnail files."""
+    thumbnails_path = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
+    if not os.path.exists(thumbnails_path) or not os.path.isdir(thumbnails_path):
+        return []
+    
+    thumbnails = []
+    for filename in os.listdir(thumbnails_path):
+        file_path = os.path.join(thumbnails_path, filename)
+        if os.path.isfile(file_path):
+            thumbnails.append(f'thumbnails/{filename}')
+    
+    return sorted(thumbnails, key=str.lower)
+
+
 class HomeView(ListView):  # type: ignore[type-arg]
     model = Content
     template_name = 'blog/index.html'
@@ -89,6 +104,21 @@ def validate_existing_file(existing_file: str, content_type: ContentType | None)
     return os.path.exists(full_path) and os.path.isfile(full_path)
 
 
+def validate_existing_thumbnail(existing_thumbnail: str) -> bool:
+    """Validate that existing_thumbnail is safe and exists in thumbnails folder."""
+    if not existing_thumbnail:
+        return False
+    if '..' in existing_thumbnail or existing_thumbnail.startswith('/'):
+        return False
+    if not existing_thumbnail.startswith('thumbnails/'):
+        return False
+    full_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, existing_thumbnail))
+    media_root = os.path.normpath(settings.MEDIA_ROOT)
+    if not full_path.startswith(media_root + os.sep):
+        return False
+    return os.path.exists(full_path) and os.path.isfile(full_path)
+
+
 class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-arg]
     model = Content
     form_class = ContentForm
@@ -103,6 +133,15 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
             else:
                 form.add_error(None, 'Выбранный файл недоступен.')
                 return self.form_invalid(form)
+        
+        existing_thumbnail = self.request.POST.get('existing_thumbnail', '').strip()
+        if existing_thumbnail:
+            if validate_existing_thumbnail(existing_thumbnail):
+                form.instance.thumbnail = existing_thumbnail
+            else:
+                form.add_error(None, 'Выбранная миниатюра недоступна.')
+                return self.form_invalid(form)
+        
         messages.success(self.request, 'Контент успешно создан.')
         return super().form_valid(form)
 
@@ -116,6 +155,7 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
         context['selected_content_type_id'] = None
         context['current_category_code'] = None
         context['has_file'] = False
+        context['available_thumbnails'] = get_available_thumbnails()
         return context
 
 
@@ -137,6 +177,15 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
                 else:
                     form.add_error(None, 'Выбранный файл недоступен.')
                     return self.form_invalid(form)
+        
+        existing_thumbnail = self.request.POST.get('existing_thumbnail', '').strip()
+        if existing_thumbnail:
+            if validate_existing_thumbnail(existing_thumbnail):
+                form.instance.thumbnail = existing_thumbnail
+            else:
+                form.add_error(None, 'Выбранная миниатюра недоступна.')
+                return self.form_invalid(form)
+        
         messages.success(self.request, 'Контент успешно обновлён.')
         return super().form_valid(form)
 
@@ -151,6 +200,7 @@ class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[typ
         context['selected_content_type_id'] = content.content_type_id
         context['current_category_code'] = content.category.code if content.category else None
         context['has_file'] = bool(content.video_file)
+        context['available_thumbnails'] = get_available_thumbnails()
         return context
 
 
@@ -458,29 +508,29 @@ class FileListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
         context: dict[str, Any] = super().get_context_data(**kwargs)
         context['is_moderator'] = True
         
-        files_by_type: dict[int, list[dict[str, Any]]] = {}
         used_files = set(
             Content.objects.exclude(video_file='').values_list('video_file', flat=True)
         )
         
+        all_files: list[dict[str, Any]] = []
         for ct in context['content_types']:
             folder_path = os.path.join(settings.MEDIA_ROOT, ct.upload_folder)
-            files = []
             if os.path.exists(folder_path) and os.path.isdir(folder_path):
                 for filename in os.listdir(folder_path):
                     file_path = os.path.join(folder_path, filename)
                     if os.path.isfile(file_path):
                         relative_path = f'{ct.upload_folder}/{filename}'
-                        files.append({
+                        all_files.append({
                             'name': filename,
                             'path': relative_path,
                             'used': relative_path in used_files,
                             'size': os.path.getsize(file_path),
+                            'type_id': ct.id,
+                            'type_name': ct.name,
                         })
-            files.sort(key=lambda x: str(x['name']).lower())
-            files_by_type[ct.id] = files
         
-        context['files_by_type'] = files_by_type
+        all_files.sort(key=lambda x: str(x['name']).lower())
+        context['all_files'] = all_files
         return context
 
 

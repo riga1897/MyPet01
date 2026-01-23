@@ -131,15 +131,41 @@
                     <p id="file-hint" class="text-xs text-muted-foreground mt-1"></p>
                 </div>
                 
-                <div>
+                <div id="thumbnail-section">
                     <label class="block text-sm font-medium text-foreground mb-1">
                         Миниатюра (необязательно)
                     </label>
-                    <input type="file" 
-                           name="thumbnail" 
-                           id="id_thumbnail"
-                           class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                           accept="image/*">
+                    
+                    <div class="flex gap-2 mb-2">
+                        <button type="button" id="btn-thumb-upload" onclick="setThumbMode('upload')"
+                                class="px-3 py-1 text-sm rounded-lg border border-primary bg-primary text-primary-foreground">
+                            Загрузить новую
+                        </button>
+                        <button type="button" id="btn-thumb-select" onclick="setThumbMode('select')"
+                                class="px-3 py-1 text-sm rounded-lg border border-border bg-card text-foreground hover:bg-muted">
+                            Выбрать из папки
+                        </button>
+                    </div>
+                    
+                    <div id="thumb-upload-mode">
+                        <input type="file" 
+                               name="thumbnail" 
+                               id="id_thumbnail"
+                               class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                               accept="image/*">
+                    </div>
+                    
+                    <div id="thumb-select-mode" class="hidden">
+                        <input type="hidden" name="existing_thumbnail" id="existing_thumbnail_input" value="">
+                        <select id="existing-thumb-select" onchange="onExistingThumbSelected(this)"
+                                class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card">
+                            <option value="">— Выберите миниатюру —</option>
+                            {% for thumb in available_thumbnails %}
+                            <option value="{{ thumb }}">{{ thumb }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
                     {% if object.thumbnail %}
                     <p class="text-sm text-muted-foreground mt-1">
                         Текущая миниатюра: {{ object.thumbnail.name|truncatechars:50 }}
@@ -149,7 +175,7 @@
                     <p class="text-red-600 text-sm mt-1">{{ form.thumbnail.errors.0 }}</p>
                     {% endif %}
                     <p class="text-xs text-muted-foreground mt-1">
-                        Если не выбрана, будет сгенерирована автоматически
+                        Если не выбрана, будет сгенерирована автоматически (для фото/видео) или использована заглушка
                     </p>
                 </div>
                 
@@ -332,6 +358,40 @@
         }
     }
     window.onFileSelected = onFileSelected;
+    
+    let currentThumbMode = 'upload';
+    
+    function setThumbMode(mode) {
+        currentThumbMode = mode;
+        const uploadBtn = document.getElementById('btn-thumb-upload');
+        const selectBtn = document.getElementById('btn-thumb-select');
+        const uploadMode = document.getElementById('thumb-upload-mode');
+        const selectMode = document.getElementById('thumb-select-mode');
+        
+        if (mode === 'upload') {
+            uploadBtn.classList.add('bg-primary', 'text-primary-foreground', 'border-primary');
+            uploadBtn.classList.remove('bg-card', 'text-foreground', 'border-border');
+            selectBtn.classList.remove('bg-primary', 'text-primary-foreground', 'border-primary');
+            selectBtn.classList.add('bg-card', 'text-foreground', 'border-border');
+            uploadMode.classList.remove('hidden');
+            selectMode.classList.add('hidden');
+            document.getElementById('existing_thumbnail_input').value = '';
+        } else {
+            selectBtn.classList.add('bg-primary', 'text-primary-foreground', 'border-primary');
+            selectBtn.classList.remove('bg-card', 'text-foreground', 'border-border');
+            uploadBtn.classList.remove('bg-primary', 'text-primary-foreground', 'border-primary');
+            uploadBtn.classList.add('bg-card', 'text-foreground', 'border-border');
+            selectMode.classList.remove('hidden');
+            uploadMode.classList.add('hidden');
+            document.getElementById('id_thumbnail').value = '';
+        }
+    }
+    window.setThumbMode = setThumbMode;
+    
+    function onExistingThumbSelected(select) {
+        document.getElementById('existing_thumbnail_input').value = select.value;
+    }
+    window.onExistingThumbSelected = onExistingThumbSelected;
     
     document.addEventListener('DOMContentLoaded', function() {
         updateFileInput();
