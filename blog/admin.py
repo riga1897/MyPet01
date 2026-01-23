@@ -7,8 +7,9 @@ from .models import Category, Content, ContentType, Tag, TagGroup
 
 @admin.register(ContentType)
 class ContentTypeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'code', 'upload_folder', 'content_count', 'created_at')
+    list_display = ('name', 'code', 'upload_folder', 'content_count', 'updated_at', 'created_at')
     search_fields = ('name', 'code')
+    ordering = ('-updated_at',)
 
     class Media:
         js = ('admin/js/contenttype_transliterate.js',)
@@ -43,8 +44,9 @@ class ContentTypeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'code', 'created_at')
+    list_display = ('name', 'code', 'updated_at', 'created_at')
     search_fields = ('name', 'code')
+    ordering = ('-updated_at',)
 
     class Media:
         js = ('admin/js/category_transliterate.js',)
@@ -57,10 +59,11 @@ class TagInline(admin.TabularInline):  # type: ignore[type-arg]
 
 @admin.register(TagGroup)
 class TagGroupAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'get_categories', 'created_at')
+    list_display = ('name', 'get_categories', 'updated_at', 'created_at')
     list_filter = ('categories',)
     search_fields = ('name',)
     filter_horizontal = ('categories',)
+    ordering = ('-updated_at',)
     inlines = [TagInline]
 
     def get_categories(self, obj: TagGroup) -> str:
@@ -73,17 +76,19 @@ class TagGroupAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('name', 'group', 'created_at')
+    list_display = ('name', 'group', 'updated_at', 'created_at')
     list_filter = ('group',)
     search_fields = ('name', 'group__name')
+    ordering = ('-updated_at',)
 
 
 @admin.register(Content)
 class ContentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
-    list_display = ('title', 'content_type', 'get_categories', 'duration', 'created_at')
-    list_filter = ('content_type', 'categories', 'tags', 'created_at')
+    list_display = ('title', 'content_type', 'get_categories', 'duration', 'updated_at', 'created_at')
+    list_filter = ('content_type', 'categories', 'tags', 'created_at', 'updated_at')
     search_fields = ('title', 'description')
     filter_horizontal = ('categories', 'tags')
+    ordering = ('-updated_at',)
     show_facets = (
         admin.ShowFacets.ALWAYS if settings.admin_show_facets
         else admin.ShowFacets.NEVER
