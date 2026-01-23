@@ -46,6 +46,7 @@
                     </div>
                     <input type="file" 
                            id="file-input"
+                           multiple
                            disabled
                            class="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 disabled:opacity-50">
                     <button type="button" 
@@ -198,6 +199,10 @@ function handleCheckboxChange(checkbox) {
     updateUploadState();
 }
 
+let uploadQueue = [];
+let currentUploadIndex = 0;
+let totalFiles = 0;
+
 function uploadFile() {
     const selectedType = getSelectedType();
     if (!selectedType) {
@@ -206,35 +211,50 @@ function uploadFile() {
     }
     
     const fileInput = document.getElementById('file-input');
-    const file = fileInput.files[0];
+    const files = fileInput.files;
     
-    if (!file) {
+    if (!files || files.length === 0) {
         alert('Выберите файл для загрузки');
         return;
     }
     
+    uploadQueue = Array.from(files);
+    currentUploadIndex = 0;
+    totalFiles = uploadQueue.length;
+    
+    const progressContainer = document.getElementById('upload-progress');
+    const uploadBtn = document.getElementById('upload-btn');
+    
+    progressContainer.classList.remove('hidden');
+    uploadBtn.disabled = true;
+    fileInput.disabled = true;
+    
+    uploadNextFile(selectedType);
+}
+
+function uploadNextFile(selectedType) {
+    if (currentUploadIndex >= uploadQueue.length) {
+        document.getElementById('progress-text').textContent = 'Готово!';
+        setTimeout(() => location.reload(), 500);
+        return;
+    }
+    
+    const file = uploadQueue[currentUploadIndex];
     const formData = new FormData();
     formData.append('content_type_id', selectedType.id);
     formData.append('file', file);
     
-    const progressContainer = document.getElementById('upload-progress');
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
-    const uploadBtn = document.getElementById('upload-btn');
-    
-    progressContainer.classList.remove('hidden');
-    progressBar.style.width = '0%';
-    progressText.textContent = '0%';
-    uploadBtn.disabled = true;
-    fileInput.disabled = true;
     
     const xhr = new XMLHttpRequest();
     
     xhr.upload.addEventListener('progress', function(e) {
         if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            progressBar.style.width = percent + '%';
-            progressText.textContent = percent + '%';
+            const fileProgress = (e.loaded / e.total);
+            const overallProgress = ((currentUploadIndex + fileProgress) / totalFiles) * 100;
+            progressBar.style.width = Math.round(overallProgress) + '%';
+            progressText.textContent = (currentUploadIndex + 1) + '/' + totalFiles + ' (' + Math.round(overallProgress) + '%)';
         }
     });
     
@@ -243,25 +263,29 @@ function uploadFile() {
             try {
                 const data = JSON.parse(xhr.responseText);
                 if (data.success) {
-                    progressText.textContent = 'Готово!';
-                    setTimeout(() => location.reload(), 500);
+                    currentUploadIndex++;
+                    uploadNextFile(selectedType);
                 } else {
-                    alert(data.error || 'Ошибка загрузки');
-                    resetUploadUI();
+                    alert('Ошибка загрузки ' + file.name + ': ' + (data.error || 'Неизвестная ошибка'));
+                    currentUploadIndex++;
+                    uploadNextFile(selectedType);
                 }
             } catch (e) {
-                alert('Ошибка обработки ответа');
-                resetUploadUI();
+                alert('Ошибка обработки ответа для ' + file.name);
+                currentUploadIndex++;
+                uploadNextFile(selectedType);
             }
         } else {
-            alert('Ошибка загрузки: ' + xhr.status);
-            resetUploadUI();
+            alert('Ошибка загрузки ' + file.name + ': ' + xhr.status);
+            currentUploadIndex++;
+            uploadNextFile(selectedType);
         }
     });
     
     xhr.addEventListener('error', function() {
-        alert('Ошибка загрузки файла');
-        resetUploadUI();
+        alert('Ошибка загрузки ' + file.name);
+        currentUploadIndex++;
+        uploadNextFile(selectedType);
     });
     
     xhr.open('POST', '/api/files/upload/');
