@@ -419,5 +419,12 @@ applyCategoryFilter = function() {
     updateGroupSelectedCount();
     originalApplyCategoryFilter();
 };
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCategoryFilters();
+    updateGroupCheckboxesVisibility();
+    updateGroupSelectAllState();
+    updateGroupSelectedCount();
+});
 </script>
 {% endblock %}
