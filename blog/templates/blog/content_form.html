@@ -539,11 +539,6 @@
     }
     window.detachThumbnail = detachThumbnail;
     
-    document.addEventListener('DOMContentLoaded', function() {
-        setFileMode('upload');
-        setThumbMode('upload');
-    });
-    
     function setupFormUpload() {
         const form = document.getElementById('content-form');
         const progressSection = document.getElementById('upload-progress-section');
@@ -629,6 +624,8 @@
     }
     
     document.addEventListener('DOMContentLoaded', function() {
+        setFileMode('upload');
+        setThumbMode('upload');
         updateFileInput();
         setupFormUpload();
         
