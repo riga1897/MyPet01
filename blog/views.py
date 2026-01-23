@@ -458,12 +458,12 @@ class AvailableFilesView(View):
 
     def get(self, request: HttpRequest) -> HttpResponse:
         folder = request.GET.get('folder', '').strip()
-        exclude_content_id_str = request.GET.get('exclude_content_id')
-        exclude_content_id: int | None = None
+        content_id_str = request.GET.get('content_id', '')
+        content_id: int | None = None
         
-        if exclude_content_id_str:
+        if content_id_str:
             try:
-                exclude_content_id = int(exclude_content_id_str)
+                content_id = int(content_id_str)
             except (ValueError, TypeError):
                 pass
         
@@ -478,17 +478,10 @@ class AvailableFilesView(View):
         if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
             return JsonResponse({'files': []})
         
-        used_files = set(
-            Content.objects.exclude(
-                pk=exclude_content_id
-            ).exclude(
-                video_file=''
-            ).values_list('video_file', flat=True)
-        ) if exclude_content_id else set(
-            Content.objects.exclude(
-                video_file=''
-            ).values_list('video_file', flat=True)
-        )
+        used_files_qs = Content.objects.exclude(video_file='')
+        if content_id:
+            used_files_qs = used_files_qs.exclude(pk=content_id)
+        used_files = set(used_files_qs.values_list('video_file', flat=True))
         
         available_files = []
         for filename in os.listdir(folder_path):
@@ -496,6 +489,43 @@ class AvailableFilesView(View):
             if os.path.isfile(file_path):
                 relative_path = f'{folder}/{filename}'
                 if relative_path not in used_files:
+                    available_files.append({
+                        'name': filename,
+                        'path': relative_path,
+                    })
+        
+        available_files.sort(key=lambda x: x['name'].lower())
+        return JsonResponse({'files': available_files})
+
+
+class AvailableThumbnailsView(View):
+    """API endpoint to get available thumbnail files."""
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        content_id_str = request.GET.get('content_id', '')
+        content_id: int | None = None
+        
+        if content_id_str:
+            try:
+                content_id = int(content_id_str)
+            except (ValueError, TypeError):
+                pass
+        
+        thumbnails_path = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
+        if not os.path.exists(thumbnails_path) or not os.path.isdir(thumbnails_path):
+            return JsonResponse({'files': []})
+        
+        used_thumbs_qs = Content.objects.exclude(thumbnail='')
+        if content_id:
+            used_thumbs_qs = used_thumbs_qs.exclude(pk=content_id)
+        used_thumbs = set(used_thumbs_qs.values_list('thumbnail', flat=True))
+        
+        available_files = []
+        for filename in os.listdir(thumbnails_path):
+            file_path = os.path.join(thumbnails_path, filename)
+            if os.path.isfile(file_path):
+                relative_path = f'thumbnails/{filename}'
+                if relative_path not in used_thumbs:
                     available_files.append({
                         'name': filename,
                         'path': relative_path,

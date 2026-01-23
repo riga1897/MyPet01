@@ -2,6 +2,7 @@ from django.urls import path
 
 from blog.views import (
     AvailableFilesView,
+    AvailableThumbnailsView,
     CheckCategoryCodeView,
     CheckContentTypeCodeView,
     CheckContentTypeFolderView,
@@ -43,6 +44,7 @@ urlpatterns = [
     path('api/check-contenttype-folder/', CheckContentTypeFolderView.as_view(), name='check_contenttype_folder'),
     path('api/check-category-code/', CheckCategoryCodeView.as_view(), name='check_category_code'),
     path('api/available-files/', AvailableFilesView.as_view(), name='available_files'),
+    path('api/available-thumbnails/', AvailableThumbnailsView.as_view(), name='available_thumbnails'),
     path('files/', FileListView.as_view(), name='file_list'),
     path('api/files/upload/', FileUploadView.as_view(), name='file_upload'),
     path('api/files/delete/', FileDeleteView.as_view(), name='file_delete'),

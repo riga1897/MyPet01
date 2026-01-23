@@ -180,10 +180,10 @@
                         <select id="existing-thumb-select" onchange="onExistingThumbSelected(this)"
                                 class="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card">
                             <option value="">— Выберите миниатюру —</option>
-                            {% for thumb in available_thumbnails %}
-                            <option value="{{ thumb }}">{{ thumb }}</option>
-                            {% endfor %}
                         </select>
+                        <p id="no-thumbs-message" class="hidden text-sm text-muted-foreground mt-1">
+                            Нет доступных миниатюр
+                        </p>
                     </div>
                     
                     <input type="file" 
@@ -322,9 +322,39 @@
             selectBtn.className = 'px-3 py-1.5 text-sm rounded-lg border border-primary bg-primary text-primary-foreground';
             uploadMode.classList.add('hidden');
             selectMode.classList.remove('hidden');
+            loadAvailableThumbnails();
         }
     }
     window.setThumbMode = setThumbMode;
+    
+    function loadAvailableThumbnails() {
+        const select = document.getElementById('existing-thumb-select');
+        const noThumbsMsg = document.getElementById('no-thumbs-message');
+        
+        select.innerHTML = '<option value="">— Загрузка... —</option>';
+        noThumbsMsg.classList.add('hidden');
+        
+        fetch(`{% url 'blog:available_thumbnails' %}?content_id=${contentId || ''}`)
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">— Выберите миниатюру —</option>';
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.path;
+                        option.textContent = file.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">— Нет доступных миниатюр —</option>';
+                    noThumbsMsg.classList.remove('hidden');
+                }
+            })
+            .catch(() => {
+                select.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+            });
+    }
+    window.loadAvailableThumbnails = loadAvailableThumbnails;
     
     function loadAvailableFiles() {
         const folder = getSelectedContentTypeFolder();
