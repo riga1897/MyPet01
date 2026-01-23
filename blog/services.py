@@ -148,3 +148,30 @@ def generate_thumbnail_from_image(image_file: Any) -> 'ContentFile[bytes] | None
         logger.warning('Failed to generate thumbnail from image: %s', e)
     
     return None
+
+
+def generate_hashed_filename(uploaded_file: Any) -> tuple[str, str]:
+    """Generate filename with MD5 hash from file content.
+    
+    Args:
+        uploaded_file: Django UploadedFile with content.
+    
+    Returns:
+        Tuple of (hashed_filename, content_hash).
+        Example: ('photo_a1b2c3d4.jpg', 'a1b2c3d4')
+    """
+    import os as os_module
+    md5_hash = hashlib.md5()
+    
+    uploaded_file.seek(0)
+    for chunk in uploaded_file.chunks():
+        md5_hash.update(chunk)
+    uploaded_file.seek(0)
+    
+    content_hash = md5_hash.hexdigest()[:8]
+    original_name = uploaded_file.name or 'file'
+    
+    name_part, ext = os_module.path.splitext(original_name)
+    hashed_filename = f'{name_part}_{content_hash}{ext}'
+    
+    return hashed_filename, content_hash

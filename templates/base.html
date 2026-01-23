@@ -136,6 +136,15 @@
             background-color: var(--primary);
             color: var(--primary-foreground);
         }
+        
+        button, .btn, [type="submit"], [type="button"] {
+            transition: all 0.15s ease;
+        }
+        button:active:not(:disabled), .btn:active:not(:disabled),
+        [type="submit"]:active:not(:disabled), [type="button"]:active:not(:disabled) {
+            transform: scale(0.97);
+            opacity: 0.85;
+        }
     </style>
     {% block extra_css %}{% endblock %}
     <script>

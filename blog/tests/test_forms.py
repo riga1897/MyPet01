@@ -1,4 +1,6 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 from blog.forms import ContentForm
 from blog.models import Category, ContentType
 
@@ -50,3 +52,44 @@ class TestContentForm:
         })
         assert not form.is_valid()
         assert 'title' in form.errors
+
+    @pytest.mark.django_db
+    def test_save_adds_hash_to_uploaded_file(
+        self, yoga_category: Category, video_type: ContentType
+    ) -> None:
+        """When saving with uploaded file, filename should get MD5 hash."""
+        file_content = b'test video content for hashing'
+        uploaded_file = SimpleUploadedFile('my_video.mp4', file_content)
+        
+        form = ContentForm(
+            data={
+                'title': 'Видео с хэшем',
+                'description': 'Тест',
+                'content_type': video_type.pk,
+                'category': yoga_category.pk,
+            },
+            files={'video_file': uploaded_file}
+        )
+        assert form.is_valid(), form.errors
+        content = form.save()
+        
+        assert content.video_file.name is not None
+        filename = content.video_file.name.split('/')[-1]
+        assert filename.startswith('my_video_')
+        assert filename.endswith('.mp4')
+        assert len(filename) > len('my_video_.mp4')
+
+    @pytest.mark.django_db
+    def test_save_without_file_works(self, yoga_category: Category) -> None:
+        """Saving without file should work normally."""
+        form = ContentForm(data={
+            'title': 'Контент без файла',
+            'description': 'Описание',
+            'category': yoga_category.pk,
+        })
+        assert form.is_valid(), form.errors
+        content = form.save()
+        
+        assert content.pk is not None
+        assert content.title == 'Контент без файла'
+        assert not content.video_file

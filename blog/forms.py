@@ -1,7 +1,10 @@
-from typing import Any
+from typing import Any, cast
 
 from django import forms
+from django.core.files.uploadedfile import InMemoryUploadedFile, TemporaryUploadedFile
+
 from blog.models import Content, Tag, TagGroup
+from blog.services import generate_hashed_filename
 
 
 FORM_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
@@ -107,3 +110,20 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
                 'class': FORM_INPUT_CLASS,
             }),
         }
+
+    def clean_video_file(self) -> InMemoryUploadedFile | TemporaryUploadedFile | None:
+        """Add MD5 hash to uploaded video filename."""
+        video_file = self.cleaned_data.get('video_file')
+        if video_file and isinstance(video_file, (InMemoryUploadedFile, TemporaryUploadedFile)):
+            hashed_name, _ = generate_hashed_filename(video_file)
+            video_file.name = hashed_name
+        return video_file
+
+    def save(self, commit: bool = True) -> Content:
+        instance: Content = cast(Content, super().save(commit=False))
+        
+        if commit:
+            instance.save()
+            self.save_m2m()
+        
+        return instance
