@@ -239,15 +239,19 @@ function clearAllGroupFilters() {
 
 function updateGroupCheckboxesVisibility() {
     const selectedCats = getSelectedCategoryFilters();
-    const allSelected = document.querySelectorAll('.category-filter-checkbox').length === selectedCats.length;
+    const allCheckboxes = document.querySelectorAll('.category-filter-checkbox');
+    const allSelected = allCheckboxes.length === selectedCats.length;
+    const noneSelected = selectedCats.length === 0;
     
     document.querySelectorAll('.group-checkbox-label').forEach(label => {
         const categories = label.dataset.categories ? label.dataset.categories.split(',').filter(c => c) : [];
         let isVisible = allSelected;
         
         if (!isVisible) {
-            if (categories.length === 0) {
-                isVisible = selectedCats.includes('nocategory');
+            if (noneSelected) {
+                isVisible = categories.length === 0;
+            } else if (categories.length === 0) {
+                isVisible = false;
             } else {
                 isVisible = categories.some(cat => selectedCats.includes(cat));
             }

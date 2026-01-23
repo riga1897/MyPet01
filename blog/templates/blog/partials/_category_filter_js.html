@@ -84,16 +84,20 @@ function getSelectedCategoryFilters() {
 }
 
 function matchesCategoryFilter(categoryData) {
-    if (selectedCategoryFilters.size === 0) return false;
-    
     const allCheckboxes = document.querySelectorAll('.category-filter-checkbox');
     const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+    const noneChecked = selectedCategoryFilters.size === 0;
+    
     if (allChecked) return true;
     
     const categories = categoryData ? categoryData.split(',').filter(c => c).map(c => c.toLowerCase()) : [];
     
+    if (noneChecked) {
+        return categories.length === 0;
+    }
+    
     if (categories.length === 0) {
-        return selectedCategoryFilters.has('nocategory');
+        return false;
     }
     
     return categories.some(cat => selectedCategoryFilters.has(cat));

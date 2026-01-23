@@ -30,15 +30,5 @@
             <span class="text-sm">{{ cat.name }}</span>
         </label>
         {% endfor %}
-        
-        <label class="category-filter-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer border-t border-border"
-               data-category-code="nocategory">
-            <input type="checkbox" 
-                   class="category-filter-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
-                   data-category-code="nocategory"
-                   checked
-                   onchange="handleCategoryFilterCheckboxChange(this)">
-            <span class="text-sm italic text-muted-foreground">Без категории</span>
-        </label>
     </div>
 </div>
