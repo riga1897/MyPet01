@@ -164,8 +164,18 @@
                 </div>
                 
                 
-                <div class="flex gap-4 pt-4">
-                    <button type="submit" 
+                <div id="upload-progress-section" class="hidden">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="flex-1 bg-muted rounded-full h-3 overflow-hidden">
+                            <div id="upload-progress-bar" class="bg-primary h-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <span id="upload-progress-text" class="text-sm text-muted-foreground min-w-[50px]">0%</span>
+                    </div>
+                    <p id="upload-status-text" class="text-sm text-muted-foreground">Загрузка файла...</p>
+                </div>
+                
+                <div id="submit-buttons" class="flex gap-4 pt-4">
+                    <button type="submit" id="submit-btn"
                         class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors">
                         Сохранить
                     </button>
@@ -362,8 +372,93 @@
     }
     window.clearThumbSelection = clearThumbSelection;
     
+    function setupFormUpload() {
+        const form = document.getElementById('content-form');
+        const progressSection = document.getElementById('upload-progress-section');
+        const progressBar = document.getElementById('upload-progress-bar');
+        const progressText = document.getElementById('upload-progress-text');
+        const statusText = document.getElementById('upload-status-text');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitButtons = document.getElementById('submit-buttons');
+        
+        form.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('id_video_file');
+            const thumbInput = document.getElementById('id_thumbnail');
+            const hasFile = (fileInput && fileInput.files.length > 0) || 
+                           (thumbInput && thumbInput.files.length > 0);
+            
+            if (!hasFile) {
+                return true;
+            }
+            
+            e.preventDefault();
+            
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressSection.classList.remove('hidden');
+            
+            const formData = new FormData(form);
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressText.textContent = percent + '%';
+                    
+                    if (percent < 100) {
+                        statusText.textContent = 'Загрузка файла...';
+                    } else {
+                        statusText.textContent = 'Обработка на сервере...';
+                    }
+                }
+            });
+            
+            xhr.addEventListener('load', function() {
+                if (xhr.status >= 200 && xhr.status < 400) {
+                    statusText.textContent = 'Сохранено!';
+                    progressBar.classList.remove('bg-primary');
+                    progressBar.classList.add('bg-green-500');
+                    
+                    const redirectUrl = xhr.responseURL;
+                    if (redirectUrl && redirectUrl !== window.location.href) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = '{% url "blog:content_list" %}';
+                    }
+                } else {
+                    statusText.textContent = 'Ошибка сохранения';
+                    progressBar.classList.remove('bg-primary');
+                    progressBar.classList.add('bg-red-500');
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(xhr.responseText, 'text/html');
+                    const newForm = doc.querySelector('#content-form');
+                    if (newForm) {
+                        form.innerHTML = newForm.innerHTML;
+                        setupFormUpload();
+                    }
+                }
+            });
+            
+            xhr.addEventListener('error', function() {
+                statusText.textContent = 'Ошибка соединения';
+                progressBar.classList.remove('bg-primary');
+                progressBar.classList.add('bg-red-500');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+            
+            xhr.open('POST', form.action || window.location.href);
+            xhr.send(formData);
+        });
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
         updateFileInput();
+        setupFormUpload();
         
         {% if current_category_code %}
         if (typeof updateTagGroupsVisibilityForm === 'function') {
