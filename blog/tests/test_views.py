@@ -15,33 +15,45 @@ def clear_cache() -> None:
     cache.clear()
 
 
+@pytest.fixture
+def authenticated_client() -> Client:
+    """Create an authenticated client."""
+    user = User.objects.create_user(username='testuser', password='test123')
+    client = Client()
+    client.force_login(user)
+    return client
+
+
 @pytest.mark.django_db
 class TestHomeView:
-    def test_home_displays_content(self, yoga_category: Category) -> None:
+    def test_home_displays_content(
+        self, yoga_category: Category, authenticated_client: Client
+    ) -> None:
         content = Content.objects.create(
             title='Тестовое видео',
             description='Описание тестового видео',
         )
         content.categories.add(yoga_category)
-        client = Client()
-        response = client.get('/')
+        response = authenticated_client.get('/')
         page_content = response.content.decode('utf-8')
         assert 'Тестовое видео' in page_content
 
-    def test_home_displays_max_6_items(self, yoga_category: Category) -> None:
+    def test_home_displays_max_6_items(
+        self, yoga_category: Category, authenticated_client: Client
+    ) -> None:
         for i in range(8):
             content = Content.objects.create(
                 title=f'Контент {i}',
                 description=f'Описание {i}',
             )
             content.categories.add(yoga_category)
-        client = Client()
-        response = client.get('/')
+        response = authenticated_client.get('/')
         assert len(response.context['cards']) == 6
 
-    def test_home_shows_empty_message_when_no_content(self) -> None:
-        client = Client()
-        response = client.get('/')
+    def test_home_shows_empty_message_when_no_content(
+        self, authenticated_client: Client
+    ) -> None:
+        response = authenticated_client.get('/')
         page_content = response.content.decode('utf-8')
         assert 'Контента пока нет' in page_content
 
