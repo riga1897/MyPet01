@@ -173,7 +173,47 @@ function fuzzyMatch(text, query) {
     return true;
 }
 
-function matchesSearchQuery(title, description, query) {
+function levenshteinDistance(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b[i - 1] === a[j - 1]) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+function levenshteinMatch(text, query, maxDistance) {
+    if (!query || query.length < 3) return false;
+    const words = text.split(/\s+/).map(w => w.replace(/[.,!?;:«»""''()\[\]{}]/g, ''));
+    for (const word of words) {
+        if (word.length >= query.length - 1 && word.length <= query.length + 2) {
+            const distance = levenshteinDistance(word, query);
+            if (distance <= maxDistance) return true;
+        }
+    }
+    return false;
+}
+
+function matchesSearchQueryFast(title, description, query) {
     if (!query) return true;
     
     if (title.includes(query) || description.includes(query)) {
@@ -196,12 +236,50 @@ function matchesSearchQuery(title, description, query) {
     return false;
 }
 
-function searchCards(query) {
-    currentSearch = query.toLowerCase().trim();
-    applyFilters();
+function matchesSearchQuerySlow(title, description, query) {
+    if (!query || query.length < 3) return false;
+    
+    const maxDist = query.length <= 4 ? 1 : 2;
+    const altQuery = convertLayout(query);
+    
+    if (levenshteinMatch(title, query, maxDist) || levenshteinMatch(description, query, maxDist)) {
+        return true;
+    }
+    
+    if (altQuery !== query) {
+        if (levenshteinMatch(title, altQuery, maxDist) || levenshteinMatch(description, altQuery, maxDist)) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
-function applyFilters() {
+let slowSearchTimeout = null;
+let searchVersion = 0;
+
+function searchCards(query) {
+    currentSearch = query.toLowerCase().trim();
+    searchVersion++;
+    const currentVersion = searchVersion;
+    
+    if (slowSearchTimeout) {
+        clearTimeout(slowSearchTimeout);
+    }
+    
+    applyFiltersFast();
+    
+    if (currentSearch.length >= 3) {
+        const querySnapshot = currentSearch;
+        slowSearchTimeout = setTimeout(() => {
+            if (searchVersion === currentVersion && currentSearch === querySnapshot) {
+                applyFiltersSlow();
+            }
+        }, 150);
+    }
+}
+
+function applyFiltersFast() {
     const cards = document.querySelectorAll('.content-card');
     const noResults = document.getElementById('no-results');
     const container = document.getElementById('cards-container');
@@ -216,15 +294,17 @@ function applyFilters() {
         const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
         
         const matchesFilter = matchesCategoryFilter(category);
-        const matchesSearch = matchesSearchQuery(title, description, currentSearch);
+        const matchesSearch = matchesSearchQueryFast(title, description, currentSearch);
         const matchesTags = activeTagIds.length === 0 || 
                            activeTagIds.some(tagId => cardTags.includes(tagId));
         
         if (matchesFilter && matchesSearch && matchesTags) {
             card.classList.remove('hidden');
+            card.dataset.fastMatch = 'true';
             visibleCount++;
         } else {
             card.classList.add('hidden');
+            card.dataset.fastMatch = 'false';
         }
     });
     
@@ -234,6 +314,48 @@ function applyFilters() {
     } else {
         noResults.classList.add('hidden');
     }
+}
+
+function applyFiltersSlow() {
+    const cards = document.querySelectorAll('.content-card');
+    const noResults = document.getElementById('no-results');
+    const container = document.getElementById('cards-container');
+    let visibleCount = 0;
+    
+    const activeTagIds = typeof getSelectedTagIds === 'function' ? getSelectedTagIds() : [];
+    
+    cards.forEach(card => {
+        if (card.dataset.fastMatch === 'true') {
+            visibleCount++;
+            return;
+        }
+        
+        const category = card.dataset.category;
+        const title = card.dataset.title;
+        const description = card.dataset.description;
+        const cardTags = card.dataset.tags ? card.dataset.tags.split(',').filter(t => t) : [];
+        
+        const matchesFilter = matchesCategoryFilter(category);
+        const matchesSearch = matchesSearchQuerySlow(title, description, currentSearch);
+        const matchesTags = activeTagIds.length === 0 || 
+                           activeTagIds.some(tagId => cardTags.includes(tagId));
+        
+        if (matchesFilter && matchesSearch && matchesTags) {
+            card.classList.remove('hidden');
+            visibleCount++;
+        }
+    });
+    
+    if (visibleCount === 0 && cards.length > 0) {
+        noResults.classList.remove('hidden');
+        container.appendChild(noResults);
+    } else {
+        noResults.classList.add('hidden');
+    }
+}
+
+function applyFilters() {
+    applyFiltersFast();
 }
 
 function openModal(title, description, type, videoUrl, imageUrl) {
