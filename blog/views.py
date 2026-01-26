@@ -18,7 +18,9 @@ from django.contrib.postgres.search import (
 
 from core.utils.text import convert_layout
 from core.mixins import ModeratorRequiredMixin
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
@@ -775,3 +777,29 @@ class FileDeleteView(ModeratorRequiredMixin, View):
         
         os.remove(full_path)
         return JsonResponse({'success': True})
+
+
+@method_decorator(login_required, name='dispatch')
+class ProtectedMediaView(View):
+    """Serve media files only to authenticated users."""
+    
+    def get(self, request: HttpRequest, path: str) -> FileResponse:
+        if '..' in path or path.startswith('/'):
+            raise Http404("Invalid path")
+        
+        full_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, path))
+        media_root = os.path.normpath(str(settings.MEDIA_ROOT))
+        
+        if not full_path.startswith(media_root + os.sep):
+            raise Http404("Invalid path")
+        
+        if not os.path.exists(full_path) or not os.path.isfile(full_path):
+            raise Http404("File not found")
+        
+        import mimetypes
+        content_type, _ = mimetypes.guess_type(full_path)
+        
+        return FileResponse(
+            open(full_path, 'rb'),
+            content_type=content_type or 'application/octet-stream',
+        )

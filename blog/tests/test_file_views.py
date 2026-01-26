@@ -401,3 +401,57 @@ class TestFileDeleteView:
         finally:
             if os.path.exists(test_file):
                 os.remove(test_file)
+
+
+@pytest.mark.django_db
+class TestProtectedMediaView:
+    """Tests for protected media file serving."""
+
+    def test_unauthenticated_redirect_to_login(self) -> None:
+        """Unauthenticated users should be redirected to login."""
+        client = Client()
+        response = client.get('/media/videos/test.mp4')
+        assert response.status_code == 302
+        assert '/users/login/' in str(response.headers.get('Location', ''))
+
+    def test_path_traversal_blocked(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Path traversal attempts should return 404."""
+        client, _ = moderator_client
+        response = client.get('/media/../etc/passwd')
+        assert response.status_code == 404
+
+    def test_absolute_path_blocked(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Absolute paths should return 404."""
+        client, _ = moderator_client
+        response = client.get('/media//etc/passwd')
+        assert response.status_code == 404
+
+    def test_nonexistent_file_returns_404(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Non-existent files should return 404."""
+        client, _ = moderator_client
+        response = client.get('/media/videos/nonexistent.mp4')
+        assert response.status_code == 404
+
+    def test_successful_file_serve(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Authenticated users can access media files."""
+        client, _ = moderator_client
+        folder_path = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(folder_path, exist_ok=True)
+        test_file = os.path.join(folder_path, 'protected_test.mp4')
+        with open(test_file, 'wb') as f:
+            f.write(b'test video content')
+        try:
+            response = client.get('/media/videos/protected_test.mp4')
+            assert response.status_code == 200
+            assert response.get('Content-Type') == 'video/mp4'
+        finally:
+            if os.path.exists(test_file):
+                os.remove(test_file)
