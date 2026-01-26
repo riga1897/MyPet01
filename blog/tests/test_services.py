@@ -190,3 +190,94 @@ class TestGenerateHashedFilename:
         
         uploaded_file.seek(0)
         assert uploaded_file.read() == content
+
+
+class TestGenerateThumbnailFromVideoEdgeCases:
+    """Edge case tests for generate_thumbnail_from_video."""
+
+    @patch('blog.services.subprocess.run')
+    def test_converts_rgba_to_rgb(self, mock_run: MagicMock) -> None:
+        """Should convert RGBA image from ffmpeg to RGB."""
+        img = Image.new('RGBA', (100, 100), color=(255, 0, 0, 128))
+        img_buffer = BytesIO()
+        img.save(img_buffer, format='PNG')
+        img_bytes = img_buffer.getvalue()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        def mock_ffmpeg(*args: object, **kwargs: object) -> MagicMock:
+            Path(tmp_path).write_bytes(img_bytes)
+            return MagicMock(returncode=0)
+
+        mock_run.side_effect = mock_ffmpeg
+        mock_file = MagicMock()
+        mock_file.path = '/path/to/video.mp4'
+
+        with patch('blog.services.tempfile.NamedTemporaryFile') as mock_temp:
+            mock_temp.return_value.__enter__.return_value.name = tmp_path
+            result = generate_thumbnail_from_video(mock_file)
+
+        assert result is not None
+        Path(tmp_path).unlink(missing_ok=True)
+
+    @patch('blog.services.subprocess.run')
+    def test_returns_none_on_timeout(self, mock_run: MagicMock) -> None:
+        """Should return None and cleanup on subprocess timeout."""
+        import subprocess
+        mock_run.side_effect = subprocess.TimeoutExpired('ffmpeg', 30)
+        mock_file = MagicMock()
+        mock_file.path = '/path/to/video.mp4'
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        with patch('blog.services.tempfile.NamedTemporaryFile') as mock_temp:
+            mock_temp.return_value.__enter__.return_value.name = tmp_path
+            result = generate_thumbnail_from_video(mock_file)
+
+        assert result is None
+        Path(tmp_path).unlink(missing_ok=True)
+
+    @patch('blog.services.subprocess.run')
+    def test_returns_none_on_oserror(self, mock_run: MagicMock) -> None:
+        """Should return None on OSError."""
+        mock_run.side_effect = OSError("ffmpeg not found")
+        mock_file = MagicMock()
+        mock_file.path = '/path/to/video.mp4'
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        with patch('blog.services.tempfile.NamedTemporaryFile') as mock_temp:
+            mock_temp.return_value.__enter__.return_value.name = tmp_path
+            result = generate_thumbnail_from_video(mock_file)
+
+        assert result is None
+        Path(tmp_path).unlink(missing_ok=True)
+
+    @patch('blog.services.subprocess.run')
+    def test_cleanup_tmp_file_after_success(self, mock_run: MagicMock) -> None:
+        """Should remove temp file after successful processing."""
+        img = Image.new('RGB', (100, 100), color='green')
+        img_buffer = BytesIO()
+        img.save(img_buffer, format='JPEG')
+        img_bytes = img_buffer.getvalue()
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        def mock_ffmpeg(*args: object, **kwargs: object) -> MagicMock:
+            Path(tmp_path).write_bytes(img_bytes)
+            return MagicMock(returncode=0)
+
+        mock_run.side_effect = mock_ffmpeg
+        mock_file = MagicMock()
+        mock_file.path = '/path/to/video.mp4'
+
+        with patch('blog.services.tempfile.NamedTemporaryFile') as mock_temp:
+            mock_temp.return_value.__enter__.return_value.name = tmp_path
+            result = generate_thumbnail_from_video(mock_file)
+
+        assert result is not None
+        Path(tmp_path).unlink(missing_ok=True)
