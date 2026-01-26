@@ -107,6 +107,29 @@ class TestTagGroupModel:
         group.categories.add(Category.objects.create(name='Cat тест', code='cat_test'))
         assert group.is_visible_for_category(None) is False
 
+    def test_taggroup_category_pks_empty(self) -> None:
+        """category_pks returns empty set when no categories linked."""
+        group = TagGroup.objects.create(name='Универсальная')
+        assert group.category_pks == set()
+
+    def test_taggroup_category_pks_with_categories(
+        self, yoga_category: Category, oils_category: Category
+    ) -> None:
+        """category_pks returns set of linked category PKs."""
+        group = TagGroup.objects.create(name='С категориями')
+        group.categories.add(yoga_category, oils_category)
+        assert group.category_pks == {yoga_category.pk, oils_category.pk}
+
+    def test_taggroup_is_visible_uses_prefetch(
+        self, yoga_category: Category, oils_category: Category
+    ) -> None:
+        """is_visible_for_category works correctly with prefetched data."""
+        group = TagGroup.objects.create(name='Prefetch test')
+        group.categories.add(yoga_category)
+        prefetched_group = TagGroup.objects.prefetch_related('categories').get(pk=group.pk)
+        assert prefetched_group.is_visible_for_category(yoga_category) is True
+        assert prefetched_group.is_visible_for_category(oils_category) is False
+
 
 @pytest.mark.django_db
 class TestTagModel:

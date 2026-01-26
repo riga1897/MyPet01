@@ -72,16 +72,26 @@ class TagGroup(BaseModel):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def category_pks(self) -> set[int]:
+        """Return set of category PKs. Uses prefetched data if available."""
+        try:
+            return {cat.pk for cat in self.categories.all()}
+        except AttributeError:
+            return set(self.categories.values_list('pk', flat=True))
+
     def is_visible_for_category(self, category: 'Category | None') -> bool:
         """Check if this tag group should be visible for the given category.
         
         Empty categories = applies to all categories.
+        Uses prefetched data when available (no extra queries).
         """
-        if not self.categories.exists():
+        pks = self.category_pks
+        if not pks:
             return True
         if category is None:
             return False
-        return self.categories.filter(pk=category.pk).exists()
+        return category.pk in pks
 
 
 class Tag(BaseModel):
