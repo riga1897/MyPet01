@@ -7,6 +7,55 @@
 
 ## Выполненные задачи
 
+### ✅ 3.3 Защита медиа-файлов (Выполнено: 26 января 2026)
+
+**Реализовано:**
+- ProtectedMediaView для отдачи медиа только авторизованным пользователям
+- Редирект на страницу входа для неавторизованных запросов к /media/
+- Защита от path traversal атак (блокировка `..` и абсолютных путей)
+- Корректный Content-Type для файлов (video/mp4, image/jpeg и т.д.)
+- 5 тестов для ProtectedMediaView
+
+**Файлы:**
+- blog/views.py (ProtectedMediaView)
+- mypet_project/urls.py (path 'media/<path:path>')
+- blog/tests/test_file_views.py (TestProtectedMediaView)
+
+---
+
+### ✅ 3.4 Ограничение доступа к контенту для гостей (Выполнено: 26 января 2026)
+
+**Реализовано:**
+- Секция с карточками контента скрыта для неавторизованных пользователей
+- Гости видят только Hero и раздел "О блоге"
+- Кнопка CTA в Hero: "Войти для просмотра" (гости) / "Смотреть" (авторизованные)
+- Тесты обновлены для проверки видимости секций
+
+**Файлы:**
+- blog/templates/blog/index.html ({% if user.is_authenticated %})
+- blog/templates/blog/partials/_hero.html (условная кнопка)
+- blog/tests/test_urls.py, blog/tests/test_views.py
+
+---
+
+### ✅ Рефакторинг: videos → cards (Выполнено: 26 января 2026)
+
+**Реализовано:**
+- Переименование HTML id: `videos` → `cards`
+- Переименование ссылок: `href="#videos"` → `href="#cards"`
+- Переименование контекста view: `context_object_name = 'cards'`
+- Переименование переменных в шаблонах: `for card in cards`
+- JavaScript: `videosSection` → `cardsSection`
+- Обновление тестов
+
+**Файлы:**
+- blog/templates/blog/index.html
+- blog/templates/blog/partials/_hero.html
+- blog/views.py (HomeView.context_object_name)
+- blog/tests/test_urls.py, blog/tests/test_views.py
+
+---
+
 ### ✅ 2.3 Поиск по контенту (Выполнено: 26 января 2026)
 
 **Реализовано:**
