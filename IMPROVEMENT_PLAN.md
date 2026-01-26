@@ -1,7 +1,27 @@
 # План дальнейших улучшений MyPet01
 
 **Дата создания:** 26 января 2026  
-**Статус:** Планирование
+**Статус:** В работе
+
+---
+
+## Выполненные задачи
+
+### ✅ 2.3 Поиск по контенту (Выполнено: 26 января 2026)
+
+**Реализовано:**
+- PostgreSQL Full-Text Search по полям title и description
+- SearchView с пагинацией (12 элементов на страницу)
+- Форма поиска в header (десктоп + мобильное меню)
+- Шаблон страницы результатов search_results.html
+- 8 новых тестов для поиска
+- Индекс на поле created_at для оптимизации
+
+**Файлы:**
+- blog/views.py (SearchView)
+- blog/urls.py (/search/)
+- blog/templates/blog/search_results.html
+- blog/templates/blog/partials/_header.html
 
 ---
 

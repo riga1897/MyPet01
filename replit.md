@@ -31,6 +31,7 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
   - Muted: `#E8EDE7`
 
 **Technical Implementations:**
+- **Full-Text Search**: PostgreSQL Full-Text Search implementation with SearchVector for title and description fields. SearchView with pagination at `/search/`. Search form integrated in header (desktop + mobile).
 - **Content Management**: Features a robust content model (`Content`) supporting various content types (`ContentType`), multiple categories (ManyToMany), and a dynamic tag system (`TagGroup`, `Tag`). Content types dictate upload folders, and both tags and categories support multi-select with "Select All" functionality in forms.
 - **User Management**: Includes a `users` app with authentication, role-based access control (Guests, Moderators, Admins), and a moderator management interface.
 - **Security**: Configurable security settings for development (HTTP) and production (HTTPS with HSTS, secure cookies, XSS protection, content sniffing prevention, clickjacking prevention).
