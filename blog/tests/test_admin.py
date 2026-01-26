@@ -1,11 +1,12 @@
 """Tests for blog admin classes."""
-from unittest.mock import MagicMock
+from typing import Any
 
 import pytest
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.http import HttpRequest
 from django.test import RequestFactory
 
 from blog.admin import ContentAdmin, ContentTypeAdmin, TagGroupAdmin
@@ -14,19 +15,19 @@ from blog.models import Category, Content, ContentType, TagGroup
 User = get_user_model()
 
 
-def get_request_with_messages(user: User, factory: RequestFactory) -> MagicMock:  # type: ignore[type-arg]
+def get_request_with_messages(user: Any, factory: RequestFactory) -> HttpRequest:
     """Create a request with session and message support."""
     request = factory.post('/')
     request.user = user
-    middleware = SessionMiddleware(lambda r: None)
+    middleware = SessionMiddleware(lambda r: r)
     middleware.process_request(request)
     request.session.save()
-    request._messages = FallbackStorage(request)
+    setattr(request, '_messages', FallbackStorage(request))
     return request
 
 
 @pytest.fixture
-def admin_user() -> User:  # type: ignore[type-arg]
+def admin_user() -> Any:
     return User.objects.create_superuser('admin', 'admin@test.com', 'password')
 
 
@@ -53,7 +54,7 @@ class TestContentTypeAdmin:
         assert admin.content_count(ct) == 2
 
     def test_delete_model_success(
-        self, site: AdminSite, admin_user: User, request_factory: RequestFactory  # type: ignore[type-arg]
+        self, site: AdminSite, admin_user: Any, request_factory: RequestFactory
     ) -> None:
         """Test successful single deletion."""
         ct = ContentType.objects.create(name='Удаляемый', code='del', upload_folder='del')
@@ -63,7 +64,7 @@ class TestContentTypeAdmin:
         assert not ContentType.objects.filter(code='del').exists()
 
     def test_delete_model_with_content_shows_error(
-        self, site: AdminSite, admin_user: User, request_factory: RequestFactory  # type: ignore[type-arg]
+        self, site: AdminSite, admin_user: Any, request_factory: RequestFactory
     ) -> None:
         """Test deletion with content shows error message."""
         ct = ContentType.objects.create(name='С контентом', code='has', upload_folder='has')
@@ -74,10 +75,10 @@ class TestContentTypeAdmin:
         assert ContentType.objects.filter(code='has').exists()
 
     def test_delete_queryset_partial_success(
-        self, site: AdminSite, admin_user: User, request_factory: RequestFactory  # type: ignore[type-arg]
+        self, site: AdminSite, admin_user: Any, request_factory: RequestFactory
     ) -> None:
         """Test bulk deletion with mixed results."""
-        ct1 = ContentType.objects.create(name='Без контента', code='empty', upload_folder='e')
+        ContentType.objects.create(name='Без контента', code='empty', upload_folder='e')
         ct2 = ContentType.objects.create(name='С контентом2', code='full', upload_folder='f')
         Content.objects.create(title='Связанный', content_type=ct2)
         admin = ContentTypeAdmin(ContentType, site)
