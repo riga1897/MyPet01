@@ -53,6 +53,8 @@ addopts = "--cov=mypet_project --cov=blog --cov=core --cov=users --cov-report=te
 omit = [
     "*/migrations/*",
     "*/__init__.py",
+    "*/tests/*",
+    "tests/*",
     "mypet_project/wsgi.py",
     "mypet_project/asgi.py",
     "manage.py",
