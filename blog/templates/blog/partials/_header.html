@@ -26,6 +26,8 @@
                     <a href="{% url 'blog:content_list' %}" class="transition-colors hover:text-primary">Контент</a>
                     <a href="{% url 'blog:tag_list' %}" class="transition-colors hover:text-primary">Теги</a>
                     <a href="{% url 'blog:file_list' %}" class="transition-colors hover:text-primary">Файлы</a>
+                    {% endif %}
+                    {% if user.is_superuser %}
                     <a href="{% url 'users:moderator_list' %}" class="transition-colors hover:text-primary">Модераторы</a>
                     {% endif %}
                     <span class="text-muted-foreground text-sm">{{ user.username }}</span>
@@ -79,6 +81,8 @@
                 <a href="{% url 'blog:content_list' %}" class="py-2 transition-colors hover:text-primary">Контент</a>
                 <a href="{% url 'blog:tag_list' %}" class="py-2 transition-colors hover:text-primary">Теги</a>
                 <a href="{% url 'blog:file_list' %}" class="py-2 transition-colors hover:text-primary">Файлы</a>
+                {% endif %}
+                {% if user.is_superuser %}
                 <a href="{% url 'users:moderator_list' %}" class="py-2 transition-colors hover:text-primary">Модераторы</a>
                 {% endif %}
                 <div class="flex items-center justify-between py-2 border-t border-border mt-2 pt-4">
