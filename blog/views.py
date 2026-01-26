@@ -9,7 +9,7 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from core.mixins import ModeratorRequiredMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.views import View
@@ -64,13 +64,6 @@ class HomeView(ListView):  # type: ignore[type-arg]
         context['is_moderator'] = is_moderator(self.request.user)
         context.update(get_filter_context())
         return context
-
-
-class ModeratorRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    request: Any
-
-    def test_func(self) -> bool:
-        return is_moderator(self.request.user)
 
 
 class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]

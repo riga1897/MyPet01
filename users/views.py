@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from core.mixins import AdminRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404, redirect
@@ -21,14 +21,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
 
-class ModeratorRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    request: Any
-
-    def test_func(self) -> bool:
-        return can_manage_moderators(self.request.user)
-
-
-class ModeratorListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
+class ModeratorListView(AdminRequiredMixin, ListView):  # type: ignore[type-arg]
     model = User
     template_name = 'users/moderator_list.html'
     context_object_name = 'users'
