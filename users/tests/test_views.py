@@ -63,14 +63,15 @@ class TestModeratorListView:
         response = client.get('/users/moderators/')
         assert response.status_code == 403
 
-    def test_moderator_can_access(self) -> None:
+    def test_moderator_gets_403(self) -> None:
+        """Moderator (non-superuser) cannot access moderator management."""
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
         client = Client()
         client.force_login(user)
         response = client.get('/users/moderators/')
-        assert response.status_code == 200
+        assert response.status_code == 403
 
     def test_superuser_can_access(self) -> None:
         user = User.objects.create_superuser(username='admin', password='test123')
@@ -107,14 +108,28 @@ class TestAddModerator:
         client.force_login(regular)
         response = client.post(f'/users/moderators/add/{target.pk}/')
         assert response.status_code == 302
+        assert '/users/login/' in response.url  # type: ignore[attr-defined]
 
-    def test_moderator_can_add_user(self) -> None:
+    def test_moderator_cannot_add_user(self) -> None:
+        """Moderator (non-superuser) cannot add users to moderators group."""
         mod = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         mod.groups.add(group)
         target = User.objects.create_user(username='target', password='test123')
         client = Client()
         client.force_login(mod)
+        response = client.post(f'/users/moderators/add/{target.pk}/')
+        assert response.status_code == 302
+        assert '/users/login/' in response.url  # type: ignore[attr-defined]
+        target.refresh_from_db()
+        assert not target.groups.filter(name='Модераторы').exists()
+
+    def test_superuser_can_add_user(self) -> None:
+        """Superuser can add users to moderators group."""
+        admin = User.objects.create_superuser(username='admin', password='test123')
+        target = User.objects.create_user(username='target', password='test123')
+        client = Client()
+        client.force_login(admin)
         response = client.post(f'/users/moderators/add/{target.pk}/')
         assert response.status_code == 302
         target.refresh_from_db()
@@ -132,7 +147,8 @@ class TestAddModerator:
 
 @pytest.mark.django_db
 class TestRemoveModerator:
-    def test_moderator_can_remove_user(self) -> None:
+    def test_moderator_cannot_remove_user(self) -> None:
+        """Moderator (non-superuser) cannot remove users from moderators group."""
         mod = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         mod.groups.add(group)
@@ -140,6 +156,20 @@ class TestRemoveModerator:
         target.groups.add(group)
         client = Client()
         client.force_login(mod)
+        response = client.post(f'/users/moderators/remove/{target.pk}/')
+        assert response.status_code == 302
+        assert '/users/login/' in response.url  # type: ignore[attr-defined]
+        target.refresh_from_db()
+        assert target.groups.filter(name='Модераторы').exists()
+
+    def test_superuser_can_remove_user(self) -> None:
+        """Superuser can remove users from moderators group."""
+        admin = User.objects.create_superuser(username='admin', password='test123')
+        target = User.objects.create_user(username='target', password='test123')
+        group = get_or_create_moderators_group()
+        target.groups.add(group)
+        client = Client()
+        client.force_login(admin)
         response = client.post(f'/users/moderators/remove/{target.pk}/')
         assert response.status_code == 302
         target.refresh_from_db()
