@@ -198,12 +198,12 @@ class ContentListView(ModeratorRequiredMixin, ModeratorFilterContextMixin, ListV
     model = Content
     template_name = 'blog/content_list.html'
     context_object_name = 'contents'
-    ordering = ['-created_at']
+    ordering = ['-updated_at']
 
     def get_queryset(self) -> Any:
         return Content.objects.select_related('content_type').prefetch_related(
             'categories', 'tags', 'tags__group'
-        ).order_by('-created_at')
+        ).order_by('-updated_at')
 
 
 def validate_existing_file(existing_file: str, content_type: ContentType | None) -> bool:
