@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 from django import forms
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile, TemporaryUploadedFile
 
 from blog.models import Content, Tag, TagGroup
@@ -9,6 +10,21 @@ from blog.services import generate_hashed_filename
 
 FORM_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
 CHECKBOX_CLASS = 'w-4 h-4 text-primary border-border rounded focus:ring-primary'
+
+MAX_FILE_SIZE_MB = 500
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+
+def validate_file_size(
+    file: InMemoryUploadedFile | TemporaryUploadedFile | None,
+    field_name: str,
+) -> None:
+    """Validate that uploaded file doesn't exceed MAX_FILE_SIZE_BYTES."""
+    if file and hasattr(file, 'size') and file.size is not None:
+        if file.size > MAX_FILE_SIZE_BYTES:
+            raise ValidationError(
+                f'{field_name}: файл слишком большой. Максимум: {MAX_FILE_SIZE_MB} MB'
+            )
 
 
 class TagGroupForm(forms.ModelForm):  # type: ignore[type-arg]
@@ -112,12 +128,20 @@ class ContentForm(forms.ModelForm):  # type: ignore[type-arg]
         }
 
     def clean_video_file(self) -> InMemoryUploadedFile | TemporaryUploadedFile | None:
-        """Add MD5 hash to uploaded video filename."""
+        """Validate size and add MD5 hash to uploaded video filename."""
         video_file = self.cleaned_data.get('video_file')
         if video_file and isinstance(video_file, (InMemoryUploadedFile, TemporaryUploadedFile)):
+            validate_file_size(video_file, 'Файл')
             hashed_name, _ = generate_hashed_filename(video_file)
             video_file.name = hashed_name
         return video_file
+
+    def clean_thumbnail(self) -> InMemoryUploadedFile | TemporaryUploadedFile | None:
+        """Validate thumbnail file size."""
+        thumbnail = self.cleaned_data.get('thumbnail')
+        if thumbnail and isinstance(thumbnail, (InMemoryUploadedFile, TemporaryUploadedFile)):
+            validate_file_size(thumbnail, 'Превью')
+        return thumbnail
 
     def save(self, commit: bool = True) -> Content:
         instance: Content = cast(Content, super().save(commit=False))

@@ -115,28 +115,89 @@ def validate_existing_thumbnail(existing_thumbnail: str) -> bool:
     return os.path.exists(full_path) and os.path.isfile(full_path)
 
 
-class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-arg]
-    model = Content
-    form_class = ContentForm
-    template_name = 'blog/content_form.html'
-    success_url = reverse_lazy('blog:content_list')
+class ModeratorFilterContextMixin:
+    """Mixin that adds is_moderator=True and filter context to views."""
 
-    def form_valid(self, form: ContentForm) -> HttpResponse:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context: dict[str, Any] = super().get_context_data(**kwargs)  # type: ignore[misc]
+        context['is_moderator'] = True
+        context.update(get_filter_context())
+        return context
+
+
+class FileHandlingMixin:
+    """Mixin for handling existing_file and existing_thumbnail in content forms."""
+
+    request: HttpRequest
+
+    def handle_file_selection(
+        self, form: ContentForm, allow_detach: bool = False
+    ) -> HttpResponse | None:
+        """Handle file and thumbnail selection from existing files.
+        
+        Returns HttpResponse (form_invalid) on error, None on success.
+        """
+        if allow_detach:
+            detach_file = self.request.POST.get('detach_file', '').strip()
+            if detach_file == 'true':
+                form.instance.video_file = ''
+            else:
+                error = self._handle_existing_file(form)
+                if error:
+                    return error
+            
+            detach_thumbnail = self.request.POST.get('detach_thumbnail', '').strip()
+            if detach_thumbnail == 'true':
+                form.instance.thumbnail = ''
+            else:
+                error = self._handle_existing_thumbnail(form)
+                if error:
+                    return error
+        else:
+            error = self._handle_existing_file(form)
+            if error:
+                return error
+            error = self._handle_existing_thumbnail(form)
+            if error:
+                return error
+        
+        return None
+
+    def _handle_existing_file(self, form: ContentForm) -> HttpResponse | None:
+        """Handle existing_file field."""
         existing_file = self.request.POST.get('existing_file', '').strip()
         if existing_file:
             if validate_existing_file(existing_file, form.instance.content_type):
                 form.instance.video_file = existing_file
             else:
                 form.add_error(None, 'Выбранный файл недоступен.')
-                return self.form_invalid(form)
-        
+                result: HttpResponse = self.form_invalid(form)  # type: ignore[attr-defined]
+                return result
+        return None
+
+    def _handle_existing_thumbnail(self, form: ContentForm) -> HttpResponse | None:
+        """Handle existing_thumbnail field."""
         existing_thumbnail = self.request.POST.get('existing_thumbnail', '').strip()
         if existing_thumbnail:
             if validate_existing_thumbnail(existing_thumbnail):
                 form.instance.thumbnail = existing_thumbnail
             else:
                 form.add_error(None, 'Выбранная миниатюра недоступна.')
-                return self.form_invalid(form)
+                result: HttpResponse = self.form_invalid(form)  # type: ignore[attr-defined]
+                return result
+        return None
+
+
+class ContentCreateView(ModeratorRequiredMixin, FileHandlingMixin, CreateView):  # type: ignore[type-arg]
+    model = Content
+    form_class = ContentForm
+    template_name = 'blog/content_form.html'
+    success_url = reverse_lazy('blog:content_list')
+
+    def form_valid(self, form: ContentForm) -> HttpResponse:
+        error = self.handle_file_selection(form, allow_detach=False)
+        if error:
+            return error
         
         messages.success(self.request, 'Контент успешно создан.')
         return super().form_valid(form)
@@ -155,36 +216,16 @@ class ContentCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[typ
         return context
 
 
-class ContentUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[type-arg]
+class ContentUpdateView(ModeratorRequiredMixin, FileHandlingMixin, UpdateView):  # type: ignore[type-arg]
     model = Content
     form_class = ContentForm
     template_name = 'blog/content_form.html'
     success_url = reverse_lazy('blog:content_list')
 
     def form_valid(self, form: ContentForm) -> HttpResponse:
-        detach_file = self.request.POST.get('detach_file', '').strip()
-        if detach_file == 'true':
-            form.instance.video_file = ''
-        else:
-            existing_file = self.request.POST.get('existing_file', '').strip()
-            if existing_file:
-                if validate_existing_file(existing_file, form.instance.content_type):
-                    form.instance.video_file = existing_file
-                else:
-                    form.add_error(None, 'Выбранный файл недоступен.')
-                    return self.form_invalid(form)
-        
-        detach_thumbnail = self.request.POST.get('detach_thumbnail', '').strip()
-        if detach_thumbnail == 'true':
-            form.instance.thumbnail = ''
-        else:
-            existing_thumbnail = self.request.POST.get('existing_thumbnail', '').strip()
-            if existing_thumbnail:
-                if validate_existing_thumbnail(existing_thumbnail):
-                    form.instance.thumbnail = existing_thumbnail
-                else:
-                    form.add_error(None, 'Выбранная миниатюра недоступна.')
-                    return self.form_invalid(form)
+        error = self.handle_file_selection(form, allow_detach=True)
+        if error:
+            return error
         
         messages.success(self.request, 'Контент успешно обновлён.')
         return super().form_valid(form)

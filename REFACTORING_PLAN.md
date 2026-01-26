@@ -93,7 +93,7 @@ class ModeratorRequiredMixin(LoginRequiredMixin):
 
 ---
 
-### 2.2 Консолидация get_context_data (Приоритет: Средний)
+### 2.2 Консолидация get_context_data (Приоритет: Средний) ✅ ВЫПОЛНЕНО
 
 **Проблема:** Повторяющийся паттерн добавления `get_filter_context()` в 10+ views.
 
@@ -168,7 +168,7 @@ def generate_video_thumbnail(video_path: str) -> str | None:
 
 ---
 
-### 3.2 Валидация размера файлов (Приоритет: Средний)
+### 3.2 Валидация размера файлов (Приоритет: Средний) ✅ ВЫПОЛНЕНО
 
 **Проблема:** Нет валидации размера файла на уровне формы.
 
@@ -240,7 +240,7 @@ def validate_file_size(file):
 
 ---
 
-### 4.2 Логика обработки файлов в views (Приоритет: Низкий)
+### 4.2 Логика обработки файлов в views (Приоритет: Низкий) ✅ ВЫПОЛНЕНО
 
 **Проблема:** Повторяющаяся логика `existing_file`/`existing_thumbnail` в ContentCreateView и ContentUpdateView.
 

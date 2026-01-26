@@ -1,7 +1,8 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from blog.forms import ContentForm
+from blog.forms import ContentForm, MAX_FILE_SIZE_MB, validate_file_size
 from blog.models import Category, ContentType
 
 
@@ -94,3 +95,44 @@ class TestContentForm:
         assert content.pk is not None
         assert content.title == 'Контент без файла'
         assert not content.video_file
+
+
+class TestValidateFileSize:
+    """Tests for validate_file_size function."""
+
+    def test_accepts_file_within_limit(self) -> None:
+        """Should not raise for files within size limit."""
+        small_file = SimpleUploadedFile('small.mp4', b'x' * 1024)
+        validate_file_size(small_file, 'Файл')
+
+    def test_rejects_file_exceeding_limit(self) -> None:
+        """Should raise ValidationError for files exceeding size limit."""
+        from unittest.mock import MagicMock
+        
+        large_file = MagicMock()
+        large_file.size = (MAX_FILE_SIZE_MB + 1) * 1024 * 1024
+        
+        with pytest.raises(ValidationError) as exc_info:
+            validate_file_size(large_file, 'Файл')
+        
+        assert 'файл слишком большой' in str(exc_info.value)
+        assert str(MAX_FILE_SIZE_MB) in str(exc_info.value)
+
+    def test_accepts_none_file(self) -> None:
+        """Should not raise for None file."""
+        validate_file_size(None, 'Файл')
+
+    def test_accepts_file_without_size_attribute(self) -> None:
+        """Should not raise for file without size attribute."""
+        from unittest.mock import MagicMock
+        
+        file_no_size = MagicMock(spec=[])
+        validate_file_size(file_no_size, 'Файл')
+
+    def test_accepts_file_with_none_size(self) -> None:
+        """Should not raise for file with None size."""
+        from unittest.mock import MagicMock
+        
+        file_none_size = MagicMock()
+        file_none_size.size = None
+        validate_file_size(file_none_size, 'Файл')
