@@ -60,6 +60,14 @@
             {{ video.description }}
         </p>
         
+        {% if video.tags.all %}
+        <div class="mb-3" title="{% for tag in video.tags.all %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+            <p class="text-xs text-muted-foreground truncate">
+                {% for tag in video.tags.all|slice:":2" %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if video.tags.count > 2 %}…{% endif %}
+            </p>
+        </div>
+        {% endif %}
+        
         <div class="flex items-center justify-between text-xs text-muted-foreground mt-auto">
             <span>{{ video.updated_at|date:"d F Y" }}</span>
             {% if is_moderator %}
