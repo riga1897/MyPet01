@@ -13,6 +13,9 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024  # 500 MB
+FFMPEG_TIMEOUT_SECONDS = 60
+
 
 def generate_unique_thumbnail_name(prefix: str = 'thumb') -> str:
     """Generate unique thumbnail filename with hash.
@@ -35,8 +38,22 @@ def generate_thumbnail_from_video(video_file: Any) -> 'ContentFile[bytes] | None
     
     Returns:
         ContentFile with JPEG thumbnail, or None if generation fails.
+        Returns None if video file exceeds MAX_VIDEO_SIZE_BYTES (500 MB).
     """
     if not video_file or not hasattr(video_file, 'path'):
+        return None
+    
+    try:
+        file_size = Path(video_file.path).stat().st_size
+        if file_size > MAX_VIDEO_SIZE_BYTES:
+            logger.warning(
+                'Video file too large for thumbnail generation: %d bytes (max: %d)',
+                file_size,
+                MAX_VIDEO_SIZE_BYTES,
+            )
+            return None
+    except OSError as e:
+        logger.warning('Failed to check video file size: %s', e)
         return None
     
     tmp_path = ''
@@ -55,7 +72,7 @@ def generate_thumbnail_from_video(video_file: Any) -> 'ContentFile[bytes] | None
                 tmp_path,
             ],
             capture_output=True,
-            timeout=60,
+            timeout=FFMPEG_TIMEOUT_SECONDS,
         )
         
         if result.returncode == 0:
