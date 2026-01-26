@@ -36,14 +36,14 @@ tag_groups = TagGroup.objects.prefetch_related('categories').all()
 
 ---
 
-### 1.2 Оптимизация кэширования (Приоритет: Средний)
+### 1.2 Оптимизация кэширования (Приоритет: Средний) ✅ ВЫПОЛНЕНО
 
 **Проблема:** `HomeView` кэширует полные объекты модели Content — неоптимально по памяти.
 
 **Решение:**
 - Кэшировать только ID контента, а не полные объекты
-- Добавить явный TTL для кэша
-- Использовать сериализованные данные вместо ORM-объектов
+- Добавить явный TTL для кэша (CACHE_TTL = 300 секунд)
+- Использовать `get_cached_content_ids()` / `set_cached_content_ids()`
 
 ```python
 # Было:
@@ -59,14 +59,16 @@ cache.set('home_video_ids', video_ids, timeout=300)
 
 ---
 
-### 1.3 Кэширование контекста фильтров (Приоритет: Низкий)
+### 1.3 Кэширование контекста фильтров (Приоритет: Низкий) ✅ ВЫПОЛНЕНО
 
 **Проблема:** `get_filter_context()` вызывается на каждый запрос.
 
 **Решение:**
 - Кэшировать результат `get_filter_context()` с инвалидацией при изменении категорий/тегов
+- Добавлены функции `get_cached_filter_context()`, `set_cached_filter_context()`, `invalidate_filter_context_cache()`
+- Сигналы инвалидации при изменении Category, Tag, TagGroup, TagGroup.categories
 
-**Файлы:** `blog/views.py`
+**Файлы:** `blog/views.py`, `blog/cache.py`, `blog/signals.py`
 
 ---
 

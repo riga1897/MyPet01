@@ -15,19 +15,31 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from blog.cache import get_cached_content_list, set_cached_content_list
+from blog.cache import (
+    get_cached_content_ids,
+    get_cached_filter_context,
+    set_cached_content_ids,
+    set_cached_filter_context,
+)
 from blog.forms import ContentForm, TagForm, TagGroupForm
 from blog.models import Category, Content, ContentType, Tag, TagGroup
 from users.models import is_moderator
 
 
 def get_filter_context() -> dict[str, Any]:
-    """Get common filter context (categories, tag groups, and content types)."""
-    return {
-        'tag_groups': TagGroup.objects.prefetch_related('tags', 'categories').all(),
-        'categories': Category.objects.all(),
-        'content_types': ContentType.objects.all(),
-    }
+    """Get common filter context (categories, tag groups, and content types).
+    
+    Uses caching to avoid repeated database queries.
+    """
+    cached = get_cached_filter_context()
+    if cached is not None:
+        return cached
+    
+    tag_groups = TagGroup.objects.prefetch_related('tags', 'categories').all()
+    categories = Category.objects.all()
+    content_types = ContentType.objects.all()
+    
+    return set_cached_filter_context(tag_groups, categories, content_types)
 
 
 def get_available_thumbnails() -> list[str]:
@@ -69,13 +81,20 @@ class HomeView(ListView):  # type: ignore[type-arg]
     context_object_name = 'videos'
 
     def get_queryset(self) -> list[Content]:  # type: ignore[override]
-        cached = get_cached_content_list()
-        if cached is not None:
-            return cached
+        """Get content list, using cached IDs for efficiency."""
+        cached_ids = get_cached_content_ids()
+        if cached_ids is not None:
+            return list(
+                Content.objects.select_related('content_type')
+                .prefetch_related('categories', 'tags', 'tags__group')
+                .filter(id__in=cached_ids)
+            )
+        
         queryset = Content.objects.select_related('content_type').prefetch_related(
             'categories', 'tags', 'tags__group'
         ).all()
-        return set_cached_content_list(queryset, limit=6)
+        set_cached_content_ids(queryset, limit=6)
+        return list(queryset[:6])
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
