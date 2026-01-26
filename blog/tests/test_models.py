@@ -1,4 +1,12 @@
+import os
+from io import BytesIO
+from unittest.mock import patch
+
 import pytest
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
+
 from blog.models import Category, Content, ContentType, Tag, TagGroup
 
 
@@ -202,3 +210,164 @@ class TestContentTypeModel:
         Content.objects.create(title='Тест', content_type=video_type)
         with pytest.raises(ValueError, match='Невозможно удалить'):
             video_type.delete()
+
+
+@pytest.mark.django_db
+class TestContentFileUploadPath:
+    """Tests for content_file_upload_path function."""
+
+    def test_uses_upload_folder_from_content_type(self, video_type: ContentType) -> None:
+        from blog.models import content_file_upload_path
+        content = Content(content_type=video_type, title='Тест')
+        path = content_file_upload_path(content, 'test_video.mp4')
+        assert path == 'videos/test_video.mp4'
+
+    def test_fallback_to_content_folder_when_no_type(self) -> None:
+        from blog.models import content_file_upload_path
+        content = Content(title='Без типа')
+        path = content_file_upload_path(content, 'test_file.mp4')
+        assert path == 'content/test_file.mp4'
+
+    def test_fallback_to_content_folder_when_no_upload_folder(self) -> None:
+        from blog.models import content_file_upload_path
+        ct = ContentType(name='Без папки', code='no_folder', upload_folder='')
+        content = Content(content_type=ct, title='Тест')
+        path = content_file_upload_path(content, 'file.mp4')
+        assert path == 'content/file.mp4'
+
+
+@pytest.mark.django_db
+class TestTagGroupCategoryPks:
+    """Tests for TagGroup.category_pks property."""
+
+    def test_category_pks_returns_empty_set_for_no_categories(self) -> None:
+        tg = TagGroup.objects.create(name='Без категорий')
+        assert tg.category_pks == set()
+
+    def test_category_pks_returns_category_pks(
+        self, yoga_category: Category
+    ) -> None:
+        tg = TagGroup.objects.create(name='С категорией')
+        tg.categories.add(yoga_category)
+        assert tg.category_pks == {yoga_category.pk}
+
+
+@pytest.mark.django_db
+class TestContentThumbnailCompression:
+    """Tests for Content thumbnail compression."""
+
+    def _create_test_image(self, width: int = 800, height: int = 600, mode: str = 'RGB') -> BytesIO:
+        """Create a test image in memory."""
+        img = Image.new(mode, (width, height), color='blue')
+        buffer = BytesIO()
+        fmt = 'PNG' if mode == 'RGBA' else 'JPEG'
+        img.save(buffer, format=fmt)
+        buffer.seek(0)
+        return buffer
+
+    def test_compress_thumbnail_rgb_image(self, video_type: ContentType) -> None:
+        """Test compression of RGB image."""
+        img_buffer = self._create_test_image()
+        uploaded = SimpleUploadedFile('test.jpg', img_buffer.read(), content_type='image/jpeg')
+        content = Content(title='Тест', content_type=video_type, thumbnail=uploaded)
+        content._compress_thumbnail()
+        assert content.thumbnail.name.endswith('.jpg')
+
+    def test_compress_thumbnail_rgba_image(self, video_type: ContentType) -> None:
+        """Test compression of RGBA image converts to RGB."""
+        img_buffer = self._create_test_image(mode='RGBA')
+        uploaded = SimpleUploadedFile('test.png', img_buffer.read(), content_type='image/png')
+        content = Content(title='Тест', content_type=video_type, thumbnail=uploaded)
+        content._compress_thumbnail()
+        assert content.thumbnail.name.endswith('.jpg')
+
+    def test_compress_thumbnail_invalid_image_logs_warning(
+        self, video_type: ContentType
+    ) -> None:
+        """Test that invalid image logs warning."""
+        uploaded = SimpleUploadedFile('bad.jpg', b'not an image', content_type='image/jpeg')
+        content = Content(title='Тест', content_type=video_type, thumbnail=uploaded)
+        with patch('blog.models.logger') as mock_logger:
+            content._compress_thumbnail()
+            mock_logger.warning.assert_called()
+
+    def test_compress_thumbnail_empty_name_returns_early(
+        self, video_type: ContentType
+    ) -> None:
+        """Test that empty thumbnail name returns early."""
+        content = Content(title='Тест', content_type=video_type)
+        content._compress_thumbnail()
+
+
+@pytest.mark.django_db
+class TestContentAutoThumbnail:
+    """Tests for Content auto-thumbnail generation."""
+
+    def test_process_auto_fields_video_generates_thumbnail(
+        self, video_type: ContentType
+    ) -> None:
+        """Test auto-thumbnail generation for video content."""
+        folder = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(folder, exist_ok=True)
+        video_path = os.path.join(folder, 'test_auto.mp4')
+        with open(video_path, 'wb') as f:
+            f.write(b'fake video content')
+        try:
+            content = Content.objects.create(
+                title='Видео',
+                content_type=video_type,
+            )
+            Content.objects.filter(pk=content.pk).update(video_file='videos/test_auto.mp4')
+            content.refresh_from_db()
+            with patch('blog.models.generate_thumbnail_from_video') as mock_gen:
+                mock_gen.return_value = 'thumbnails/generated.jpg'
+                content._process_auto_fields_after_save()
+                mock_gen.assert_called_once()
+        finally:
+            if os.path.exists(video_path):
+                os.remove(video_path)
+
+    def test_process_auto_fields_photo_generates_thumbnail(
+        self, photo_type: ContentType
+    ) -> None:
+        """Test auto-thumbnail generation for photo content."""
+        folder = os.path.join(settings.MEDIA_ROOT, 'photos')
+        os.makedirs(folder, exist_ok=True)
+        with patch('blog.models.generate_thumbnail_from_image') as mock_gen:
+            mock_gen.return_value = 'thumbnails/photo_thumb.jpg'
+            content = Content.objects.create(
+                title='Фото',
+                content_type=photo_type,
+            )
+            Content.objects.filter(pk=content.pk).update(video_file='photos/test.jpg')
+            content.refresh_from_db()
+            content._process_auto_fields_after_save()
+            mock_gen.assert_called_once()
+
+
+@pytest.mark.django_db
+class TestContentDelete:
+    """Tests for Content delete method."""
+
+    def test_delete_removes_thumbnail_file(self, video_type: ContentType) -> None:
+        """Test that deleting content removes the thumbnail file."""
+        thumbs_folder = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
+        os.makedirs(thumbs_folder, exist_ok=True)
+        thumb_path = os.path.join(thumbs_folder, 'to_delete.jpg')
+        with open(thumb_path, 'w') as f:
+            f.write('test')
+        try:
+            content = Content.objects.create(title='Удаляемый', content_type=video_type)
+            Content.objects.filter(pk=content.pk).update(thumbnail='thumbnails/to_delete.jpg')
+            content.refresh_from_db()
+            content.delete()
+            assert not os.path.exists(thumb_path)
+        finally:
+            if os.path.exists(thumb_path):
+                os.remove(thumb_path)
+
+    def test_delete_without_thumbnail_succeeds(self, video_type: ContentType) -> None:
+        """Test that deleting content without thumbnail works."""
+        content = Content.objects.create(title='Без thumb', content_type=video_type)
+        content.delete()
+        assert not Content.objects.filter(pk=content.pk).exists()
