@@ -252,6 +252,9 @@ class Content(BaseModel):
         ordering = ['-created_at']
         verbose_name = 'Контент'
         verbose_name_plural = 'Контент'
+        indexes = [
+            models.Index(fields=['created_at']),
+        ]
 
     def __str__(self) -> str:
         return self.title

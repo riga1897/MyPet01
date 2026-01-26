@@ -9,6 +9,7 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from core.mixins import ModeratorRequiredMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.urls import reverse_lazy
@@ -98,6 +99,44 @@ class HomeView(ListView):  # type: ignore[type-arg]
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
+        context['is_moderator'] = is_moderator(self.request.user)
+        context.update(get_filter_context())
+        return context
+
+
+class SearchView(ListView):  # type: ignore[type-arg]
+    """Full-text search view using PostgreSQL search."""
+
+    model = Content
+    template_name = 'blog/search_results.html'
+    context_object_name = 'results'
+    paginate_by = 12
+
+    def get_queryset(self) -> Any:
+        """Search content using PostgreSQL full-text search."""
+        query = self.request.GET.get('q', '').strip()
+        if not query:
+            return Content.objects.none()
+
+        search_vector = SearchVector('title', weight='A') + SearchVector(
+            'description', weight='B'
+        )
+        search_query = SearchQuery(query, search_type='plain')
+
+        return (
+            Content.objects.annotate(
+                search=search_vector,
+                rank=SearchRank(search_vector, search_query),
+            )
+            .filter(search=search_query)
+            .select_related('content_type')
+            .prefetch_related('categories', 'tags', 'tags__group')
+            .order_by('-rank', '-created_at')
+        )
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context: dict[str, Any] = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get('q', '').strip()
         context['is_moderator'] = is_moderator(self.request.user)
         context.update(get_filter_context())
         return context

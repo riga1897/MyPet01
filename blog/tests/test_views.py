@@ -371,3 +371,73 @@ class TestFileDeleteView:
                                content_type='application/json')
         data = response.json()
         assert data['success'] is False
+
+
+@pytest.mark.django_db
+class TestSearchView:
+    def test_search_page_loads(self) -> None:
+        client = Client()
+        response = client.get('/search/')
+        assert response.status_code == 200
+        assert 'Результаты поиска' in response.content.decode('utf-8')
+
+    def test_search_with_empty_query(self) -> None:
+        client = Client()
+        response = client.get('/search/?q=')
+        assert response.status_code == 200
+        assert 'Введите поисковый запрос' in response.content.decode('utf-8')
+
+    def test_search_finds_content_by_title(self, yoga_category: Category) -> None:
+        content = Content.objects.create(
+            title='Утренняя йога',
+            description='Практика для начала дня',
+        )
+        content.categories.add(yoga_category)
+        client = Client()
+        response = client.get('/search/?q=утренняя')
+        assert response.status_code == 200
+        assert 'Утренняя йога' in response.content.decode('utf-8')
+
+    def test_search_finds_content_by_description(self, yoga_category: Category) -> None:
+        content = Content.objects.create(
+            title='Йога видео',
+            description='Медитация для расслабления',
+        )
+        content.categories.add(yoga_category)
+        client = Client()
+        response = client.get('/search/?q=медитация')
+        assert response.status_code == 200
+        assert 'Йога видео' in response.content.decode('utf-8')
+
+    def test_search_no_results(self) -> None:
+        Content.objects.create(
+            title='Йога видео',
+            description='Практика',
+        )
+        client = Client()
+        response = client.get('/search/?q=несуществующий')
+        assert response.status_code == 200
+        assert 'ничего не найдено' in response.content.decode('utf-8').lower()
+
+    def test_search_context_has_query(self) -> None:
+        client = Client()
+        response = client.get('/search/?q=тест')
+        assert response.context['query'] == 'тест'
+
+    def test_search_pagination(self, yoga_category: Category) -> None:
+        for i in range(15):
+            content = Content.objects.create(
+                title=f'Йога практика {i}',
+                description='Описание практики',
+            )
+            content.categories.add(yoga_category)
+        client = Client()
+        response = client.get('/search/?q=йога')
+        assert response.status_code == 200
+        assert 'page_obj' in response.context
+
+    def test_search_strips_whitespace(self) -> None:
+        client = Client()
+        response = client.get('/search/?q=  ')
+        assert response.status_code == 200
+        assert 'Введите поисковый запрос' in response.content.decode('utf-8')
