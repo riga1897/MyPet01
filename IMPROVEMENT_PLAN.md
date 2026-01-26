@@ -10,18 +10,40 @@
 ### ✅ 2.3 Поиск по контенту (Выполнено: 26 января 2026)
 
 **Реализовано:**
-- PostgreSQL Full-Text Search по полям title и description
-- SearchView с пагинацией (12 элементов на страницу)
-- Форма поиска в header (десктоп + мобильное меню)
-- Шаблон страницы результатов search_results.html
-- 8 новых тестов для поиска
-- Индекс на поле created_at для оптимизации
+- Динамический клиентский поиск на главной странице
+- Поиск по title и description в реальном времени
+- Убрана форма поиска из header (консолидировано на главной)
 
 **Файлы:**
-- blog/views.py (SearchView)
-- blog/urls.py (/search/)
-- blog/templates/blog/search_results.html
-- blog/templates/blog/partials/_header.html
+- blog/templates/blog/index.html (searchCards, applyFilters)
+- blog/templates/blog/partials/_header.html (убрана форма поиска)
+
+---
+
+### ✅ 2.4 Конвертер раскладки клавиатуры (Выполнено: 26 января 2026)
+
+**Реализовано:**
+- JavaScript функция convertLayout() для конвертации QWERTY↔ЙЦУКЕН
+- Автоматическое определение языка ввода (isLatin)
+- Поиск находит "йога" при вводе "qjuf" (и наоборот)
+
+**Файлы:**
+- blog/templates/blog/index.html (convertLayout, isLatin, QWERTY_TO_CYRILLIC)
+- core/utils/text.py (Python-версия для серверной валидации)
+
+---
+
+### ✅ 2.5 Нечёткий поиск (Выполнено: 26 января 2026)
+
+**Реализовано:**
+- JavaScript функция fuzzyMatch() для последовательного сопоставления букв
+- matchesSearchQuery() объединяет все стратегии поиска
+- Поиск находит "йога" при вводе "йга" (пропущена буква)
+- pg_trgm расширение PostgreSQL установлено для будущих улучшений
+
+**Файлы:**
+- blog/templates/blog/index.html (fuzzyMatch, matchesSearchQuery)
+- blog/migrations/0021_add_pg_trgm_extension.py
 
 ---
 
