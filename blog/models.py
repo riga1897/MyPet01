@@ -249,11 +249,12 @@ class Content(BaseModel):
     )
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-updated_at']
         verbose_name = 'Контент'
         verbose_name_plural = 'Контент'
         indexes = [
-            models.Index(fields=['created_at']),
+            models.Index(fields=['-updated_at']),
+            models.Index(fields=['content_type']),
         ]
 
     def __str__(self) -> str:

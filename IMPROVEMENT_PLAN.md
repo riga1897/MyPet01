@@ -64,22 +64,18 @@
 
 ## 1. Производительность
 
-### 1.1 Индексы базы данных (Приоритет: Высокий)
+### ✅ 1.1 Индексы базы данных (Выполнено: 26 января 2026)
 
-**Задача:** Добавить индексы для часто используемых полей.
+**Реализовано:**
+- Индекс на `-updated_at` для быстрой сортировки
+- Индекс на `content_type` для фильтрации
+- Изменена сортировка на `-updated_at` (обновлённый контент выше)
+- HomeView явно использует `.order_by('-updated_at')`
 
-**Решение:**
-```python
-# blog/models.py
-class Content(BaseModel):
-    class Meta:
-        indexes = [
-            models.Index(fields=['created_at']),
-            models.Index(fields=['content_type']),
-        ]
-```
-
-**Оценка:** 1 час
+**Файлы:**
+- blog/models.py (Meta.ordering, indexes)
+- blog/views.py (HomeView.get_queryset)
+- blog/migrations/0022_add_updated_at_index.py
 
 ---
 

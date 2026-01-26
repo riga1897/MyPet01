@@ -96,11 +96,12 @@ class HomeView(ListView):  # type: ignore[type-arg]
                 Content.objects.select_related('content_type')
                 .prefetch_related('categories', 'tags', 'tags__group')
                 .filter(id__in=cached_ids)
+                .order_by('-updated_at')
             )
         
         queryset = Content.objects.select_related('content_type').prefetch_related(
             'categories', 'tags', 'tags__group'
-        ).all()
+        ).order_by('-updated_at')
         set_cached_content_ids(queryset, limit=6)
         return list(queryset[:6])
 
