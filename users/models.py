@@ -25,4 +25,7 @@ def is_moderator(user: Any) -> bool:
 
 
 def can_manage_moderators(user: Any) -> bool:
-    return is_moderator(user)
+    """Проверяет, может ли пользователь управлять модераторами (только superuser)."""
+    if not user.is_authenticated:
+        return False
+    return bool(user.is_superuser)

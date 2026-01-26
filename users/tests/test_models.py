@@ -59,11 +59,11 @@ class TestCanManageModerators:
         user = User.objects.create_user(username='regular', password='test123')
         assert can_manage_moderators(user) is False
 
-    def test_moderator_can_manage(self) -> None:
+    def test_moderator_cannot_manage(self) -> None:
         user = User.objects.create_user(username='mod', password='test123')
         group = get_or_create_moderators_group()
         user.groups.add(group)
-        assert can_manage_moderators(user) is True
+        assert can_manage_moderators(user) is False
 
     def test_superuser_can_manage(self) -> None:
         user = User.objects.create_superuser(username='admin', password='test123')

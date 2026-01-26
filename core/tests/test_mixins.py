@@ -95,15 +95,15 @@ class TestAdminRequiredMixin:
         view.request = request
         assert view.test_func() is True
 
-    def test_moderator_passes(
+    def test_moderator_fails(
         self, factory: RequestFactory, moderator_user: User
     ) -> None:
-        """Moderator user should pass (can_manage_moderators allows moderators)."""
+        """Moderator user should fail (only superuser can manage moderators)."""
         request = factory.get("/")
         request.user = moderator_user
         view = DummyAdminView()
         view.request = request
-        assert view.test_func() is True
+        assert view.test_func() is False
 
     def test_regular_user_fails(
         self, factory: RequestFactory, regular_user: User
