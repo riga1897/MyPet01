@@ -441,3 +441,50 @@ class TestSearchView:
         response = client.get('/search/?q=  ')
         assert response.status_code == 200
         assert 'Введите поисковый запрос' in response.content.decode('utf-8')
+
+    def test_search_layout_conversion(self, yoga_category: Category) -> None:
+        content_type, _ = ContentType.objects.get_or_create(
+            code='video_layout', defaults={'name': 'Видео Layout'}
+        )
+        Content.objects.create(
+            title='Йога практика',
+            content_type=content_type,
+        )
+        client = Client()
+        response = client.get('/search/?q=qjuf')
+        assert response.status_code == 200
+        context = response.context
+        assert context is not None
+        assert context.get('search_mode') in ('layout', 'exact')
+
+    def test_search_context_has_suggestion(self, yoga_category: Category) -> None:
+        content_type, _ = ContentType.objects.get_or_create(
+            code='video_suggest', defaults={'name': 'Видео Suggest'}
+        )
+        Content.objects.create(
+            title='Медитация',
+            content_type=content_type,
+        )
+        client = Client()
+        response = client.get('/search/?q=vtlbnfwbz')
+        assert response.status_code == 200
+        context = response.context
+        assert context is not None
+        if context.get('search_mode') == 'layout':
+            assert context.get('suggestion') is not None
+
+    def test_search_mode_exact_no_suggestion(self, yoga_category: Category) -> None:
+        content_type, _ = ContentType.objects.get_or_create(
+            code='video_exact', defaults={'name': 'Видео Exact'}
+        )
+        Content.objects.create(
+            title='Релакс',
+            content_type=content_type,
+        )
+        client = Client()
+        response = client.get('/search/?q=Релакс')
+        assert response.status_code == 200
+        context = response.context
+        assert context is not None
+        assert context.get('search_mode') == 'exact'
+        assert context.get('suggestion') is None

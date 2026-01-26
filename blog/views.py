@@ -9,7 +9,14 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.contrib.postgres.search import (
+    SearchQuery,
+    SearchRank,
+    SearchVector,
+    TrigramSimilarity,
+)
+
+from core.utils.text import convert_layout
 from core.mixins import ModeratorRequiredMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.urls import reverse_lazy
@@ -105,19 +112,16 @@ class HomeView(ListView):  # type: ignore[type-arg]
 
 
 class SearchView(ListView):  # type: ignore[type-arg]
-    """Full-text search view using PostgreSQL search."""
+    """Full-text search view using PostgreSQL search with fuzzy matching."""
 
     model = Content
     template_name = 'blog/search_results.html'
     context_object_name = 'results'
     paginate_by = 12
+    similarity_threshold = 0.3
 
-    def get_queryset(self) -> Any:
-        """Search content using PostgreSQL full-text search."""
-        query = self.request.GET.get('q', '').strip()
-        if not query:
-            return Content.objects.none()
-
+    def _fulltext_search(self, query: str) -> Any:
+        """Perform full-text search."""
         search_vector = SearchVector('title', weight='A') + SearchVector(
             'description', weight='B'
         )
@@ -134,10 +138,57 @@ class SearchView(ListView):  # type: ignore[type-arg]
             .order_by('-rank', '-created_at')
         )
 
+    def _fuzzy_search(self, query: str) -> Any:
+        """Perform fuzzy search using trigram similarity."""
+        return (
+            Content.objects.annotate(
+                title_similarity=TrigramSimilarity('title', query),
+                desc_similarity=TrigramSimilarity('description', query),
+            )
+            .filter(title_similarity__gt=self.similarity_threshold)
+            .select_related('content_type')
+            .prefetch_related('categories', 'tags', 'tags__group')
+            .order_by('-title_similarity', '-created_at')
+        )
+
+    def get_queryset(self) -> Any:
+        """Search content with fallback to layout conversion and fuzzy search."""
+        query = self.request.GET.get('q', '').strip()
+        if not query:
+            return Content.objects.none()
+
+        results = self._fulltext_search(query)
+        if results.exists():
+            self._search_mode = 'exact'
+            self._suggestion = None
+            return results
+
+        alt_query = convert_layout(query)
+        if alt_query != query:
+            alt_results = self._fulltext_search(alt_query)
+            if alt_results.exists():
+                self._search_mode = 'layout'
+                self._suggestion = alt_query
+                return alt_results
+
+        fuzzy_results = self._fuzzy_search(query)
+        if fuzzy_results.exists():
+            self._search_mode = 'fuzzy'
+            first_result = fuzzy_results.first()
+            self._suggestion = first_result.title if first_result else None
+            return fuzzy_results
+
+        self._search_mode = 'none'
+        self._suggestion = None
+        return Content.objects.none()
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['query'] = self.request.GET.get('q', '').strip()
+        query = self.request.GET.get('q', '').strip()
+        context['query'] = query
         context['is_moderator'] = is_moderator(self.request.user)
+        context['search_mode'] = getattr(self, '_search_mode', 'none')
+        context['suggestion'] = getattr(self, '_suggestion', None)
         context.update(get_filter_context())
         return context
 

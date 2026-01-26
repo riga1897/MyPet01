@@ -33,6 +33,16 @@
                         Ничего не найдено по запросу «{{ query }}»
                     {% endif %}
                 </p>
+                {% if suggestion and search_mode != 'exact' %}
+                    <p class="mt-2 text-primary">
+                        {% if search_mode == 'layout' %}
+                            Показаны результаты для «<a href="?q={{ suggestion }}" class="underline hover:no-underline font-medium">{{ suggestion }}</a>»
+                            <span class="text-muted-foreground text-sm">(исправлена раскладка клавиатуры)</span>
+                        {% elif search_mode == 'fuzzy' %}
+                            Возможно, вы искали: «<a href="?q={{ suggestion }}" class="underline hover:no-underline font-medium">{{ suggestion }}</a>»
+                        {% endif %}
+                    </p>
+                {% endif %}
             {% endif %}
         </div>
         
