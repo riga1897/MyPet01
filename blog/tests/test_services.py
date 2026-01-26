@@ -28,10 +28,18 @@ class TestGenerateThumbnailFromVideo:
         assert generate_thumbnail_from_video(mock_file) is None
 
     @patch('blog.services.subprocess.run')
+    @patch('blog.services.Path')
     def test_returns_none_on_ffmpeg_failure(
-        self, mock_run: MagicMock
+        self, mock_path_cls: MagicMock, mock_run: MagicMock
     ) -> None:
         """Should return None when ffmpeg fails."""
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.exists.return_value = False
+        mock_path_cls.return_value = mock_path_instance
+
         mock_run.return_value = MagicMock(returncode=1)
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
@@ -41,8 +49,9 @@ class TestGenerateThumbnailFromVideo:
         assert result is None
 
     @patch('blog.services.subprocess.run')
+    @patch('blog.services.Path')
     def test_returns_content_file_on_success(
-        self, mock_run: MagicMock
+        self, mock_path_cls: MagicMock, mock_run: MagicMock
     ) -> None:
         """Should return ContentFile when ffmpeg succeeds."""
         img = Image.new('RGB', (100, 100), color='red')
@@ -54,11 +63,16 @@ class TestGenerateThumbnailFromVideo:
             tmp.write(img_bytes)
             tmp_path = tmp.name
 
-        def mock_ffmpeg(*args: object, **kwargs: object) -> MagicMock:
-            Path(tmp_path).write_bytes(img_bytes)
-            return MagicMock(returncode=0)
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.exists.return_value = True
+        mock_path_instance.read_bytes.return_value = img_bytes
+        mock_path_instance.unlink = MagicMock()
+        mock_path_cls.return_value = mock_path_instance
 
-        mock_run.side_effect = mock_ffmpeg
+        mock_run.return_value = MagicMock(returncode=0)
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
 
@@ -196,7 +210,10 @@ class TestGenerateThumbnailFromVideoEdgeCases:
     """Edge case tests for generate_thumbnail_from_video."""
 
     @patch('blog.services.subprocess.run')
-    def test_converts_rgba_to_rgb(self, mock_run: MagicMock) -> None:
+    @patch('blog.services.Path')
+    def test_converts_rgba_to_rgb(
+        self, mock_path_cls: MagicMock, mock_run: MagicMock
+    ) -> None:
         """Should convert RGBA image from ffmpeg to RGB."""
         img = Image.new('RGBA', (100, 100), color=(255, 0, 0, 128))
         img_buffer = BytesIO()
@@ -206,11 +223,16 @@ class TestGenerateThumbnailFromVideoEdgeCases:
         with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
             tmp_path = tmp.name
 
-        def mock_ffmpeg(*args: object, **kwargs: object) -> MagicMock:
-            Path(tmp_path).write_bytes(img_bytes)
-            return MagicMock(returncode=0)
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.exists.return_value = True
+        mock_path_instance.read_bytes.return_value = img_bytes
+        mock_path_instance.unlink = MagicMock()
+        mock_path_cls.return_value = mock_path_instance
 
-        mock_run.side_effect = mock_ffmpeg
+        mock_run.return_value = MagicMock(returncode=0)
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
 
@@ -222,9 +244,20 @@ class TestGenerateThumbnailFromVideoEdgeCases:
         Path(tmp_path).unlink(missing_ok=True)
 
     @patch('blog.services.subprocess.run')
-    def test_returns_none_on_timeout(self, mock_run: MagicMock) -> None:
+    @patch('blog.services.Path')
+    def test_returns_none_on_timeout(
+        self, mock_path_cls: MagicMock, mock_run: MagicMock
+    ) -> None:
         """Should return None and cleanup on subprocess timeout."""
         import subprocess
+
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.unlink = MagicMock()
+        mock_path_cls.return_value = mock_path_instance
+
         mock_run.side_effect = subprocess.TimeoutExpired('ffmpeg', 30)
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
@@ -240,8 +273,18 @@ class TestGenerateThumbnailFromVideoEdgeCases:
         Path(tmp_path).unlink(missing_ok=True)
 
     @patch('blog.services.subprocess.run')
-    def test_returns_none_on_oserror(self, mock_run: MagicMock) -> None:
-        """Should return None on OSError."""
+    @patch('blog.services.Path')
+    def test_returns_none_on_oserror(
+        self, mock_path_cls: MagicMock, mock_run: MagicMock
+    ) -> None:
+        """Should return None on OSError from subprocess."""
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.unlink = MagicMock()
+        mock_path_cls.return_value = mock_path_instance
+
         mock_run.side_effect = OSError("ffmpeg not found")
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
@@ -257,7 +300,10 @@ class TestGenerateThumbnailFromVideoEdgeCases:
         Path(tmp_path).unlink(missing_ok=True)
 
     @patch('blog.services.subprocess.run')
-    def test_cleanup_tmp_file_after_success(self, mock_run: MagicMock) -> None:
+    @patch('blog.services.Path')
+    def test_cleanup_tmp_file_after_success(
+        self, mock_path_cls: MagicMock, mock_run: MagicMock
+    ) -> None:
         """Should remove temp file after successful processing."""
         img = Image.new('RGB', (100, 100), color='green')
         img_buffer = BytesIO()
@@ -267,11 +313,16 @@ class TestGenerateThumbnailFromVideoEdgeCases:
         with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
             tmp_path = tmp.name
 
-        def mock_ffmpeg(*args: object, **kwargs: object) -> MagicMock:
-            Path(tmp_path).write_bytes(img_bytes)
-            return MagicMock(returncode=0)
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.exists.return_value = True
+        mock_path_instance.read_bytes.return_value = img_bytes
+        mock_path_instance.unlink = MagicMock()
+        mock_path_cls.return_value = mock_path_instance
 
-        mock_run.side_effect = mock_ffmpeg
+        mock_run.return_value = MagicMock(returncode=0)
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
 
@@ -281,3 +332,62 @@ class TestGenerateThumbnailFromVideoEdgeCases:
 
         assert result is not None
         Path(tmp_path).unlink(missing_ok=True)
+
+
+class TestVideoFileSizeValidation:
+    """Tests for video file size validation in generate_thumbnail_from_video."""
+
+    @patch('blog.services.Path')
+    def test_returns_none_when_file_too_large(self, mock_path_cls: MagicMock) -> None:
+        """Should return None when video file exceeds MAX_VIDEO_SIZE_BYTES."""
+        from blog.services import MAX_VIDEO_SIZE_BYTES
+
+        mock_stat = MagicMock()
+        mock_stat.st_size = MAX_VIDEO_SIZE_BYTES + 1
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_cls.return_value = mock_path_instance
+
+        mock_file = MagicMock()
+        mock_file.path = '/path/to/large_video.mp4'
+
+        result = generate_thumbnail_from_video(mock_file)
+
+        assert result is None
+
+    @patch('blog.services.Path')
+    def test_returns_none_on_stat_oserror(self, mock_path_cls: MagicMock) -> None:
+        """Should return None when stat() raises OSError."""
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.side_effect = OSError("File not found")
+        mock_path_cls.return_value = mock_path_instance
+
+        mock_file = MagicMock()
+        mock_file.path = '/path/to/nonexistent.mp4'
+
+        result = generate_thumbnail_from_video(mock_file)
+
+        assert result is None
+
+    @patch('blog.services.subprocess.run')
+    @patch('blog.services.Path')
+    def test_proceeds_when_file_size_ok(
+        self, mock_path_cls: MagicMock, mock_run: MagicMock
+    ) -> None:
+        """Should proceed to ffmpeg when file size is within limits."""
+        from blog.services import MAX_VIDEO_SIZE_BYTES
+
+        mock_stat = MagicMock()
+        mock_stat.st_size = MAX_VIDEO_SIZE_BYTES - 1
+        mock_path_instance = MagicMock()
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.exists.return_value = False
+        mock_path_cls.return_value = mock_path_instance
+
+        mock_run.return_value = MagicMock(returncode=1)
+        mock_file = MagicMock()
+        mock_file.path = '/path/to/video.mp4'
+
+        generate_thumbnail_from_video(mock_file)
+
+        mock_run.assert_called_once()
