@@ -88,7 +88,7 @@ class ModeratorFilterContextMixin(ModeratorContextMixin):
 class HomeView(ListView):  # type: ignore[type-arg]
     model = Content
     template_name = 'blog/index.html'
-    context_object_name = 'videos'
+    context_object_name = 'cards'
 
     def get_queryset(self) -> list[Content]:  # type: ignore[override]
         """Get content list, using cached IDs for efficiency."""

@@ -37,7 +37,7 @@ class TestHomeView:
             content.categories.add(yoga_category)
         client = Client()
         response = client.get('/')
-        assert len(response.context['videos']) == 6
+        assert len(response.context['cards']) == 6
 
     def test_home_shows_empty_message_when_no_content(self) -> None:
         client = Client()

@@ -19,7 +19,7 @@ class TestBlogUrls:
         response = client.get('/')
         assert 'Гармония Души' in response.content.decode('utf-8')
 
-    def test_home_contains_videos_section(self) -> None:
+    def test_home_contains_cards_section(self) -> None:
         client = Client()
         response = client.get('/')
-        assert 'id="videos"' in response.content.decode('utf-8')
+        assert 'id="cards"' in response.content.decode('utf-8')
