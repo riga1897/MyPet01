@@ -8,4 +8,5 @@ Disallow: /files/
 Disallow: /users/
 Disallow: /api/
 
-Sitemap: https://example.com/sitemap.xml
+Sitemap: https://www.mine-craft.su/sitemap.xml
+Sitemap: https://site.mine-craft.su/sitemap.xml
