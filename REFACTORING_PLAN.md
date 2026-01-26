@@ -72,7 +72,7 @@ cache.set('home_video_ids', video_ids, timeout=300)
 
 ## 2. Качество кода
 
-### 2.1 Устранение дублирования ModeratorRequiredMixin (Приоритет: Высокий)
+### 2.1 Устранение дублирования ModeratorRequiredMixin (Приоритет: Высокий) ✅ ВЫПОЛНЕНО
 
 **Проблема:** Миксин дублируется в `blog/views.py` и `users/views.py`.
 
