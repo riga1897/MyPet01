@@ -115,22 +115,19 @@ class FilterContextMixin:
 
 ---
 
-### 2.3 Улучшение типизации (Приоритет: Низкий)
+### 2.3 Улучшение типизации (Приоритет: Низкий) ✅ ВЫПОЛНЕНО (частично)
 
 **Проблема:** Много `# type: ignore` комментариев, неполная совместимость с mypy.
 
 **Решение:**
-- Использовать generic типы для Django views
-- Добавить proper type hints для QuerySet возвратов
+- Попытка использовать generic типы для Django views (`ListView[Content]`, `CreateView[Content, ContentForm]`)
+- **Проблема:** Django generic views не поддерживают subscripting во время выполнения (`TypeError: type 'ListView' is not subscriptable`)
+- **Решение:** Оставлены `# type: ignore[type-arg]` комментарии — это стандартная практика для Django проектов
+- **Результат:** Mypy проходит успешно (`Success: no issues found in 82 source files`)
 
-```python
-# Было:
-class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
-
-# Стало:
-class ContentListView(ModeratorRequiredMixin, ListView[Content]):
-    model = Content
-```
+**Альтернативы:**
+- Использовать `django-stubs` для полной поддержки типизации Django (требует дополнительной настройки)
+- Использовать условный импорт с `TYPE_CHECKING` (усложняет код)
 
 **Файлы:** `blog/views.py`, `users/views.py`
 
