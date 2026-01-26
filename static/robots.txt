@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /content/
+Disallow: /tags/
+Disallow: /files/
+Disallow: /users/
+Disallow: /api/
+
+Sitemap: https://example.com/sitemap.xml

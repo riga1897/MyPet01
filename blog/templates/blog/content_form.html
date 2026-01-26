@@ -60,7 +60,7 @@
                     <label class="block text-sm font-medium text-foreground mb-1">
                         Теги
                     </label>
-                    {% include "blog/partials/_tag_select_dropdowns.html" with tag_groups=tag_groups selected_tag_ids=selected_tag_ids current_category_code=current_category_code %}
+                    {% include "blog/partials/_tag_filter_dropdowns.html" with tag_groups=tag_groups field_name='tags' selected_tag_ids=selected_tag_ids %}
                     {% if form.tags.errors %}
                     <p class="text-red-600 text-sm mt-1">{{ form.tags.errors.0 }}</p>
                     {% endif %}
@@ -657,9 +657,9 @@
         updateFileInput();
         setupFormUpload();
         
-        {% if current_category_code %}
-        if (typeof updateTagGroupsVisibilityForm === 'function') {
-            updateTagGroupsVisibilityForm('{{ current_category_code }}');
+        {% if selected_category_codes %}
+        if (typeof updateTagDropdownsVisibility === 'function') {
+            updateTagDropdownsVisibility([{% for code in selected_category_codes %}'{{ code }}'{% if not forloop.last %}, {% endif %}{% endfor %}]);
         }
         {% endif %}
     });

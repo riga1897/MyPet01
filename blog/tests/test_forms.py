@@ -136,3 +136,67 @@ class TestValidateFileSize:
         file_none_size = MagicMock()
         file_none_size.size = None
         validate_file_size(file_none_size, 'Файл')
+
+
+class TestContentFormFileSizeValidation:
+    """Integration tests for file size validation in ContentForm."""
+
+    @pytest.mark.django_db
+    def test_clean_video_file_rejects_oversized_file(
+        self, yoga_category: Category, video_type: ContentType
+    ) -> None:
+        """clean_video_file should reject files exceeding size limit."""
+        from unittest.mock import patch
+        
+        small_video = SimpleUploadedFile(
+            'test.mp4', b'x' * 100, content_type='video/mp4'
+        )
+        oversized_bytes = (MAX_FILE_SIZE_MB + 1) * 1024 * 1024
+        
+        with patch.object(small_video, 'size', oversized_bytes):
+            form = ContentForm(
+                data={
+                    'title': 'Тест',
+                    'description': 'Описание',
+                    'content_type': video_type.pk,
+                    'categories': [yoga_category.pk],
+                },
+                files={'video_file': small_video}  # type: ignore[arg-type]
+            )
+            
+            assert not form.is_valid()
+            assert 'video_file' in form.errors
+            assert 'слишком большой' in str(form.errors['video_file'])
+
+    @pytest.mark.django_db
+    def test_clean_thumbnail_rejects_oversized_file(
+        self, yoga_category: Category
+    ) -> None:
+        """clean_thumbnail should reject files exceeding size limit."""
+        from unittest.mock import patch
+        import io
+        from PIL import Image
+        
+        img = Image.new('RGB', (100, 100), color='red')
+        img_io = io.BytesIO()
+        img.save(img_io, format='JPEG')
+        img_io.seek(0)
+        
+        valid_image = SimpleUploadedFile(
+            'test.jpg', img_io.read(), content_type='image/jpeg'
+        )
+        oversized_bytes = (MAX_FILE_SIZE_MB + 1) * 1024 * 1024
+        
+        with patch.object(valid_image, 'size', oversized_bytes):
+            form = ContentForm(
+                data={
+                    'title': 'Тест',
+                    'description': 'Описание',
+                    'categories': [yoga_category.pk],
+                },
+                files={'thumbnail': valid_image}  # type: ignore[arg-type]
+            )
+            
+            assert not form.is_valid()
+            assert 'thumbnail' in form.errors
+            assert 'слишком большой' in str(form.errors['thumbnail'])

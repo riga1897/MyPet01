@@ -3,7 +3,11 @@ Tag filter dropdowns with multi-select and "Select All" functionality.
 Requires:
   - tag_groups: QuerySet of TagGroup with prefetched tags and categories
   - Optional: filter_id_prefix (default: 'tag-filter') for unique IDs when used multiple times
+  - Optional: field_name (default: none) - if provided, adds name attribute for form submission
+  - Optional: selected_tag_ids - list of pre-selected tag IDs
+  - Optional: selected_categories - list of selected category codes for visibility filtering
 Usage: {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag_groups %}
+For forms: {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag_groups field_name='tags' selected_tag_ids=selected_tag_ids selected_categories=selected_categories %}
 {% endcomment %}
 
 {% if tag_groups %}
@@ -37,9 +41,11 @@ Usage: {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag
             <label class="tag-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
                 <input type="checkbox" 
                        class="tag-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                       {% if field_name %}name="{{ field_name }}"{% endif %}
                        data-group-id="{{ group.id }}"
                        data-tag-id="{{ tag.id }}"
                        value="{{ tag.id }}"
+                       {% if tag.id in selected_tag_ids %}checked{% endif %}
                        onchange="handleTagCheckboxChange(this)">
                 <span class="text-sm">{{ tag.name }}</span>
             </label>
@@ -163,12 +169,19 @@ if (typeof window._tagFilterDropdownsInitialized === 'undefined') {
     }
     window.applyTagFilters = applyTagFilters;
 
-    function updateTagDropdownsVisibility(categoryCode) {
+    function updateTagDropdownsVisibility(categoryCodes) {
+        const codes = Array.isArray(categoryCodes) ? categoryCodes : [categoryCodes];
+        const isAllSelected = codes.includes('all') || codes.length === 0;
+        
         document.querySelectorAll('.tag-group-dropdown').forEach(dropdown => {
-            const categories = dropdown.dataset.categories;
-            const isVisible = !categories || categories === '' || 
-                             categoryCode === 'all' || 
-                             categories.includes(categoryCode + ',');
+            const groupCategories = dropdown.dataset.categories;
+            let isVisible = false;
+            
+            if (!groupCategories || groupCategories === '' || isAllSelected) {
+                isVisible = true;
+            } else {
+                isVisible = codes.some(code => groupCategories.includes(code + ','));
+            }
             
             if (isVisible) {
                 dropdown.classList.remove('hidden');
@@ -183,6 +196,13 @@ if (typeof window._tagFilterDropdownsInitialized === 'undefined') {
         });
     }
     window.updateTagDropdownsVisibility = updateTagDropdownsVisibility;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.tag-group-dropdown').forEach(dropdown => {
+            updateSelectAllState(dropdown);
+            updateSelectedCount(dropdown);
+        });
+    });
 }
 </script>
 {% endif %}

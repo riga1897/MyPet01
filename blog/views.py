@@ -45,6 +45,24 @@ def get_available_thumbnails() -> list[str]:
     return sorted(thumbnails, key=str.lower)
 
 
+class ModeratorContextMixin:
+    """Mixin that adds is_moderator=True to context."""
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context: dict[str, Any] = super().get_context_data(**kwargs)  # type: ignore[misc]
+        context['is_moderator'] = True
+        return context
+
+
+class ModeratorFilterContextMixin(ModeratorContextMixin):
+    """Mixin that adds is_moderator=True and filter context to views."""
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context: dict[str, Any] = super().get_context_data(**kwargs)
+        context.update(get_filter_context())
+        return context
+
+
 class HomeView(ListView):  # type: ignore[type-arg]
     model = Content
     template_name = 'blog/index.html'
@@ -66,7 +84,7 @@ class HomeView(ListView):  # type: ignore[type-arg]
         return context
 
 
-class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
+class ContentListView(ModeratorRequiredMixin, ModeratorFilterContextMixin, ListView):  # type: ignore[type-arg]
     model = Content
     template_name = 'blog/content_list.html'
     context_object_name = 'contents'
@@ -76,12 +94,6 @@ class ContentListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-ar
         return Content.objects.select_related('content_type').prefetch_related(
             'categories', 'tags', 'tags__group'
         ).order_by('-created_at')
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        context.update(get_filter_context())
-        return context
 
 
 def validate_existing_file(existing_file: str, content_type: ContentType | None) -> bool:
@@ -113,16 +125,6 @@ def validate_existing_thumbnail(existing_thumbnail: str) -> bool:
     if not full_path.startswith(media_root + os.sep):
         return False
     return os.path.exists(full_path) and os.path.isfile(full_path)
-
-
-class ModeratorFilterContextMixin:
-    """Mixin that adds is_moderator=True and filter context to views."""
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)  # type: ignore[misc]
-        context['is_moderator'] = True
-        context.update(get_filter_context())
-        return context
 
 
 class FileHandlingMixin:
@@ -188,7 +190,7 @@ class FileHandlingMixin:
         return None
 
 
-class ContentCreateView(ModeratorRequiredMixin, FileHandlingMixin, CreateView):  # type: ignore[type-arg]
+class ContentCreateView(ModeratorRequiredMixin, ModeratorFilterContextMixin, FileHandlingMixin, CreateView):  # type: ignore[type-arg]
     model = Content
     form_class = ContentForm
     template_name = 'blog/content_form.html'
@@ -204,19 +206,17 @@ class ContentCreateView(ModeratorRequiredMixin, FileHandlingMixin, CreateView): 
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Создать'
-        context.update(get_filter_context())
         context['selected_tag_ids'] = []
         context['selected_category_ids'] = []
+        context['selected_category_codes'] = []
         context['selected_content_type_id'] = None
-        context['current_category_code'] = None
         context['has_file'] = False
         context['available_thumbnails'] = get_available_thumbnails()
         return context
 
 
-class ContentUpdateView(ModeratorRequiredMixin, FileHandlingMixin, UpdateView):  # type: ignore[type-arg]
+class ContentUpdateView(ModeratorRequiredMixin, ModeratorFilterContextMixin, FileHandlingMixin, UpdateView):  # type: ignore[type-arg]
     model = Content
     form_class = ContentForm
     template_name = 'blog/content_form.html'
@@ -232,21 +232,18 @@ class ContentUpdateView(ModeratorRequiredMixin, FileHandlingMixin, UpdateView): 
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Редактировать'
-        context.update(get_filter_context())
         content = self.object
         context['selected_tag_ids'] = list(content.tags.values_list('id', flat=True))
         context['selected_category_ids'] = list(content.categories.values_list('id', flat=True))
+        context['selected_category_codes'] = list(content.categories.values_list('code', flat=True))
         context['selected_content_type_id'] = content.content_type_id
-        first_category = content.categories.first()
-        context['current_category_code'] = first_category.code if first_category else None
         context['has_file'] = bool(content.video_file)
         context['available_thumbnails'] = get_available_thumbnails()
         return context
 
 
-class ContentDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[type-arg]
+class ContentDeleteView(ModeratorRequiredMixin, ModeratorContextMixin, DeleteView):  # type: ignore[type-arg]
     model = Content
     template_name = 'blog/content_confirm_delete.html'
     success_url = reverse_lazy('blog:content_list')
@@ -255,13 +252,8 @@ class ContentDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[typ
         messages.success(self.request, 'Контент успешно удалён.')
         return super().form_valid(form)
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        return context
 
-
-class TagListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
+class TagListView(ModeratorRequiredMixin, ModeratorFilterContextMixin, ListView):  # type: ignore[type-arg]
     model = TagGroup
     template_name = 'blog/tag_list.html'
     context_object_name = 'tag_groups'
@@ -269,14 +261,8 @@ class TagListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
     def get_queryset(self) -> Any:
         return TagGroup.objects.prefetch_related('tags', 'categories').all()
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        context.update(get_filter_context())
-        return context
 
-
-class TagGroupCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-arg]
+class TagGroupCreateView(ModeratorRequiredMixin, ModeratorContextMixin, CreateView):  # type: ignore[type-arg]
     model = TagGroup
     form_class = TagGroupForm
     template_name = 'blog/taggroup_form.html'
@@ -288,12 +274,11 @@ class TagGroupCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[ty
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Создать группу'
         return context
 
 
-class TagGroupUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[type-arg]
+class TagGroupUpdateView(ModeratorRequiredMixin, ModeratorContextMixin, UpdateView):  # type: ignore[type-arg]
     model = TagGroup
     form_class = TagGroupForm
     template_name = 'blog/taggroup_form.html'
@@ -305,12 +290,11 @@ class TagGroupUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[ty
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Редактировать группу'
         return context
 
 
-class TagGroupDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[type-arg]
+class TagGroupDeleteView(ModeratorRequiredMixin, ModeratorContextMixin, DeleteView):  # type: ignore[type-arg]
     model = TagGroup
     template_name = 'blog/taggroup_confirm_delete.html'
     success_url = reverse_lazy('blog:tag_list')
@@ -319,13 +303,8 @@ class TagGroupDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[ty
         messages.success(self.request, 'Группа тегов успешно удалена.')
         return super().form_valid(form)
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        return context
 
-
-class TagCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-arg]
+class TagCreateView(ModeratorRequiredMixin, ModeratorContextMixin, CreateView):  # type: ignore[type-arg]
     model = Tag
     form_class = TagForm
     template_name = 'blog/tag_form.html'
@@ -337,12 +316,11 @@ class TagCreateView(ModeratorRequiredMixin, CreateView):  # type: ignore[type-ar
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Создать тег'
         return context
 
 
-class TagUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[type-arg]
+class TagUpdateView(ModeratorRequiredMixin, ModeratorContextMixin, UpdateView):  # type: ignore[type-arg]
     model = Tag
     form_class = TagForm
     template_name = 'blog/tag_form.html'
@@ -354,12 +332,11 @@ class TagUpdateView(ModeratorRequiredMixin, UpdateView):  # type: ignore[type-ar
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         context['action'] = 'Редактировать тег'
         return context
 
 
-class TagDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[type-arg]
+class TagDeleteView(ModeratorRequiredMixin, ModeratorContextMixin, DeleteView):  # type: ignore[type-arg]
     model = Tag
     template_name = 'blog/tag_confirm_delete.html'
     success_url = reverse_lazy('blog:tag_list')
@@ -367,11 +344,6 @@ class TagDeleteView(ModeratorRequiredMixin, DeleteView):  # type: ignore[type-ar
     def form_valid(self, form: Any) -> HttpResponse:
         messages.success(self.request, 'Тег успешно удалён.')
         return super().form_valid(form)
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
-        return context
 
 
 class TagReorderView(ModeratorRequiredMixin, View):
@@ -569,7 +541,7 @@ class AvailableThumbnailsView(View):
         return JsonResponse({'files': available_files})
 
 
-class FileListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
+class FileListView(ModeratorRequiredMixin, ModeratorContextMixin, ListView):  # type: ignore[type-arg]
     template_name = 'blog/file_list.html'
     context_object_name = 'content_types'
 
@@ -578,7 +550,6 @@ class FileListView(ModeratorRequiredMixin, ListView):  # type: ignore[type-arg]
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
-        context['is_moderator'] = True
         
         file_to_content: dict[str, dict[str, Any]] = {}
         for content in Content.objects.exclude(video_file='').select_related():

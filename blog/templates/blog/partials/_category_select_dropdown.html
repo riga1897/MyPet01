@@ -127,8 +127,12 @@ if (typeof window._categorySelectInitialized === 'undefined') {
         const checkedBoxes = document.querySelectorAll('.category-checkbox:checked');
         const codes = Array.from(checkedBoxes).map(cb => cb.dataset.categoryCode);
         
+        if (typeof updateTagDropdownsVisibility === 'function') {
+            updateTagDropdownsVisibility(codes);
+        }
+        
         if (typeof onCategoryChanged === 'function') {
-            onCategoryChanged(codes.length > 0 ? codes[0] : '', '');
+            onCategoryChanged(codes, '');
         }
         
         if (typeof onContentTypeOrCategoryChanged === 'function') {
