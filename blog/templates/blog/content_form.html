@@ -12,66 +12,66 @@
             <a href="{% url 'blog:content_list' %}" class="text-primary hover:underline">← Назад к списку</a>
         </div>
         
-        <div class="bg-card rounded-2xl shadow-lg p-8">
+        <div class="card-lg">
             <form method="post" enctype="multipart/form-data" class="space-y-5" id="content-form">
                 {% csrf_token %}
                 
                 <div>
-                    <label for="id_title" class="block text-sm font-medium text-foreground mb-1">
+                    <label for="id_title" class="form-label">
                         Заголовок
                     </label>
                     {{ form.title }}
                     {% if form.title.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.title.errors.0 }}</p>
+                    <p class="form-error">{{ form.title.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div>
-                    <label for="id_description" class="block text-sm font-medium text-foreground mb-1">
+                    <label for="id_description" class="form-label">
                         Описание
                     </label>
                     {{ form.description }}
                     {% if form.description.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                    <p class="form-error">{{ form.description.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-foreground mb-1">
+                    <label class="form-label">
                         Тип контента
                     </label>
                     {% include "blog/partials/_content_type_select_dropdown.html" with content_types=content_types selected_content_type_id=selected_content_type_id has_file=has_file %}
                     {% if form.content_type.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.content_type.errors.0 }}</p>
+                    <p class="form-error">{{ form.content_type.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-foreground mb-1">
+                    <label class="form-label">
                         Категория
                     </label>
                     {% include "blog/partials/_category_select_dropdown.html" with categories=categories selected_category_ids=selected_category_ids %}
                     {% if form.categories.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.categories.errors.0 }}</p>
+                    <p class="form-error">{{ form.categories.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-foreground mb-1">
+                    <label class="form-label">
                         Теги
                     </label>
                     {% include "blog/partials/_tag_filter_dropdowns.html" with tag_groups=tag_groups field_name='tags' selected_tag_ids=selected_tag_ids %}
                     {% if form.tags.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.tags.errors.0 }}</p>
+                    <p class="form-error">{{ form.tags.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div id="file-upload-section">
-                    <label class="block text-sm font-medium text-foreground mb-1">
+                    <label class="form-label">
                         <span id="file-label">Файл</span>
                     </label>
                     
-                    <div id="file-mode-buttons" class="flex gap-2 mb-2">
+                    <div id="file-mode-buttons" class="mode-toggle-buttons">
                         <button type="button" id="btn-file-upload-mode" onclick="setFileMode('upload')"
                                 class="btn-primary-sm">
                             Загрузить
@@ -84,18 +84,17 @@
                     
                     <div id="file-upload-mode">
                         <div id="file-upload-area" class="hidden">
-                            <button type="button" onclick="openFileDialog()"
-                                    class="w-full px-4 py-3 text-sm rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-muted/50 transition-colors text-muted-foreground">
+                            <button type="button" onclick="openFileDialog()" class="file-upload-area">
                                 Нажмите для выбора файла
                             </button>
                         </div>
-                        <div id="file-selected-display" class="hidden flex items-center gap-2 p-3 bg-muted rounded-lg">
+                        <div id="file-selected-display" class="hidden file-selected-display">
                             <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                             <span id="file-name-display" class="text-sm text-foreground flex-1 truncate"></span>
                             <button type="button" onclick="clearFileSelection()" 
-                                    class="text-red-500 hover:text-red-700 p-1 flex-shrink-0" title="Убрать файл">
+                                    class="btn-icon-danger flex-shrink-0" title="Убрать файл">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
@@ -122,10 +121,10 @@
                     <input type="hidden" name="existing_file" id="existing_file_input" value="">
                     
                     {% if object.video_file %}
-                    <div id="current-file-info" class="flex items-center gap-2 mt-1 p-2 bg-muted rounded-lg">
+                    <div id="current-file-info" class="current-file-info">
                         <span class="text-sm text-foreground flex-1">{{ object.video_file.name|truncatechars:50 }}</span>
                         <button type="button" onclick="detachFile()" 
-                                class="text-red-500 hover:text-red-700 p-1" title="Открепить файл">
+                                class="btn-icon-danger" title="Открепить файл">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
@@ -134,17 +133,17 @@
                     </div>
                     {% endif %}
                     {% if form.video_file.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.video_file.errors.0 }}</p>
+                    <p class="form-error">{{ form.video_file.errors.0 }}</p>
                     {% endif %}
-                    <p id="file-hint" class="text-xs text-muted-foreground mt-1"></p>
+                    <p id="file-hint" class="form-hint"></p>
                 </div>
                 
                 <div id="thumbnail-section">
-                    <label class="block text-sm font-medium text-foreground mb-1">
+                    <label class="form-label">
                         Миниатюра (необязательно)
                     </label>
                     
-                    <div id="thumb-mode-buttons" class="flex gap-2 mb-2">
+                    <div id="thumb-mode-buttons" class="mode-toggle-buttons">
                         <button type="button" id="btn-thumb-upload-mode" onclick="setThumbMode('upload')"
                                 class="btn-primary-sm">
                             Загрузить
@@ -157,18 +156,17 @@
                     
                     <div id="thumb-upload-mode">
                         <div id="thumb-upload-area" class="hidden">
-                            <button type="button" onclick="openThumbDialog()"
-                                    class="w-full px-4 py-3 text-sm rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-muted/50 transition-colors text-muted-foreground">
+                            <button type="button" onclick="openThumbDialog()" class="file-upload-area">
                                 Нажмите для выбора изображения
                             </button>
                         </div>
-                        <div id="thumb-selected-display" class="hidden flex items-center gap-2 p-3 bg-muted rounded-lg">
+                        <div id="thumb-selected-display" class="hidden file-selected-display">
                             <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                             <span id="thumb-name-display" class="text-sm text-foreground flex-1 truncate"></span>
                             <button type="button" onclick="clearThumbSelection()" 
-                                    class="text-red-500 hover:text-red-700 p-1 flex-shrink-0" title="Убрать миниатюру">
+                                    class="btn-icon-danger flex-shrink-0" title="Убрать миниатюру">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
@@ -195,10 +193,10 @@
                     <input type="hidden" name="existing_thumbnail" id="existing_thumbnail_input" value="">
                     
                     {% if object.thumbnail %}
-                    <div id="current-thumbnail-info" class="flex items-center gap-2 mt-1 p-2 bg-muted rounded-lg">
+                    <div id="current-thumbnail-info" class="current-file-info">
                         <span class="text-sm text-foreground flex-1">{{ object.thumbnail.name|truncatechars:50 }}</span>
                         <button type="button" onclick="detachThumbnail()" 
-                                class="text-red-500 hover:text-red-700 p-1" title="Открепить миниатюру">
+                                class="btn-icon-danger" title="Открепить миниатюру">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
@@ -207,9 +205,9 @@
                     </div>
                     {% endif %}
                     {% if form.thumbnail.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.thumbnail.errors.0 }}</p>
+                    <p class="form-error">{{ form.thumbnail.errors.0 }}</p>
                     {% endif %}
-                    <p class="text-xs text-muted-foreground mt-1">
+                    <p class="form-hint">
                         Если не выбрана, будет сгенерирована автоматически (для фото/видео) или использована заглушка
                     </p>
                 </div>
@@ -217,12 +215,12 @@
                 
                 <div id="upload-progress-section" class="hidden">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="flex-1 bg-muted rounded-full h-3 overflow-hidden">
-                            <div id="upload-progress-bar" class="bg-primary h-full transition-all duration-300" style="width: 0%"></div>
+                        <div class="progress-bar-container">
+                            <div id="upload-progress-bar" class="progress-bar" style="width: 0%"></div>
                         </div>
                         <span id="upload-progress-text" class="text-sm text-muted-foreground min-w-[50px]">0%</span>
                     </div>
-                    <p id="upload-status-text" class="text-sm text-muted-foreground">Загрузка файла...</p>
+                    <p id="upload-status-text" class="form-hint">Загрузка файла...</p>
                 </div>
                 
                 <div id="submit-buttons" class="flex justify-between pt-4">

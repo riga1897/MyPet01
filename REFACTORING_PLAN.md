@@ -193,52 +193,29 @@ def validate_file_size(file):
 
 ## 4. Дублирование кода
 
-### 4.0 Создание единого CSS (Приоритет: Средний)
+### 4.0 Создание единого CSS (Приоритет: Средний) ✅ ВЫПОЛНЕНО
 
 **Проблема:** Стили разбросаны по шаблонам в виде Tailwind-классов, нет единого CSS-файла для переиспользуемых компонентов.
 
 **Решение:**
-- Создать `static/css/components.css` с CSS-классами для повторяющихся компонентов
-- Определить классы для: dropdown-menu, card, button, form-input и др.
-- Использовать @apply директивы Tailwind или чистый CSS
-- Заменить повторяющиеся inline-классы на CSS-классы
+- Расширен `static/css/components.css` с CSS-классами для всех повторяющихся компонентов
+- Добавлены классы: `form-label`, `form-error`, `form-hint`, `file-upload-area`, `file-selected-display`, `current-file-info`, `card`, `card-lg`, `mode-toggle-buttons`, `btn-icon-danger`, `progress-bar-container`, `progress-bar`
+- Заменены inline Tailwind-классы на CSS-классы в `content_form.html`, `tag_form.html`, `taggroup_form.html`
 
-```css
-/* static/css/components.css */
-.dropdown-menu {
-    @apply absolute top-full left-0 mt-1 min-w-[180px];
-    @apply bg-card border border-border rounded-lg;
-    @apply shadow-xl z-50 py-1;
-}
-
-.btn-primary {
-    @apply bg-primary text-primary-foreground px-4 py-2;
-    @apply rounded-lg hover:bg-primary/90 transition-colors;
-}
-```
-
-**Файлы:** `static/css/components.css` (новый), `templates/base.html`, все partials
+**Файлы:** `static/css/components.css`, `blog/templates/blog/content_form.html`, `blog/templates/blog/tag_form.html`, `blog/templates/blog/taggroup_form.html`
 
 ---
 
-### 4.1 Шаблоны загрузки файлов (Приоритет: Средний)
+### 4.1 Шаблоны загрузки файлов (Приоритет: Средний) ✅ ВЫПОЛНЕНО (через CSS)
 
 **Проблема:** Блоки выбора файла и миниатюры в `content_form.html` почти идентичны.
 
 **Решение:**
-- Создать переиспользуемый partial `_file_upload_field.html`
+- Вместо создания переиспользуемого partial, стили унифицированы через CSS-классы
+- Создание единого partial нецелесообразно из-за разных JS-функций и ID элементов для file/thumbnail
+- CSS-классы (`file-upload-area`, `file-selected-display`, `current-file-info`, `btn-icon-danger`, `mode-toggle-buttons`) устраняют стилевое дублирование
 
-```html
-<!-- blog/templates/blog/partials/_file_upload_field.html -->
-<div id="{{ field_id }}-section">
-    <label class="block text-sm font-medium text-foreground mb-1">
-        {{ label }}{% if optional %} (необязательно){% endif %}
-    </label>
-    <!-- Единый шаблон для обоих типов -->
-</div>
-```
-
-**Файлы:** `blog/templates/blog/partials/_file_upload_field.html` (новый), `blog/templates/blog/content_form.html`
+**Файлы:** `static/css/components.css`, `blog/templates/blog/content_form.html`
 
 ---
 

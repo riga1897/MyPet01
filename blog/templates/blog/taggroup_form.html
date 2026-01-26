@@ -12,22 +12,22 @@
             <a href="{% url 'blog:tag_list' %}" class="text-primary hover:underline">← Назад к тегам</a>
         </div>
         
-        <div class="bg-card rounded-2xl shadow-lg p-8">
+        <div class="card-lg">
             <form method="post" class="space-y-4">
                 {% csrf_token %}
                 
                 <div>
-                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-foreground mb-1">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">
                         {{ form.name.label }}
                     </label>
                     {{ form.name }}
                     {% if form.name.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                    <p class="form-error">{{ form.name.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-foreground mb-2">
+                    <label class="form-label">
                         {{ form.categories.label }}
                     </label>
                     <div class="mb-2">
@@ -40,10 +40,10 @@
                         {{ form.categories }}
                     </div>
                     {% if form.categories.help_text %}
-                    <p class="text-muted-foreground text-xs mt-1">{{ form.categories.help_text }}</p>
+                    <p class="form-hint">{{ form.categories.help_text }}</p>
                     {% endif %}
                     {% if form.categories.errors %}
-                    <p class="text-red-600 text-sm mt-1">{{ form.categories.errors.0 }}</p>
+                    <p class="form-error">{{ form.categories.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
