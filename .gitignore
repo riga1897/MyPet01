@@ -210,3 +210,4 @@ media/
 
 # Production secrets (never commit!)
 .env.production
+.github/workflows/ci.yml
