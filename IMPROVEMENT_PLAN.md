@@ -240,22 +240,17 @@ Content.objects.annotate(
 
 ## 3. Безопасность
 
-### 3.1 Content Security Policy (Приоритет: Высокий)
+### ✅ 3.1 Content Security Policy (Выполнено: 27 января 2026)
 
-**Задача:** Настроить CSP заголовки.
+**Реализовано:**
+- django-csp middleware добавлен
+- Настроены директивы: default-src, script-src, style-src, img-src, media-src, font-src, connect-src, frame-ancestors, base-uri, form-action
+- Разрешены: Tailwind CDN, Google Fonts, inline стили/скрипты
+- 4 теста для проверки CSP заголовков
 
-**Решение:**
-```python
-# settings.py
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_SCRIPT_SRC = ("'self'",)
-CSP_IMG_SRC = ("'self'", "data:", "https:")
-```
-
-**Зависимости:** `django-csp`
-
-**Оценка:** 2 часа
+**Файлы:**
+- mypet_project/settings.py (CONTENT_SECURITY_POLICY, CSPMiddleware)
+- blog/tests/test_csp.py
 
 ---
 
@@ -340,27 +335,18 @@ def api_view(request):
 
 ## 6. DevOps
 
-### 6.1 CI/CD пайплайн (Приоритет: Высокий)
+### ✅ 6.1 CI/CD пайплайн (Выполнено: 27 января 2026)
 
-**Задача:** Автоматизировать тестирование и деплой.
+**Реализовано:**
+- GitHub Actions workflow для CI
+- PostgreSQL service container для тестов
+- Poetry caching для быстрых сборок
+- Ruff linter + Mypy type checker
+- Pytest с покрытием кода
+- Интеграция с Codecov
 
-**Решение:**
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run tests
-        run: poetry run pytest
-      - name: Run linters
-        run: poetry run ruff check . && poetry run mypy .
-```
-
-**Оценка:** 3 часа
+**Файлы:**
+- .github/workflows/ci.yml
 
 ---
 
@@ -394,11 +380,11 @@ services:
 | Фаза | Задачи | Приоритет | Общая оценка |
 |------|--------|-----------|--------------|
 | 1 | ~~1.1~~✅, ~~2.2~~✅, ~~4.1~~✅ | Высокий | ✅ Выполнено |
-| 2 | 3.1, 6.1 | Высокий | 5 часов |
+| 2 | ~~3.1~~✅, ~~6.1~~✅ | Высокий | ✅ Выполнено |
 | 3 | 1.2, 3.2, 4.2, 6.2 | Средний | 7 часов |
 | 4 | 5.1, 5.2 | Низкий | 12 часов |
 
-**Общая оценка:** ~24 часа
+**Общая оценка:** ~19 часов
 
 *Примечание: 2.1 Пагинация убрана — для лендинга не требуется*
 
