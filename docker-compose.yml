@@ -4,11 +4,11 @@ services:
     ports:
       - "5000:5000"
     environment:
+      - DJANGO_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/mypet
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - DEBUG=${DEBUG:-false}
-      - CACHE_BACKEND=redis
-      - CACHE_LOCATION=redis://redis:6379/0
+    env_file:
+      - .env
+      - .env.development
     depends_on:
       db:
         condition: service_healthy
