@@ -3,8 +3,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def get_env_file() -> str:
-    """Determine which .env file to use based on DJANGO_ENV."""
-    env = os.getenv('DJANGO_ENV', 'development')
+    """Determine which .env file to use based on DJANGO_ENV.
+
+    Priority:
+    1. Environment variable DJANGO_ENV (e.g., from Docker)
+    2. DJANGO_ENV from .env file
+    3. Default: 'development'
+    """
+    from dotenv import dotenv_values
+
+    env = os.getenv('DJANGO_ENV')
+    if not env:
+        base_env = dotenv_values('.env')
+        env = base_env.get('DJANGO_ENV', 'development')
+
     env_file = f'.env.{env}'
     if os.path.exists(env_file):
         return env_file
@@ -17,6 +29,9 @@ class Settings(BaseSettings):
         env_file_encoding='utf-8',
         extra='ignore',
     )
+
+    # Environment selection (from .env or environment variable)
+    django_env: str = 'development'
 
     # Environment-specific settings (from .env.development or .env.production)
     debug: bool = False
