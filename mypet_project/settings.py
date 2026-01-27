@@ -29,6 +29,7 @@ LOGOUT_REDIRECT_URL = '/'
 MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -110,5 +111,41 @@ CACHES = {
         ),
         'LOCATION': env_settings.cache_location,
         'TIMEOUT': env_settings.cache_timeout,
+    }
+}
+
+# Content Security Policy (CSP)
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ["'self'"],
+        "script-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "cdn.tailwindcss.com",
+        ],
+        "style-src": [
+            "'self'",
+            "'unsafe-inline'",
+            "fonts.googleapis.com",
+        ],
+        "font-src": [
+            "'self'",
+            "fonts.gstatic.com",
+        ],
+        "img-src": [
+            "'self'",
+            "data:",
+            "blob:",
+        ],
+        "media-src": [
+            "'self'",
+            "blob:",
+        ],
+        "connect-src": [
+            "'self'",
+        ],
+        "frame-ancestors": ["'self'"],
+        "base-uri": ["'self'"],
+        "form-action": ["'self'"],
     }
 }
