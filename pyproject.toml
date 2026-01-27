@@ -73,3 +73,16 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
 ]
+
+[tool.ruff.lint]
+select = [
+    "B",    # flake8-bugbear
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "C90",  # mccabe
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+]
+
+fixable = ["ALL"]
+unfixable = []
