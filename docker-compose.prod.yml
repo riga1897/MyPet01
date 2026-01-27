@@ -11,12 +11,12 @@ services:
       - DJANGO_ENV=production
     env_file:
       - .env
-      - .env.production
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
 
   nginx:
     image: nginx:alpine
@@ -28,32 +28,37 @@ services:
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/certbot:/var/www/certbot:ro
     depends_on:
       - web
+    restart: unless-stopped
 
   db:
     image: postgres:15-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: mypet
-      POSTGRES_USER: mypet_user
+      POSTGRES_DB: blog_db
+      POSTGRES_USER: blog_user
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mypet_user -d mypet"]
+      test: ["CMD-SHELL", "pg_isready -U blog_user -d blog_db"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
 volumes:
   postgres_data:

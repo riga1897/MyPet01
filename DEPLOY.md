@@ -1,5 +1,119 @@
 # Деплой Blog на VPS
 
+Два варианта деплоя:
+- **Docker (рекомендуется)** — быстрый и простой
+- **Ручная установка** — для тонкой настройки
+
+---
+
+# Вариант 1: Docker (рекомендуется)
+
+## Требования
+
+- Ubuntu 22.04+ / Debian 11+
+- Docker 24+
+- Docker Compose v2+
+
+## 1. Установка Docker
+
+```bash
+# Обновление системы
+sudo apt update && sudo apt upgrade -y
+
+# Установка Docker
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+
+# Перелогиниться для применения группы
+exit
+# Войти снова
+```
+
+## 2. Клонирование проекта
+
+```bash
+mkdir -p /opt/blog && cd /opt/blog
+git clone https://github.com/riga1897/MyPet01.git .
+```
+
+## 3. Настройка переменных окружения
+
+```bash
+cp deploy/.env.production.example .env
+nano .env  # Заполнить реальными значениями
+
+# Обязательно установить:
+# - SECRET_KEY (сгенерировать: openssl rand -hex 32)
+# - POSTGRES_PASSWORD
+# - ALLOWED_HOSTS
+```
+
+## 4. SSL сертификаты
+
+```bash
+# Создать директории для сертификатов
+mkdir -p nginx/ssl nginx/certbot
+
+# Вариант A: Let's Encrypt (бесплатно)
+sudo apt install certbot
+sudo certbot certonly --standalone -d www.mine-craft.su -d site.mine-craft.su
+sudo cp /etc/letsencrypt/live/mine-craft.su/fullchain.pem nginx/ssl/
+sudo cp /etc/letsencrypt/live/mine-craft.su/privkey.pem nginx/ssl/
+
+# Вариант B: Самоподписанный (для тестирования)
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout nginx/ssl/privkey.pem \
+    -out nginx/ssl/fullchain.pem \
+    -subj "/CN=mine-craft.su"
+```
+
+## 5. Запуск
+
+```bash
+# Сборка и запуск
+docker compose -f docker-compose.prod.yml up -d --build
+
+# Применение миграций
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate
+
+# Создание суперпользователя
+docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
+
+# Проверка статуса
+docker compose -f docker-compose.prod.yml ps
+```
+
+## 6. Обновление
+
+```bash
+cd /opt/blog
+git pull origin main
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
+```
+
+## 7. Полезные команды Docker
+
+```bash
+# Логи
+docker compose -f docker-compose.prod.yml logs -f web
+docker compose -f docker-compose.prod.yml logs -f nginx
+
+# Перезапуск
+docker compose -f docker-compose.prod.yml restart
+
+# Остановка
+docker compose -f docker-compose.prod.yml down
+
+# Очистка (с удалением данных!)
+docker compose -f docker-compose.prod.yml down -v
+```
+
+---
+
+# Вариант 2: Ручная установка
+
 ## Требования
 
 - Ubuntu 22.04+ / Debian 11+
