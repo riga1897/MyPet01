@@ -1,8 +1,81 @@
 # Деплой Blog на VPS
 
-Два варианта деплоя:
-- **Docker (рекомендуется)** — быстрый и простой
+Три варианта деплоя:
+- **CI/CD (рекомендуется)** — автоматический деплой через GitHub Actions
+- **Docker (ручной)** — быстрый и простой
 - **Ручная установка** — для тонкой настройки
+
+---
+
+# Вариант 0: CI/CD (рекомендуется)
+
+Автоматический деплой при `git push` через GitHub Actions.
+
+## Gitflow стратегия
+
+```
+feature/* → develop → release/* → main
+                          ↓           ↓
+                     preprod VPS   prod VPS
+```
+
+## Настройка (один раз)
+
+### 1. GitHub Secrets
+
+В репозитории: **Settings** → **Secrets and variables** → **Actions**
+
+**Production:**
+- `SSH_KEY` — приватный SSH ключ
+- `SSH_USER` — пользователь (например, `root`)
+- `SERVER_IP` — IP production сервера
+- `DEPLOY_DIR` — путь деплоя (`/opt/blog`)
+
+**Pre-Production:**
+- `PREPROD_SSH_KEY`
+- `PREPROD_SSH_USER`
+- `PREPROD_SERVER_IP`
+- `PREPROD_DEPLOY_DIR` (`/opt/blog-preprod`)
+
+### 2. SSH ключ для деплоя
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_deploy
+
+cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
+
+cat ~/.ssh/github_deploy
+```
+
+Скопируйте приватный ключ в GitHub Secrets → `SSH_KEY`
+
+## Использование
+
+### Деплой на pre-production
+
+```bash
+git checkout -b release/v1.0 develop
+git push origin release/v1.0
+```
+
+CI/CD автоматически:
+1. Запускает тесты
+2. Собирает Docker образ
+3. Деплоит на препрод
+4. Создаёт draft PR в main
+
+### Деплой на production
+
+```bash
+git checkout main
+git merge release/v1.0
+git push origin main
+```
+
+## Подробная документация
+
+- [docs/CI_CD.md](docs/CI_CD.md) — архитектура pipeline
+- [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md) — настройка секретов
 
 ---
 

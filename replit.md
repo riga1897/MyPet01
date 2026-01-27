@@ -118,4 +118,28 @@ poetry run mypy .
 - [ ] **Тестирование на VPS** — задеплоить и проверить всё в боевых условиях
 - [ ] **Мониторинг** — добавить Prometheus + Grafana для отслеживания состояния сервисов
 - [ ] **Бэкапы** — скрипт автобэкапа PostgreSQL и медиафайлов
-- [ ] **CI/CD** — автодеплой при пуше в репозиторий (GitHub Actions)
+- [x] **CI/CD** — автодеплой при пуше в репозиторий (GitHub Actions)
+
+## CI/CD Pipeline
+
+Проект использует GitHub Actions для автоматизации:
+
+**Workflow:** `.github/workflows/ci-cd.yml`
+
+**Jobs:**
+1. **Test** — pytest + PostgreSQL + Redis (coverage 80%+)
+2. **Lint** — ruff, mypy
+3. **Build** — Docker → GitHub Container Registry
+4. **Deploy Pre-Prod** — release/* → preprod VPS
+5. **Deploy Production** — main → prod VPS
+
+**Gitflow:**
+```
+feature/* → develop → release/* → main
+                          ↓           ↓
+                     preprod VPS   prod VPS
+```
+
+**Документация:**
+- [docs/CI_CD.md](docs/CI_CD.md)
+- [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md)

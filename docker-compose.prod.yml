@@ -10,7 +10,10 @@ services:
     restart: unless-stopped
 
   web:
-    build: .
+    image: ghcr.io/${GITHUB_REPOSITORY:-local/mypet01}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 2 mypet_project.wsgi:application
     volumes:
       - static_volume:/app/staticfiles
