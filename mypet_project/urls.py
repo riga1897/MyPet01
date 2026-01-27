@@ -4,7 +4,6 @@ from django.urls import path, include, URLPattern, URLResolver
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
-from typing import Union
 
 from blog.sitemaps import ContentSitemap, StaticViewSitemap
 from blog.views import ProtectedMediaView
@@ -14,7 +13,7 @@ sitemaps = {
     "static": StaticViewSitemap,
 }
 
-urlpatterns: list[Union[URLPattern, URLResolver]] = [
+urlpatterns: list[URLPattern | URLResolver] = [
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.png', permanent=True)),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('', include('blog.urls')),

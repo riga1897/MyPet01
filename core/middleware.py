@@ -1,7 +1,8 @@
 """Custom middleware for the application."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
+from collections.abc import Callable
 
 from django.conf import settings
 from django.utils.cache import add_never_cache_headers
