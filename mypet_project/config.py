@@ -1,70 +1,17 @@
-import os
-from typing import Self
-
-from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-def get_env_file() -> str:
-    """Determine which .env file to use based on DJANGO_ENV.
-
-    Priority:
-    1. Environment variable DJANGO_ENV (e.g., from Docker)
-    2. DJANGO_ENV from .env file
-
-    Raises:
-        ValueError: If DJANGO_ENV is not set in environment or .env file.
-    """
-    from dotenv import dotenv_values
-
-    env = os.getenv('DJANGO_ENV')
-    if not env:
-        base_env = dotenv_values('.env')
-        env = base_env.get('DJANGO_ENV')
-
-    if not env:
-        raise ValueError(
-            "DJANGO_ENV is not set. "
-            "Please set it in .env file or as environment variable. "
-            "Valid values: 'development', 'production'"
-        )
-
-    env_file = f'.env.{env}'
-    if os.path.exists(env_file):
-        return env_file
-    return '.env'
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=('.env', get_env_file()),
+        env_file='.env',
         env_file_encoding='utf-8',
         extra='ignore',
     )
 
-    django_env: str = ''
-
-    @model_validator(mode='after')
-    def validate_django_env(self) -> Self:
-        if not self.django_env:
-            raise ValueError(
-                "DJANGO_ENV is not set. "
-                "Please set it in .env file or as environment variable. "
-                "Valid values: 'development', 'production'"
-            )
-        if self.django_env not in ('development', 'production'):
-            raise ValueError(
-                f"Invalid DJANGO_ENV value: '{self.django_env}'. "
-                "Valid values: 'development', 'production'"
-            )
-        return self
-
-    # Environment-specific settings (from .env.development or .env.production)
     debug: bool = False
     secret_key: str = 'django-insecure-dummy-key'
     allowed_hosts: str = '*'
 
-    # Database
     database_url: str = ''
     postgres_user: str = ''
     postgres_password: str = ''
@@ -72,25 +19,21 @@ class Settings(BaseSettings):
     postgres_port: str = '5432'
     postgres_db: str = ''
 
-    # CSRF
     csrf_trusted_origins: str = 'https://*.replit.dev,https://*.repl.co,https://*.pike.replit.dev'
     csrf_cookie_httponly: bool = True
     csrf_cookie_samesite: str = 'Lax'
 
-    # Localization (from .env)
     language_code: str = 'ru'
     time_zone: str = 'UTC'
     use_i18n: bool = True
     use_tz: bool = True
 
-    # URLs (from .env)
     static_url: str = '/static/'
     media_url: str = '/media/'
     login_url: str = '/users/login/'
     login_redirect_url: str = '/'
     logout_redirect_url: str = '/'
 
-    # Production security settings (can be controlled individually or via use_https)
     use_https: bool = False
     secure_ssl_redirect: bool | None = None
     secure_hsts_seconds: int | None = None
@@ -103,15 +46,12 @@ class Settings(BaseSettings):
     secure_content_type_nosniff: bool = True
     x_frame_options: str = 'DENY'
 
-    # Admin settings (from .env)
     admin_show_facets: bool = True
 
-    # Cache settings
     cache_backend: str = 'locmem'
     cache_location: str = 'mypet-cache'
     cache_timeout: int = 300
 
-    # Browser cache settings
     browser_cache_enabled: bool = False
     browser_cache_max_age: int = 86400
 

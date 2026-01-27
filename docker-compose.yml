@@ -3,12 +3,10 @@ services:
     build: .
     ports:
       - "5000:5000"
-    environment:
-      - DJANGO_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/mypet
     env_file:
       - .env
-      - .env.development
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/mypet
     depends_on:
       db:
         condition: service_healthy

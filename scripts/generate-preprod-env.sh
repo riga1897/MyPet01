@@ -28,29 +28,60 @@ SECRET_KEY=$(generate_secret_key)
 POSTGRES_PASSWORD=$(generate_password)
 
 cat > "$ENV_FILE" << EOF
-# Pre-Production Environment
+# ========================================
+# НАСТРОЙКИ ПРИЛОЖЕНИЯ (Pre-Production)
 # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 # Server: $SERVER_IP
+# ========================================
 
-# Django
+# Основные настройки
 DEBUG=False
 SECRET_KEY=$SECRET_KEY
 ALLOWED_HOSTS=$SERVER_IP,localhost,127.0.0.1
 
-# Database
+# База данных
+DATABASE_URL=postgresql://blog_user:$POSTGRES_PASSWORD@db:5432/blog_db
 POSTGRES_DB=blog_db
 POSTGRES_USER=blog_user
 POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
-DATABASE_URL=postgresql://blog_user:$POSTGRES_PASSWORD@db:5432/blog_db
+
+# CSRF
+CSRF_TRUSTED_ORIGINS=http://$SERVER_IP,https://$SERVER_IP
+CSRF_COOKIE_HTTPONLY=True
+CSRF_COOKIE_SAMESITE=Lax
+
+# Безопасность (включить после настройки SSL)
+USE_HTTPS=False
+
+# Локализация
+LANGUAGE_CODE=ru
+TIME_ZONE=UTC
+USE_I18N=True
+USE_TZ=True
+
+# URL-адреса
+STATIC_URL=/static/
+MEDIA_URL=/media/
+LOGIN_URL=/users/login/
+LOGIN_REDIRECT_URL=/
+LOGOUT_REDIRECT_URL=/
+
+# Кэш (сервер) - Redis
+CACHE_BACKEND=redis
+CACHE_LOCATION=redis://redis:6379/0
+CACHE_TIMEOUT=300
+
+# Кэш (браузер)
+BROWSER_CACHE_ENABLED=True
+BROWSER_CACHE_MAX_AGE=86400
+
+# Админка
+ADMIN_SHOW_FACETS=True
 
 # Redis
 REDIS_URL=redis://redis:6379/0
-
-# Security
-CSRF_TRUSTED_ORIGINS=http://$SERVER_IP,https://$SERVER_IP
-SECURE_SSL_REDIRECT=False
 EOF
 
 chmod 600 "$ENV_FILE"

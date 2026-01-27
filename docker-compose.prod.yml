@@ -20,8 +20,6 @@ services:
       - media_volume:/app/media
     ports:
       - "127.0.0.1:8000:8000"
-    environment:
-      - DJANGO_ENV=production
     env_file:
       - .env
     depends_on:
