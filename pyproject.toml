@@ -74,6 +74,9 @@ exclude_lines = [
     "raise NotImplementedError",
 ]
 
+[tool.ruff]
+line-length = 100
+
 [tool.ruff.lint]
 select = [
     "B",    # flake8-bugbear
