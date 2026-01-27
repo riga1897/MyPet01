@@ -149,7 +149,7 @@ class MixedUser(HttpUser):
         queries = ['йога', 'масла', 'медитация', 'здоровье']
         import random
         q = random.choice(queries)
-        self.client.get(f'/search/?q={q}', name=f'Mixed - Search')
+        self.client.get(f'/search/?q={q}', name='Mixed - Search')
 
     @task(5)
     def view_sitemap(self) -> None:
