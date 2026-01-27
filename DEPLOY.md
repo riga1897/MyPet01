@@ -1,4 +1,4 @@
-# Деплой MyPet01 на VPS
+# Деплой Blog на VPS
 
 ## Требования
 
@@ -23,8 +23,8 @@ sudo apt install -y python3.12 python3.12-venv python3-pip \
     python3-certbot-nginx git curl
 
 # Создание пользователя и директорий
-sudo mkdir -p /var/www/mypet /var/log/mypet /tmp/mypet-uploads
-sudo chown -R www-data:www-data /var/www/mypet /var/log/mypet /tmp/mypet-uploads
+sudo mkdir -p /var/www/blog /var/log/blog /tmp/blog-uploads
+sudo chown -R www-data:www-data /var/www/blog /var/log/blog /tmp/blog-uploads
 ```
 
 ---
@@ -36,12 +36,12 @@ sudo chown -R www-data:www-data /var/www/mypet /var/log/mypet /tmp/mypet-uploads
 sudo -u postgres psql
 
 # Создание базы и пользователя
-CREATE USER mypet_user WITH PASSWORD 'your_secure_password';
-CREATE DATABASE mypet_db OWNER mypet_user;
-GRANT ALL PRIVILEGES ON DATABASE mypet_db TO mypet_user;
+CREATE USER blog_user WITH PASSWORD 'your_secure_password';
+CREATE DATABASE blog_db OWNER blog_user;
+GRANT ALL PRIVILEGES ON DATABASE blog_db TO blog_user;
 
 # Включение расширений
-\c mypet_db
+\c blog_db
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 \q
 ```
@@ -51,7 +51,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 ## 3. Клонирование и настройка проекта
 
 ```bash
-cd /var/www/mypet
+cd /var/www/blog
 
 # Клонирование репозитория
 sudo -u www-data git clone https://github.com/riga1897/MyPet01.git .
@@ -92,17 +92,17 @@ python manage.py createsuperuser
 
 ```bash
 # Копирование сервиса
-sudo cp deploy/mypet.service /etc/systemd/system/
+sudo cp deploy/blog.service /etc/systemd/system/
 
 # Перезагрузка systemd
 sudo systemctl daemon-reload
 
 # Включение и запуск
-sudo systemctl enable mypet
-sudo systemctl start mypet
+sudo systemctl enable blog
+sudo systemctl start blog
 
 # Проверка статуса
-sudo systemctl status mypet
+sudo systemctl status blog
 ```
 
 ---
@@ -111,8 +111,8 @@ sudo systemctl status mypet
 
 ```bash
 # Копирование конфигурации
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/mypet
-sudo ln -s /etc/nginx/sites-available/mypet /etc/nginx/sites-enabled/
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/blog
+sudo ln -s /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/
 
 # Удаление дефолтного сайта
 sudo rm /etc/nginx/sites-enabled/default
@@ -161,13 +161,13 @@ redis-cli ping  # Должен ответить PONG
 
 ```bash
 # Проверка сервисов
-sudo systemctl status mypet nginx redis postgresql
+sudo systemctl status blog nginx redis postgresql
 
 # Логи приложения
-sudo tail -f /var/log/mypet/gunicorn-*.log
+sudo tail -f /var/log/blog/gunicorn-*.log
 
 # Логи nginx
-sudo tail -f /var/log/nginx/mypet-*.log
+sudo tail -f /var/log/nginx/blog-*.log
 
 # Тест сайта
 curl -I https://www.mine-craft.su
@@ -178,7 +178,7 @@ curl -I https://www.mine-craft.su
 ## 10. Обновление приложения
 
 ```bash
-cd /var/www/mypet
+cd /var/www/blog
 sudo -u www-data git pull origin main
 
 source .venv/bin/activate
@@ -186,7 +186,7 @@ poetry install --only main
 python manage.py migrate
 python manage.py collectstatic --noinput
 
-sudo systemctl restart mypet
+sudo systemctl restart blog
 ```
 
 ---
@@ -195,10 +195,10 @@ sudo systemctl restart mypet
 
 ```bash
 # Перезапуск приложения
-sudo systemctl restart mypet
+sudo systemctl restart blog
 
 # Просмотр логов в реальном времени
-sudo journalctl -u mypet -f
+sudo journalctl -u blog -f
 
 # Проверка портов
 sudo ss -tlnp | grep -E '80|443|8000'
@@ -214,9 +214,9 @@ redis-cli FLUSHDB
 ### Ошибка 502 Bad Gateway
 ```bash
 # Проверить, запущен ли gunicorn
-sudo systemctl status mypet
+sudo systemctl status blog
 # Проверить логи
-sudo tail -50 /var/log/mypet/gunicorn-error.log
+sudo tail -50 /var/log/blog/gunicorn-error.log
 ```
 
 ### Статика не загружается
@@ -224,13 +224,13 @@ sudo tail -50 /var/log/mypet/gunicorn-error.log
 # Пересобрать статику
 python manage.py collectstatic --clear --noinput
 # Проверить права
-sudo chown -R www-data:www-data /var/www/mypet/staticfiles
+sudo chown -R www-data:www-data /var/www/blog/staticfiles
 ```
 
 ### Проблемы с базой данных
 ```bash
 # Проверить подключение
-psql -U mypet_user -d mypet_db -h localhost
+psql -U blog_user -d blog_db -h localhost
 # Проверить миграции
 python manage.py showmigrations
 ```
