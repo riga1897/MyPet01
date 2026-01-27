@@ -1,4 +1,7 @@
 import os
+from typing import Self
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,9 +42,22 @@ class Settings(BaseSettings):
         extra='ignore',
     )
 
-    # Environment selection (from .env or environment variable)
-    # Required - no default value, must be explicitly set
-    django_env: str
+    django_env: str = ''
+
+    @model_validator(mode='after')
+    def validate_django_env(self) -> Self:
+        if not self.django_env:
+            raise ValueError(
+                "DJANGO_ENV is not set. "
+                "Please set it in .env file or as environment variable. "
+                "Valid values: 'development', 'production'"
+            )
+        if self.django_env not in ('development', 'production'):
+            raise ValueError(
+                f"Invalid DJANGO_ENV value: '{self.django_env}'. "
+                "Valid values: 'development', 'production'"
+            )
+        return self
 
     # Environment-specific settings (from .env.development or .env.production)
     debug: bool = False
@@ -105,7 +121,9 @@ class Settings(BaseSettings):
 
     @property
     def get_secure_hsts_seconds(self) -> int:
-        return self.secure_hsts_seconds if self.secure_hsts_seconds is not None else (31536000 if self.use_https else 0)
+        if self.secure_hsts_seconds is not None:
+            return self.secure_hsts_seconds
+        return 31536000 if self.use_https else 0
 
     @property
     def is_secure_hsts_include_subdomains(self) -> bool:
@@ -144,4 +162,4 @@ class Settings(BaseSettings):
         return ''
 
 
-settings = Settings()  # type: ignore[call-arg]
+settings = Settings()

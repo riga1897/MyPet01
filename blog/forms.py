@@ -8,7 +8,9 @@ from blog.models import Content, Tag, TagGroup
 from blog.services import generate_hashed_filename
 
 
-FORM_INPUT_CLASS = 'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
+FORM_INPUT_CLASS = (
+    'w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
+)
 CHECKBOX_CLASS = 'w-4 h-4 text-primary border-border rounded focus:ring-primary'
 
 MAX_FILE_SIZE_MB = 500
@@ -21,9 +23,9 @@ def validate_file_size(
 ) -> None:
     """Validate that uploaded file doesn't exceed MAX_FILE_SIZE_BYTES."""
     if file and hasattr(file, 'size') and file.size is not None and file.size > MAX_FILE_SIZE_BYTES:
-            raise ValidationError(
-                f'{field_name}: файл слишком большой. Максимум: {MAX_FILE_SIZE_MB} MB'
-            )
+        raise ValidationError(
+            f'{field_name}: файл слишком большой. Максимум: {MAX_FILE_SIZE_MB} MB'
+        )
 
 
 class TagGroupForm(forms.ModelForm):  # type: ignore[type-arg]

@@ -22,7 +22,7 @@ def get_request_with_messages(user: Any, factory: RequestFactory) -> HttpRequest
     middleware = SessionMiddleware(lambda r: r)
     middleware.process_request(request)
     request.session.save()
-    request._messages = FallbackStorage(request)
+    request._messages = FallbackStorage(request)  # type: ignore[attr-defined]
     return request
 
 

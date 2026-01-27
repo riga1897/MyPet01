@@ -26,6 +26,7 @@ def generate_unique_thumbnail_name(prefix: str = 'thumb') -> str:
     unique_hash = hashlib.md5(timestamp).hexdigest()[:8]
     return f'{prefix}_{unique_hash}.jpg'
 
+
 THUMBNAIL_MAX_SIZE = (800, 600)
 THUMBNAIL_QUALITY = 85
 
