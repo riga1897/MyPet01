@@ -15,6 +15,7 @@ from django.contrib.postgres.search import (
     SearchVector,
     TrigramSimilarity,
 )
+from django_ratelimit.decorators import ratelimit
 
 from core.utils.text import convert_layout
 from core.mixins import ModeratorRequiredMixin
@@ -114,6 +115,7 @@ class HomeView(ListView):  # type: ignore[type-arg]
         return context
 
 
+@method_decorator(ratelimit(key='ip', rate='30/m', method='GET', block=True), name='get')
 class SearchView(ListView):  # type: ignore[type-arg]
     """Full-text search view using PostgreSQL search with fuzzy matching."""
 

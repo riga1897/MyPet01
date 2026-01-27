@@ -196,6 +196,17 @@ tests = ["jinja2 (>=2.9.6)", "pytest", "pytest-cov", "pytest-django", "pytest-ru
 typing = ["django-stubs[compatible-mypy]", "jinja2 (>=2.9.6)", "mypy", "pytest", "pytest-django", "types-setuptools"]
 
 [[package]]
+name = "django-ratelimit"
+version = "4.1.0"
+description = "Cache-based rate-limiting for Django."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "django-ratelimit-4.1.0.tar.gz", hash = "sha256:555943b283045b917ad59f196829530d63be2a39adb72788d985b90c81ba808b"},
+    {file = "django_ratelimit-4.1.0-py2.py3-none-any.whl", hash = "sha256:d047a31cf94d83ef1465d7543ca66c6fc16695559b5f8d814d1b51df15110b92"},
+]
+
+[[package]]
 name = "django-stubs"
 version = "5.2.9"
 description = "Mypy stubs for Django"
@@ -1070,4 +1081,4 @@ zstd = ["backports-zstd (>=1.0.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "842e47a430b5416b090dfa84f3c9e397c89b7405155bb8c365661d39da1cde06"
+content-hash = "9bfcc9fa771d8cc4543aee6485d9ff0e5861725a0ce60a8fe5d8475148ba0b18"
