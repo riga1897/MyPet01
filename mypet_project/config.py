@@ -8,14 +8,23 @@ def get_env_file() -> str:
     Priority:
     1. Environment variable DJANGO_ENV (e.g., from Docker)
     2. DJANGO_ENV from .env file
-    3. Default: 'development'
+
+    Raises:
+        ValueError: If DJANGO_ENV is not set in environment or .env file.
     """
     from dotenv import dotenv_values
 
     env = os.getenv('DJANGO_ENV')
     if not env:
         base_env = dotenv_values('.env')
-        env = base_env.get('DJANGO_ENV', 'development')
+        env = base_env.get('DJANGO_ENV')
+
+    if not env:
+        raise ValueError(
+            "DJANGO_ENV is not set. "
+            "Please set it in .env file or as environment variable. "
+            "Valid values: 'development', 'production'"
+        )
 
     env_file = f'.env.{env}'
     if os.path.exists(env_file):
@@ -31,7 +40,8 @@ class Settings(BaseSettings):
     )
 
     # Environment selection (from .env or environment variable)
-    django_env: str = 'development'
+    # Required - no default value, must be explicitly set
+    django_env: str
 
     # Environment-specific settings (from .env.development or .env.production)
     debug: bool = False
@@ -132,4 +142,4 @@ class Settings(BaseSettings):
         return ''
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]
