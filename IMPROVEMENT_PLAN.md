@@ -155,16 +155,14 @@ CACHES = {
 
 ---
 
-### 2.2 Lazy Loading изображений (Приоритет: Средний)
+### ✅ 2.2 Lazy Loading изображений (Выполнено: 27 января 2026)
 
-**Задача:** Ленивая загрузка миниатюр для ускорения первичной загрузки.
+**Реализовано:**
+- Атрибут `loading="lazy"` уже добавлен в `_video_card.html`
+- Все миниатюры карточек загружаются лениво
 
-**Решение:**
-```html
-<img loading="lazy" src="{{ content.thumbnail.url }}" alt="{{ content.title }}">
-```
-
-**Оценка:** 30 минут
+**Файлы:**
+- blog/templates/blog/partials/_video_card.html
 
 ---
 
@@ -281,22 +279,19 @@ def api_view(request):
 
 ## 4. SEO
 
-### 4.1 Динамический sitemap.xml (Приоритет: Высокий)
+### ✅ 4.1 Динамический sitemap.xml (Выполнено: 27 января 2026)
 
-**Задача:** Генерировать sitemap автоматически.
+**Реализовано:**
+- ContentSitemap для всех элементов контента с lastmod
+- StaticViewSitemap для главной страницы
+- Доступен по адресу /sitemap.xml
+- 3 теста для проверки работоспособности
 
-**Решение:**
-```python
-# blog/sitemaps.py
-class ContentSitemap(Sitemap):
-    changefreq = 'weekly'
-    priority = 0.8
-
-    def items(self):
-        return Content.objects.all()
-```
-
-**Оценка:** 1 час
+**Файлы:**
+- blog/sitemaps.py (ContentSitemap, StaticViewSitemap)
+- mypet_project/urls.py (sitemap route)
+- mypet_project/settings.py (django.contrib.sitemaps)
+- blog/tests/test_sitemaps.py
 
 ---
 
@@ -398,12 +393,12 @@ services:
 
 | Фаза | Задачи | Приоритет | Общая оценка |
 |------|--------|-----------|--------------|
-| 1 | ~~1.1~~✅, 2.2, 4.1 | Высокий | 1.5 часа |
+| 1 | ~~1.1~~✅, ~~2.2~~✅, ~~4.1~~✅ | Высокий | ✅ Выполнено |
 | 2 | 3.1, 6.1 | Высокий | 5 часов |
 | 3 | 1.2, 3.2, 4.2, 6.2 | Средний | 7 часов |
 | 4 | 5.1, 5.2 | Низкий | 12 часов |
 
-**Общая оценка:** ~25.5 часа
+**Общая оценка:** ~24 часа
 
 *Примечание: 2.1 Пагинация убрана — для лендинга не требуется*
 
