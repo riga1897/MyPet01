@@ -27,6 +27,8 @@ django-ratelimit = "^4.1.0"
 pytest = "*"
 pytest-django = "*"
 ruff = "*"
+pytest-playwright = "^0.7.2"
+locust = "^2.43.1"
 
 [tool.mypy]
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
