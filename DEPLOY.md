@@ -110,6 +110,59 @@ docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml down -v
 ```
 
+## 8. Настройка SoftEther VPN
+
+Архитектура использует HAProxy для SNI-роутинга трафика на 443 порту:
+- `www.mine-craft.su`, `site.mine-craft.su` → Nginx → Django
+- `vpn.mine-craft.su` → SoftEther VPN
+
+### Первоначальная настройка VPN
+
+```bash
+# Подключение к vpncmd для настройки
+docker compose -f docker-compose.prod.yml exec softether vpncmd localhost /server
+
+# Внутри vpncmd:
+# 1. Установить пароль администратора
+ServerPasswordSet
+
+# 2. Создать Virtual Hub
+HubCreate VPN
+Hub VPN
+
+# 3. Создать пользователя
+UserCreate myuser /GROUP:none /REALNAME:none /NOTE:none
+UserPasswordSet myuser
+
+# 4. Включить SecureNAT (для доступа к интернету через VPN)
+SecureNatEnable
+
+# 5. Выход
+exit
+```
+
+### Порты VPN
+
+| Протокол | Порт | Описание |
+|----------|------|----------|
+| SSTP/SSL | 443/tcp | Через HAProxy (vpn.mine-craft.su) |
+| L2TP/IPsec | 500, 4500, 1701/udp | Напрямую |
+| OpenVPN | 1194/udp | Напрямую |
+
+### Клиенты
+
+- **Windows**: Встроенный SSTP клиент или SoftEther Client
+- **macOS/iOS**: L2TP/IPsec
+- **Android**: SoftEther VPN Client или OpenVPN
+- **Linux**: SoftEther Client или OpenVPN
+
+### Мониторинг HAProxy
+
+```bash
+# Статистика HAProxy доступна на :8404/stats
+curl http://localhost:8404/stats
+```
+
 ---
 
 # Вариант 2: Ручная установка
