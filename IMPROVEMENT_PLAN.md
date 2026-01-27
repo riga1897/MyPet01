@@ -128,22 +128,18 @@
 
 ---
 
-### 1.2 Redis для кэширования (Приоритет: Средний)
+### ✅ 1.2 Redis для кэширования (Выполнено: 27 января 2026)
 
-**Задача:** Настроить Redis для production-окружения.
+**Реализовано:**
+- Конфигурация Redis уже реализована через переменные окружения
+- CACHE_BACKEND='redis' активирует Redis
+- CACHE_LOCATION для указания URL Redis сервера
+- Docker Compose настроен с Redis сервисом
 
-**Решение:**
-```python
-# settings.py (production)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379'),
-    }
-}
-```
-
-**Оценка:** 2 часа
+**Файлы:**
+- mypet_project/settings.py (CACHE_BACKENDS_MAP, CACHES)
+- mypet_project/config.py (cache_backend, cache_location)
+- docker-compose.yml (redis service)
 
 ---
 
@@ -254,21 +250,16 @@ Content.objects.annotate(
 
 ---
 
-### 3.2 Rate Limiting (Приоритет: Средний)
+### ✅ 3.2 Rate Limiting (Выполнено: 27 января 2026)
 
-**Задача:** Ограничить частоту запросов к API.
+**Реализовано:**
+- django-ratelimit установлен
+- SearchView защищён: 30 запросов/минута на IP
+- 2 теста для проверки rate limiting
 
-**Решение:**
-```python
-# Использовать django-ratelimit
-@ratelimit(key='ip', rate='100/h', block=True)
-def api_view(request):
-    ...
-```
-
-**Зависимости:** `django-ratelimit`
-
-**Оценка:** 2 часа
+**Файлы:**
+- blog/views.py (@method_decorator(ratelimit(...)))
+- blog/tests/test_ratelimit.py
 
 ---
 
@@ -290,18 +281,16 @@ def api_view(request):
 
 ---
 
-### 4.2 Open Graph метатеги (Приоритет: Средний)
+### ✅ 4.2 Open Graph метатеги (Выполнено: 27 января 2026)
 
-**Задача:** Добавить метатеги для соцсетей.
+**Реализовано:**
+- OG метатеги уже добавлены в base.html
+- Блоки для переопределения: og_title, og_description, og_image
+- Twitter Card метатеги также добавлены
+- Canonical URL блок для SEO
 
-**Решение:**
-```html
-<meta property="og:title" content="{{ content.title }}">
-<meta property="og:description" content="{{ content.description }}">
-<meta property="og:image" content="{{ content.thumbnail.url }}">
-```
-
-**Оценка:** 1 час
+**Файлы:**
+- templates/base.html
 
 ---
 
@@ -350,28 +339,16 @@ def api_view(request):
 
 ---
 
-### 6.2 Docker Compose для разработки (Приоритет: Средний)
+### ✅ 6.2 Docker Compose для разработки (Выполнено: 27 января 2026)
 
-**Задача:** Упростить локальную разработку.
+**Реализовано:**
+- docker-compose.yml с web, PostgreSQL, Redis
+- Health checks для db и redis
+- Volumes для данных и media
+- Переменные окружения для настройки
 
-**Решение:**
-```yaml
-# docker-compose.yml
-services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-    depends_on:
-      - db
-      - redis
-  db:
-    image: postgres:15
-  redis:
-    image: redis:7
-```
-
-**Оценка:** 2 часа
+**Файлы:**
+- docker-compose.yml
 
 ---
 
@@ -381,10 +358,10 @@ services:
 |------|--------|-----------|--------------|
 | 1 | ~~1.1~~✅, ~~2.2~~✅, ~~4.1~~✅ | Высокий | ✅ Выполнено |
 | 2 | ~~3.1~~✅, ~~6.1~~✅ | Высокий | ✅ Выполнено |
-| 3 | 1.2, 3.2, 4.2, 6.2 | Средний | 7 часов |
+| 3 | ~~1.2~~✅, ~~3.2~~✅, ~~4.2~~✅, ~~6.2~~✅ | Средний | ✅ Выполнено |
 | 4 | 5.1, 5.2 | Низкий | 12 часов |
 
-**Общая оценка:** ~19 часов
+**Общая оценка:** ~12 часов (осталось только E2E и нагрузочное тестирование)
 
 *Примечание: 2.1 Пагинация убрана — для лендинга не требуется*
 
