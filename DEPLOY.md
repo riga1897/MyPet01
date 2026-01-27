@@ -25,6 +25,9 @@ feature/* → develop → release/* → main
 
 В репозитории: **Settings** → **Secrets and variables** → **Actions**
 
+**Общие:**
+- `GHCR_TOKEN` — Personal Access Token с `read:packages` (GitHub → Settings → Developer settings → Personal access tokens)
+
 **Production:**
 - `SSH_KEY` — приватный SSH ключ
 - `SSH_USER` — пользователь (например, `root`)

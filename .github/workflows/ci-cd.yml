@@ -2,8 +2,9 @@ name: MyPet01 CI/CD Pipeline
 
 on:
   push:
+    branches: [main, develop, 'release/*', 'feature/*']
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, 'release/*']
 
 env:
   REGISTRY: ghcr.io
@@ -93,7 +94,7 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          poetry run coverage report --fail-under=80
+          poetry run coverage report --fail-under=100
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -315,20 +316,24 @@ jobs:
       - name: Generate .env and deploy on preprod
         env:
           PREPROD_SERVER_IP: ${{ secrets.PREPROD_SERVER_IP }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFDEPLOY'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << EOFDEPLOY
             set -e
             cd ${{ secrets.PREPROD_DEPLOY_DIR }}
 
             chmod +x generate-preprod-env.sh
             SERVER_IP=${{ secrets.PREPROD_SERVER_IP }} ./generate-preprod-env.sh
 
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Update Docker image config in .env (idempotent)
+            grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=preprod-latest/" .env || echo "IMAGE_TAG=preprod-latest" >> .env
+            grep -q "^GITHUB_REPOSITORY=" .env && sed -i "s|^GITHUB_REPOSITORY=.*|GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}|" .env || echo "GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}" >> .env
 
-            export IMAGE_TAG=preprod-latest
-            export GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            # Login to GHCR (token passed securely via stdin)
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker compose -f docker-compose.prod.yml --env-file .env pull
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --remove-orphans
 
             docker image prune -af
           EOFDEPLOY
@@ -437,20 +442,25 @@ jobs:
             ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/
 
       - name: Generate .env and deploy on production
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOFDEPLOY'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << EOFDEPLOY
             set -e
             cd ${{ secrets.DEPLOY_DIR }}
 
             chmod +x generate-production-env.sh
             SERVER_IP=${{ secrets.SERVER_IP }} ./generate-production-env.sh
 
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Update Docker image config in .env (idempotent)
+            grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=latest/" .env || echo "IMAGE_TAG=latest" >> .env
+            grep -q "^GITHUB_REPOSITORY=" .env && sed -i "s|^GITHUB_REPOSITORY=.*|GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}|" .env || echo "GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}" >> .env
 
-            export IMAGE_TAG=latest
-            export GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            # Login to GHCR (token passed securely via stdin)
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker compose -f docker-compose.prod.yml --env-file .env pull
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --remove-orphans
 
             docker image prune -af
           EOFDEPLOY

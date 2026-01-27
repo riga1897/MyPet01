@@ -145,7 +145,14 @@ git push origin main
 
 ## GitHub Secrets
 
-См. [GITHUB_SECRETS.md](./GITHUB_SECRETS.md)
+**Обязательные секреты:**
+- `GHCR_TOKEN` — Personal Access Token с `read:packages`
+- `SSH_KEY` / `PREPROD_SSH_KEY` — SSH ключи для VPS
+- `SSH_USER` / `PREPROD_SSH_USER` — пользователи SSH
+- `SERVER_IP` / `PREPROD_SERVER_IP` — IP адреса серверов
+- `DEPLOY_DIR` / `PREPROD_DEPLOY_DIR` — пути деплоя
+
+Подробнее: [GITHUB_SECRETS.md](./GITHUB_SECRETS.md)
 
 ## Zero-Configuration VPS
 

@@ -19,6 +19,12 @@ GitHub Secrets используются для безопасного хране
 4. Введите **Name** и **Value**
 5. Нажмите **Add secret**
 
+## Общие Secrets
+
+| Secret | Описание | Как получить |
+|--------|----------|--------------|
+| `GHCR_TOKEN` | Personal Access Token для GitHub Container Registry | GitHub → Settings → Developer settings → Personal access tokens → Classic → Generate (scope: `read:packages`) |
+
 ## Production Secrets
 
 ### SSH доступ
@@ -56,6 +62,9 @@ cat ~/.ssh/github_deploy
 - `POSTGRES_PASSWORD` — Пароль БД (24 chars)
 
 ## Чек-лист
+
+### Общие
+- [ ] `GHCR_TOKEN` — Personal Access Token с правами `read:packages`
 
 ### Production
 - [ ] `SSH_KEY`
