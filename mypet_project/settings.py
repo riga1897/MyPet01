@@ -22,9 +22,9 @@ INSTALLED_APPS = [
     'users',
 ]
 
-LOGIN_URL = '/users/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = env_settings.login_url
+LOGIN_REDIRECT_URL = env_settings.login_redirect_url
+LOGOUT_REDIRECT_URL = env_settings.logout_redirect_url
 
 MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
@@ -86,11 +86,11 @@ SECURE_BROWSER_XSS_FILTER = env_settings.secure_browser_xss_filter
 SECURE_CONTENT_TYPE_NOSNIFF = env_settings.secure_content_type_nosniff
 X_FRAME_OPTIONS = env_settings.x_frame_options
 
-STATIC_URL = 'static/'
+STATIC_URL = env_settings.static_url
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-MEDIA_URL = 'media/'
+MEDIA_URL = env_settings.media_url
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

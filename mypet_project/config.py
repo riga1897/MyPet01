@@ -1,17 +1,29 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def get_env_file() -> str:
+    """Determine which .env file to use based on DJANGO_ENV."""
+    env = os.getenv('DJANGO_ENV', 'development')
+    env_file = f'.env.{env}'
+    if os.path.exists(env_file):
+        return env_file
+    return '.env'
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file='.env',
+        env_file=('.env', get_env_file()),
         env_file_encoding='utf-8',
         extra='ignore',
     )
 
+    # Environment-specific settings (from .env.development or .env.production)
     debug: bool = False
     secret_key: str = 'django-insecure-dummy-key'
     allowed_hosts: str = '*'
 
+    # Database
     database_url: str = ''
     postgres_user: str = ''
     postgres_password: str = ''
@@ -19,13 +31,23 @@ class Settings(BaseSettings):
     postgres_port: str = '5432'
     postgres_db: str = ''
 
+    # CSRF
     csrf_trusted_origins: str = 'https://*.replit.dev,https://*.repl.co,https://*.pike.replit.dev'
     csrf_cookie_httponly: bool = True
     csrf_cookie_samesite: str = 'Lax'
+
+    # Localization (from .env)
     language_code: str = 'ru'
     time_zone: str = 'UTC'
     use_i18n: bool = True
     use_tz: bool = True
+
+    # URLs (from .env)
+    static_url: str = '/static/'
+    media_url: str = '/media/'
+    login_url: str = '/users/login/'
+    login_redirect_url: str = '/'
+    logout_redirect_url: str = '/'
 
     # Production security settings (can be controlled individually or via use_https)
     use_https: bool = False
@@ -40,7 +62,7 @@ class Settings(BaseSettings):
     secure_content_type_nosniff: bool = True
     x_frame_options: str = 'DENY'
 
-    # Admin settings
+    # Admin settings (from .env)
     admin_show_facets: bool = True
 
     # Cache settings
