@@ -109,7 +109,9 @@ class Settings(BaseSettings):
 
     @property
     def is_secure_hsts_include_subdomains(self) -> bool:
-        return self.secure_hsts_include_subdomains if self.secure_hsts_include_subdomains is not None else self.use_https
+        if self.secure_hsts_include_subdomains is not None:
+            return self.secure_hsts_include_subdomains
+        return self.use_https
 
     @property
     def is_secure_hsts_preload(self) -> bool:

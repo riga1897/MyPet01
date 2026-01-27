@@ -204,9 +204,9 @@ class ContentType(BaseModel):
         if self.upload_folder and '..' not in self.upload_folder:
             folder_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, self.upload_folder))
             media_root = os.path.normpath(settings.MEDIA_ROOT)
-            if folder_path.startswith(media_root + os.sep) and folder_path != media_root:
-                if os.path.exists(folder_path) and os.path.isdir(folder_path):
-                    shutil.rmtree(folder_path)
+            is_valid_path = folder_path.startswith(media_root + os.sep) and folder_path != media_root
+            if is_valid_path and os.path.exists(folder_path) and os.path.isdir(folder_path):
+                shutil.rmtree(folder_path)
         return result
 
 
@@ -291,12 +291,11 @@ class Content(BaseModel):
                     self.thumbnail = thumbnail
                     needs_update = True
         
-        elif self.has_photo_type() and self.video_file:
-            if not self.thumbnail:
-                thumbnail = generate_thumbnail_from_image(self.video_file)
-                if thumbnail:
-                    self.thumbnail = thumbnail
-                    needs_update = True
+        elif self.has_photo_type() and self.video_file and not self.thumbnail:
+            thumbnail = generate_thumbnail_from_image(self.video_file)
+            if thumbnail:
+                self.thumbnail = thumbnail
+                needs_update = True
         
         if needs_update:
             super().save(update_fields=['thumbnail'])

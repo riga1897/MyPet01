@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -507,10 +508,8 @@ class CheckContentTypeCodeView(View):
         exclude_id: int | None = None
         
         if exclude_id_str:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 exclude_id = int(exclude_id_str)
-            except (ValueError, TypeError):
-                pass
         
         if not code:
             return JsonResponse({'available': True})
@@ -532,10 +531,8 @@ class CheckContentTypeFolderView(View):
         exclude_id: int | None = None
         
         if exclude_id_str:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 exclude_id = int(exclude_id_str)
-            except (ValueError, TypeError):
-                pass
         
         if not folder:
             return JsonResponse({'available': True})
@@ -557,10 +554,8 @@ class CheckCategoryCodeView(View):
         exclude_id: int | None = None
         
         if exclude_id_str:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 exclude_id = int(exclude_id_str)
-            except (ValueError, TypeError):
-                pass
         
         if not code:
             return JsonResponse({'available': True})
@@ -582,10 +577,8 @@ class AvailableFilesView(View):
         content_id: int | None = None
         
         if content_id_str:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 content_id = int(content_id_str)
-            except (ValueError, TypeError):
-                pass
         
         if not folder or '..' in folder or folder.startswith('/'):
             return JsonResponse({'files': []})
@@ -626,10 +619,8 @@ class AvailableThumbnailsView(View):
         content_id: int | None = None
         
         if content_id_str:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 content_id = int(content_id_str)
-            except (ValueError, TypeError):
-                pass
         
         thumbnails_path = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
         if not os.path.exists(thumbnails_path) or not os.path.isdir(thumbnails_path):

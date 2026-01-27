@@ -86,8 +86,9 @@ class TestCategoryModel:
         assert str(category) == 'Тестовая категория'
 
     def test_category_code_is_unique(self) -> None:
+        from django.db import IntegrityError
         Category.objects.create(name='Категория 1', code='cat1')
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             Category.objects.create(name='Категория 2', code='cat1')
 
 
@@ -169,13 +170,15 @@ class TestContentTypeModel:
         assert photo_type.is_video is False
 
     def test_contenttype_code_is_required(self) -> None:
+        from django.core.exceptions import ValidationError
         ct = ContentType(name='Без кода тест')
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ct.full_clean()
 
     def test_contenttype_code_is_unique(self) -> None:
+        from django.db import IntegrityError
         ContentType.objects.create(name='Уникальный тип 1', code='unique_type1')
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             ContentType.objects.create(name='Уникальный тип 2', code='unique_type1')
 
     def test_contenttype_upload_folder_defaults_to_code(self) -> None:

@@ -35,6 +35,19 @@ strict = true
 ignore_missing_imports = true
 check_untyped_defs = true
 
+exclude = [
+    "^tests/",
+    "^migrations/",
+    "^attached_assets/",
+    "^vehicle/",
+    "^scripts/",
+    "^\\.pythonlibs/",
+    "^\\.local/",
+    "\\.venv",
+    "\\.idea"
+]
+
+
 [tool.django-stubs]
 django_settings_module = "mypet_project.settings"
 strict_settings = false
@@ -75,7 +88,28 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 119
+preview = true
+
+exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "*.egg-info",
+    "migrations",
+    "attached_assets",
+    "vehicle",
+    "scripts",
+    ".local",
+    ".idea",
+    ".pythonlibs",
+    "build",
+    "dist",
+]
+
+force-exclude = true
 
 [tool.ruff.lint]
 select = [
@@ -89,3 +123,7 @@ select = [
 
 fixable = ["ALL"]
 unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"config/settings_test.py" = ["F403"]

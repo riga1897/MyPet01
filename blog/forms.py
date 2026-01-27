@@ -20,8 +20,7 @@ def validate_file_size(
     field_name: str,
 ) -> None:
     """Validate that uploaded file doesn't exceed MAX_FILE_SIZE_BYTES."""
-    if file and hasattr(file, 'size') and file.size is not None:
-        if file.size > MAX_FILE_SIZE_BYTES:
+    if file and hasattr(file, 'size') and file.size is not None and file.size > MAX_FILE_SIZE_BYTES:
             raise ValidationError(
                 f'{field_name}: файл слишком большой. Максимум: {MAX_FILE_SIZE_MB} MB'
             )
