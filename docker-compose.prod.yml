@@ -62,6 +62,7 @@ services:
     volumes:
       - softether_data:/var/lib/softether
       - softether_logs:/var/log/softether
+      - ./nginx/ssl:/etc/ssl/vpn:ro
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
 

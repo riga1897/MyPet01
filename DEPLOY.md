@@ -54,11 +54,18 @@ nano .env  # Заполнить реальными значениями
 # Создать директории для сертификатов
 mkdir -p nginx/ssl nginx/certbot
 
-# Вариант A: Let's Encrypt (бесплатно)
+# Вариант A: Let's Encrypt (бесплатно) — включая VPN домен!
 sudo apt install certbot
-sudo certbot certonly --standalone -d www.mine-craft.su -d site.mine-craft.su
+sudo certbot certonly --standalone \
+    -d www.mine-craft.su \
+    -d site.mine-craft.su \
+    -d vpn.mine-craft.su
+
+# Копировать сертификаты (используются и Nginx, и SoftEther VPN)
 sudo cp /etc/letsencrypt/live/mine-craft.su/fullchain.pem nginx/ssl/
 sudo cp /etc/letsencrypt/live/mine-craft.su/privkey.pem nginx/ssl/
+sudo chmod 644 nginx/ssl/fullchain.pem
+sudo chmod 600 nginx/ssl/privkey.pem
 
 # Вариант B: Самоподписанный (для тестирования)
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -66,6 +73,38 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out nginx/ssl/fullchain.pem \
     -subj "/CN=mine-craft.su"
 ```
+
+### Настройка сертификата в SoftEther VPN
+
+После первого запуска контейнеров:
+
+```bash
+# Подключиться к VPN серверу
+docker compose -f docker-compose.prod.yml exec softether vpncmd localhost /server
+
+# Установить сертификат Let's Encrypt
+ServerCertSet /LOADCERT:/etc/ssl/vpn/fullchain.pem /LOADKEY:/etc/ssl/vpn/privkey.pem
+
+# Проверить установленный сертификат
+ServerCertGet
+```
+
+### Автообновление сертификатов
+
+```bash
+# Сделать скрипт исполняемым
+chmod +x deploy/renew-certs.sh
+
+# Добавить в crontab (проверка дважды в день)
+sudo crontab -e
+# Добавить строку:
+0 3,15 * * * /opt/blog/deploy/renew-certs.sh >> /var/log/certbot-renew.log 2>&1
+```
+
+Скрипт автоматически:
+1. Проверяет и обновляет сертификаты через certbot
+2. Копирует новые сертификаты в `nginx/ssl/`
+3. Перезапускает Nginx и SoftEther для применения
 
 ## 5. Запуск
 
