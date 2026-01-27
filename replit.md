@@ -44,6 +44,54 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
 - **Database**: Utilizes PostgreSQL as the primary database.
 - **Code Quality**: Emphasizes TDD, 100% test coverage, and strict linting with `ruff` and static analysis with `mypy`.
 
+## Testing
+
+### Unit Tests
+```bash
+# Запуск всех тестов с покрытием
+poetry run pytest
+
+# Запуск конкретного модуля
+poetry run pytest blog/tests/test_views.py -v
+```
+
+### E2E Tests (16 тестов)
+```bash
+# Запуск E2E тестов
+poetry run pytest tests/e2e/ -v
+
+# Покрытые сценарии:
+# - TestHomepageFlow: загрузка главной страницы, hero-секция
+# - TestAuthenticationFlow: логин/логаут, защита страниц
+# - TestNavigationFlow: admin, sitemap, статические файлы
+# - TestSearchFlow: поиск с параметрами, XSS-защита
+```
+
+### Load Testing (Locust)
+```bash
+# Запуск с веб-интерфейсом (http://localhost:8089)
+poetry run locust -f tests/load/locustfile.py
+
+# Headless режим (100 пользователей, 10/сек)
+poetry run locust -f tests/load/locustfile.py --headless -u 100 -r 10 -t 1m --host http://localhost:5000
+
+# Типы пользователей:
+# - GuestUser: просмотр главной, поиск, sitemap
+# - AuthenticatedUser: авторизованные пользователи
+# - APIUser: тестирование API endpoints
+# - MixedUser: реалистичное смешанное поведение
+```
+
+### Linters
+```bash
+# Ruff (linting)
+poetry run ruff check .
+poetry run ruff check . --fix  # автоисправление
+
+# Mypy (static analysis)
+poetry run mypy .
+```
+
 ## External Dependencies
 - **Frameworks**: Django, Django REST Framework
 - **Database**: PostgreSQL (via `psycopg2-binary`, `dj-database-url`)
@@ -52,3 +100,4 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
 - **Dependency Management**: Poetry
 - **Static Analysis/Linting**: `mypy`, `ruff`
 - **Image Processing**: Pillow (for thumbnail compression)
+- **Testing**: pytest, pytest-django, pytest-cov, locust
