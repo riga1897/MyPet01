@@ -116,6 +116,28 @@ docker compose -f docker-compose.prod.yml down -v
 - `www.mine-craft.su`, `site.mine-craft.su` → Nginx → Django
 - `vpn.mine-craft.su` → SoftEther VPN
 
+### Сетевая архитектура
+
+HAProxy работает в режиме `network_mode: host` — это позволяет ему видеть VPN сеть SoftEther и обращаться к VPN клиентам напрямую.
+
+```
+Internet → HAProxy (host network)
+              ├── :80 → HTTPS redirect / Let's Encrypt
+              ├── :443 → SNI routing (web/vpn)
+              ├── :25565 → Minecraft (failover)
+              └── :25575 → RCON (failover)
+
+Контейнеры на localhost:
+  - Nginx: 127.0.0.1:8443 (HTTPS), 127.0.0.1:8080 (HTTP)
+  - SoftEther: 127.0.0.1:4443 (SSL VPN)
+  - Django: 127.0.0.1:8000 (Gunicorn)
+
+Напрямую на хост (минуя HAProxy):
+  - SoftEther: 992/tcp, 5555/tcp (management)
+  - SoftEther: 500, 4500, 1701/udp (IPsec/L2TP)
+  - SoftEther: 1194/udp (OpenVPN)
+```
+
 ### Первоначальная настройка VPN
 
 ```bash
