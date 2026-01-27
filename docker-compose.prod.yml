@@ -5,6 +5,8 @@ services:
       - "80:80"
       - "443:443"
       - "8404:8404"
+      - "25565:25565"
+      - "25575:25575"
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
