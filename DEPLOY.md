@@ -146,6 +146,8 @@ exit
 | Протокол | Порт | Описание |
 |----------|------|----------|
 | SSTP/SSL | 443/tcp | Через HAProxy (vpn.mine-craft.su) |
+| Management | 992/tcp | Администрирование (SoftEther Server Manager) |
+| Management | 5555/tcp | Администрирование (альтернативный) |
 | L2TP/IPsec | 500, 4500, 1701/udp | Напрямую |
 | OpenVPN | 1194/udp | Напрямую |
 
