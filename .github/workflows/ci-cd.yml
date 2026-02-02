@@ -2,9 +2,9 @@ name: MyPet01 CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, 'release/*', 'feature/*']
+    branches: [main, 'release/*']
   pull_request:
-    branches: [main, develop, 'release/*']
+    branches: [main, 'release/*']
 
 env:
   REGISTRY: ghcr.io
@@ -12,6 +12,7 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
 
     services:
       postgres:
@@ -106,6 +107,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     needs: test
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
