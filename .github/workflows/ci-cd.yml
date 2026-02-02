@@ -358,6 +358,30 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} "cd ${{ secrets.PREPROD_DEPLOY_DIR }} && docker compose -f docker-compose.prod.yml logs --tail=50"
           exit 1
 
+      - name: Run database migrations and setup
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFSETUP'
+            set -e
+            cd ${{ secrets.PREPROD_DEPLOY_DIR }}
+
+            echo "Running database migrations..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+
+            echo "Creating superuser if not exists..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py create_superuser_if_not_exists
+
+            echo "Loading initial structure..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_initial_structure
+
+            echo "Loading demo content (preprod only)..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content
+
+            echo "Collecting static files..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+
+            echo "Setup completed!"
+          EOFSETUP
+
       - name: Create draft PR to main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -484,3 +508,24 @@ jobs:
           echo "Health check failed!"
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && docker compose -f docker-compose.prod.yml logs --tail=50"
           exit 1
+
+      - name: Run database migrations and setup
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOFSETUP'
+            set -e
+            cd ${{ secrets.DEPLOY_DIR }}
+
+            echo "Running database migrations..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+
+            echo "Creating superuser if not exists..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py create_superuser_if_not_exists
+
+            echo "Loading initial structure..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_initial_structure
+
+            echo "Collecting static files..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+
+            echo "Setup completed!"
+          EOFSETUP

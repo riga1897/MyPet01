@@ -26,6 +26,7 @@ generate_password() {
 
 SECRET_KEY=$(generate_secret_key)
 POSTGRES_PASSWORD=$(generate_password)
+SUPERUSER_PASSWORD=$(generate_password)
 
 cat > "$ENV_FILE" << EOF
 # ========================================
@@ -82,6 +83,11 @@ ADMIN_SHOW_FACETS=True
 
 # Redis
 REDIS_URL=redis://redis:6379/0
+
+# Суперпользователь (для автоматического создания)
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_EMAIL=admin@mine-craft.su
+DJANGO_SUPERUSER_PASSWORD=$SUPERUSER_PASSWORD
 EOF
 
 chmod 600 "$ENV_FILE"
