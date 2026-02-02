@@ -5,7 +5,7 @@ from typing import Any
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from blog.models import Content
+from blog.models import Category, Content
 
 
 class Command(BaseCommand):
@@ -30,6 +30,14 @@ class Command(BaseCommand):
                 )
             )
             return
+
+        # Ensure initial structure is loaded first (categories, tags, content types)
+        if not Category.objects.exists():
+            self.stdout.write('Loading initial structure first...')
+            call_command(
+                'setup_initial_structure',
+                verbosity=options.get('verbosity', 1),
+            )
 
         self.stdout.write('Loading demo content...')
 
