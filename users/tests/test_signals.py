@@ -99,3 +99,36 @@ class TestRateLimitedLogin:
                 '/users/login/',
                 {'username': 'test', 'password': 'test', 'website_url': ''},
             )
+
+
+class TestGetClientIp:
+    """Tests for get_client_ip function (lines 21, 24)."""
+
+    def test_get_client_ip_from_x_forwarded_for(self) -> None:
+        """Test IP extraction from X-Forwarded-For header."""
+        from users.signals import get_client_ip
+
+        factory = RequestFactory()
+        request = factory.get('/')
+        request.META['HTTP_X_FORWARDED_FOR'] = '10.0.0.1, 192.168.1.1'
+
+        ip = get_client_ip(request)
+        assert ip == '10.0.0.1'
+
+    def test_get_client_ip_with_none_request(self) -> None:
+        """Test IP extraction when request is None."""
+        from users.signals import get_client_ip
+
+        ip = get_client_ip(None)
+        assert ip == 'unknown'
+
+    def test_get_client_ip_from_remote_addr(self) -> None:
+        """Test IP extraction from REMOTE_ADDR."""
+        from users.signals import get_client_ip
+
+        factory = RequestFactory()
+        request = factory.get('/')
+        request.META['REMOTE_ADDR'] = '192.168.1.100'
+
+        ip = get_client_ip(request)
+        assert ip == '192.168.1.100'

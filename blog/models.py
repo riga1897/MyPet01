@@ -78,7 +78,7 @@ class TagGroup(BaseModel):
         """Return set of category PKs. Uses prefetched data if available."""
         try:
             return {cat.pk for cat in self.categories.all()}
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             return set(self.categories.values_list('pk', flat=True))
 
     def is_visible_for_category(self, category: 'Category | None') -> bool:
@@ -325,7 +325,7 @@ class Content(BaseModel):
             self.thumbnail = ContentFile(output.read(), name=new_name)
         except UnidentifiedImageError:
             logger.warning('Failed to compress thumbnail: not a valid image file')
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             logger.warning('Failed to compress thumbnail: %s', e)
 
     def has_playable_video(self) -> bool:

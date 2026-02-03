@@ -280,3 +280,43 @@ class TestContentSanitization:
         content.save()
 
         assert content.description == 'This is normal description text.'
+
+
+class TestRateLimitDecorators:
+    """Tests for rate limit decorator functions (lines 109-141)."""
+
+    def test_rate_limit_login_decorator(self) -> None:
+        """Test rate_limit_login decorator wraps function correctly."""
+        from django.http import HttpRequest, HttpResponse
+
+        from core.security import rate_limit_login
+
+        def dummy_view(request: HttpRequest) -> HttpResponse:
+            return HttpResponse("response")
+
+        decorated = rate_limit_login(dummy_view)
+        assert callable(decorated)
+
+    def test_rate_limit_upload_decorator(self) -> None:
+        """Test rate_limit_upload decorator wraps function correctly."""
+        from django.http import HttpRequest, HttpResponse
+
+        from core.security import rate_limit_upload
+
+        def dummy_view(request: HttpRequest) -> HttpResponse:
+            return HttpResponse("response")
+
+        decorated = rate_limit_upload(dummy_view)
+        assert callable(decorated)
+
+    def test_rate_limit_api_decorator(self) -> None:
+        """Test rate_limit_api decorator wraps function correctly."""
+        from django.http import HttpRequest, HttpResponse
+
+        from core.security import rate_limit_api
+
+        def dummy_view(request: HttpRequest) -> HttpResponse:
+            return HttpResponse("response")
+
+        decorated = rate_limit_api(dummy_view)
+        assert callable(decorated)

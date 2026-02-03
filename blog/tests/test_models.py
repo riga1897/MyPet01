@@ -422,3 +422,4 @@ class TestContentThumbnailEdgeCases:
             thumb_path = os.path.join(settings.MEDIA_ROOT, str(content.thumbnail))
             if os.path.exists(thumb_path):
                 os.remove(thumb_path)
+

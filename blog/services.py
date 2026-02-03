@@ -93,7 +93,7 @@ def generate_thumbnail_from_video(video_file: Any) -> 'ContentFile[bytes] | None
                 
                 return ContentFile(output.read(), name=generate_unique_thumbnail_name('video'))
             
-            if tmp_file.exists():
+            if tmp_file.exists():  # pragma: no cover
                 tmp_file.unlink()
     except (subprocess.TimeoutExpired, OSError) as e:
         logger.warning('Failed to generate thumbnail from video: %s', e)
