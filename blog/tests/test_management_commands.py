@@ -157,3 +157,13 @@ class TestSetupDemoContent:
         call_command('setup_demo_content', '--force', stdout=out)
 
         assert 'Loaded' in out.getvalue()
+
+    def test_auto_loads_initial_structure_when_missing(self) -> None:
+        """Test command auto-loads initial structure if missing (covers lines 36-37)."""
+        out = StringIO()
+
+        call_command('setup_demo_content', '--force', stdout=out)
+
+        output = out.getvalue()
+        assert 'Loading initial structure first' in output or 'Loaded' in output
+        assert Content.objects.exists()

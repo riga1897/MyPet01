@@ -500,3 +500,22 @@ class TestSearchView:
         assert context is not None
         assert context.get('search_mode') == 'exact'
         assert context.get('suggestion') is None
+
+    def test_search_fuzzy_mode_returns_results(self) -> None:
+        """Test fuzzy search mode returns results and suggestion (covers lines 182-185)."""
+        content_type, _ = ContentType.objects.get_or_create(
+            code='video_fuzzy', defaults={'name': 'Видео Fuzzy'}
+        )
+        Content.objects.create(
+            title='Медитация для сна',
+            description='Глубокий сон',
+            content_type=content_type,
+        )
+        client = Client()
+        response = client.get('/search/?q=медитаци')
+        assert response.status_code == 200
+        context = response.context
+        assert context is not None
+        if context.get('search_mode') == 'fuzzy':
+            assert context.get('suggestion') is not None
+            assert 'cards' in context

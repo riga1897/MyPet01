@@ -73,3 +73,19 @@ class TestSettings:
     def test_admin_show_facets_can_be_disabled(self) -> None:
         settings = Settings(admin_show_facets=False)
         assert settings.admin_show_facets is False
+
+    def test_secure_hsts_include_subdomains_explicit_true(self) -> None:
+        """Test explicit secure_hsts_include_subdomains setting (covers line 71)."""
+        settings = Settings(
+            use_https=False,
+            secure_hsts_include_subdomains=True,
+        )
+        assert settings.is_secure_hsts_include_subdomains is True
+
+    def test_secure_hsts_include_subdomains_explicit_false(self) -> None:
+        """Test explicit secure_hsts_include_subdomains=False."""
+        settings = Settings(
+            use_https=True,
+            secure_hsts_include_subdomains=False,
+        )
+        assert settings.is_secure_hsts_include_subdomains is False

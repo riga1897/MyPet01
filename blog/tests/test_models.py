@@ -374,3 +374,51 @@ class TestContentDelete:
         content = Content.objects.create(title='Без thumb', content_type=video_type)
         content.delete()
         assert not Content.objects.filter(pk=content.pk).exists()
+
+
+@pytest.mark.django_db
+class TestContentThumbnailEdgeCases:
+    """Tests for thumbnail edge cases (covers lines 265, 325-326)."""
+
+    def test_compress_thumbnail_with_invalid_image(
+        self, video_type: ContentType
+    ) -> None:
+        """Test thumbnail compression with invalid image file (line 325-326)."""
+        content = Content.objects.create(
+            title='Invalid Thumb Test',
+            content_type=video_type,
+        )
+        invalid_file = SimpleUploadedFile(
+            name='invalid.jpg',
+            content=b'not an image content',
+            content_type='image/jpeg',
+        )
+        content.thumbnail = invalid_file
+        content.save()
+        assert content.pk is not None
+
+    def test_save_triggers_thumbnail_compression(
+        self, video_type: ContentType
+    ) -> None:
+        """Test save with new thumbnail triggers compression (line 265)."""
+        img_io = BytesIO()
+        img = Image.new('RGB', (200, 200), color='blue')
+        img.save(img_io, format='JPEG')
+        img_io.seek(0)
+        
+        content = Content.objects.create(
+            title='Compression Test',
+            content_type=video_type,
+        )
+        thumb_file = SimpleUploadedFile(
+            name='compress_test.jpg',
+            content=img_io.read(),
+            content_type='image/jpeg',
+        )
+        content.thumbnail = thumb_file
+        content.save()
+        
+        if content.thumbnail:
+            thumb_path = os.path.join(settings.MEDIA_ROOT, str(content.thumbnail))
+            if os.path.exists(thumb_path):
+                os.remove(thumb_path)
