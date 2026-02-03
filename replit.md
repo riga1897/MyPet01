@@ -35,6 +35,11 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
 - **Content Management**: Features a robust content model (`Content`) supporting various content types (`ContentType`), multiple categories (ManyToMany), and a dynamic tag system (`TagGroup`, `Tag`). Content types dictate upload folders, and both tags and categories support multi-select with "Select All" functionality in forms.
 - **User Management**: Includes a `users` app with authentication, role-based access control (Guests, Moderators, Admins), and a moderator management interface.
 - **Security**: Configurable security settings for development (HTTP) and production (HTTPS with HSTS, secure cookies, XSS protection, content sniffing prevention, clickjacking prevention).
+  - **Rate Limiting**: Login form limited to 5 attempts/minute per IP via django-ratelimit.
+  - **Honeypot Protection**: Hidden field in login form to detect bots (middleware blocks filled honeypot).
+  - **Input Sanitization**: Description fields sanitized via bleach library (strips dangerous HTML/JS).
+  - **Security Logging**: All suspicious requests and auth events logged to `logs/security.log` and console.
+  - **CSP (Content Security Policy)**: Strict policy limiting script/style sources.
 - **Caching**: Implements both server-side caching (local memory, DB, Redis, or Memcached) and browser caching with configurable `Cache-Control` headers. Server-side cache invalidation is automated via Django signals on content changes.
 - **File Management**: Handles image and video uploads, with thumbnails automatically compressed and unique MD5 hash names. Supports selecting existing files and path traversal protection.
 - **Configuration**: Environment variables are managed via `pydantic-settings` for typed configuration, with support for `.env` files and fallbacks.

@@ -15,6 +15,7 @@ from blog.services import (
     generate_thumbnail_from_video,
 )
 from core.models import BaseModel
+from core.security import sanitize_text
 
 logger = logging.getLogger(__name__)
 
@@ -261,6 +262,8 @@ class Content(BaseModel):
         return self.title
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.description:
+            self.description = sanitize_text(self.description)
         if self.thumbnail and self._is_new_thumbnail():
             self._compress_thumbnail()
         super().save(*args, **kwargs)

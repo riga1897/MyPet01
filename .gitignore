@@ -211,3 +211,6 @@ __marimo__/
 # Production secrets (never commit!)
 .env.production
 .github/workflows/ci.yml
+
+# Security logs (keep directory, ignore log files)
+logs/*.log

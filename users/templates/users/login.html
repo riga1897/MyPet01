@@ -16,6 +16,12 @@
         <form method="post" class="space-y-4">
             {% csrf_token %}
             
+            <!-- Honeypot field - hidden from humans, visible to bots -->
+            <div style="position: absolute; left: -9999px;" aria-hidden="true">
+                <label for="id_website_url">Leave this field empty</label>
+                <input type="text" name="website_url" id="id_website_url" tabindex="-1" autocomplete="off">
+            </div>
+            
             <div>
                 <label for="id_username" class="block text-sm font-medium text-foreground mb-1">
                     Имя пользователя

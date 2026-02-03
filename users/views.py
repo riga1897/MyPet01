@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.views import LoginView
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from core.mixins import AdminRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
@@ -19,6 +22,16 @@ from users.models import (
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
+
+
+@method_decorator(
+    ratelimit(key='ip', rate='5/m', method='POST', block=True),
+    name='post',
+)
+class RateLimitedLoginView(LoginView):
+    """Login view with rate limiting protection."""
+
+    template_name = 'users/login.html'
 
 
 class ModeratorListView(AdminRequiredMixin, ListView):  # type: ignore[type-arg]

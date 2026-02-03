@@ -37,6 +37,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.BrowserCacheMiddleware',
+    'core.security.HoneypotMiddleware',
+    'core.security.SecurityLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'mypet_project.urls'
@@ -148,4 +150,44 @@ CONTENT_SECURITY_POLICY = {
         "base-uri": ["'self'"],
         "form-action": ["'self'"],
     }
+}
+
+# Security Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'security': {
+            'format': '%(asctime)s %(levelname)s %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'verbose': {
+            'format': '%(asctime)s %(name)s %(levelname)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'security_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'security.log',
+            'maxBytes': 10 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'security',
+        },
+    },
+    'loggers': {
+        'security': {
+            'handlers': ['console', 'security_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console', 'security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
 }
