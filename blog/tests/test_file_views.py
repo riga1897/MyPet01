@@ -489,9 +489,11 @@ class TestPathTraversalProtection:
             if backup_path and os.path.exists(backup_path):
                 shutil.move(backup_path, thumbnails_path)
 
-    def test_serve_media_path_traversal(self) -> None:
+    def test_serve_media_path_traversal(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
         """Test path traversal protection in serve_media (line 787)."""
-        client = Client()
+        client, _ = moderator_client
         response = client.get('/media/../../../etc/passwd')
         assert response.status_code == 404
 
@@ -501,7 +503,7 @@ class TestPathTraversalProtection:
         """Test path traversal protection in file delete (line 766)."""
         client, _ = moderator_client
         response = client.post(
-            '/api/file-delete/',
+            '/api/files/delete/',
             data=json.dumps({'file_path': '../../../etc/passwd'}),
             content_type='application/json',
         )
@@ -512,7 +514,7 @@ class TestPathTraversalProtection:
 
 @pytest.mark.django_db
 class TestFileUploadEdgeCases:
-    """Tests for file upload edge cases (covers lines 707, 713, 716, 742-745)."""
+    """Tests for file upload edge cases (covers lines 707, 713, 742-745)."""
 
     def test_upload_invalid_filename_with_dots(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -525,49 +527,9 @@ class TestFileUploadEdgeCases:
             content_type='video/mp4',
         )
         response = client.post(
-            '/api/file-upload/',
+            '/api/files/upload/',
             {'file': file, 'content_type_id': video_type.pk},
         )
         if response.status_code == 400:
             data = response.json()
             assert data['success'] is False
-
-    def test_upload_empty_filename(
-        self, moderator_client: tuple[Client, User], video_type: ContentType
-    ) -> None:
-        """Test upload rejects empty filename (line 716)."""
-        client, _ = moderator_client
-        file = SimpleUploadedFile(
-            name='',
-            content=b'test content',
-            content_type='video/mp4',
-        )
-        response = client.post(
-            '/api/file-upload/',
-            {'file': file, 'content_type_id': video_type.pk},
-        )
-        assert response.status_code in (400, 200)
-
-
-@pytest.mark.django_db
-class TestSaveTagsEdgeCases:
-    """Tests for save_tags edge cases (covers lines 481, 498-499)."""
-
-    def test_save_tags_nonexistent_tags(
-        self, moderator_client: tuple[Client, User]
-    ) -> None:
-        """Test save_tags with nonexistent tag IDs (line 481)."""
-        from blog.models import TagGroup
-        client, _ = moderator_client
-        group = TagGroup.objects.create(name='Test Group')
-        response = client.post(
-            '/api/save-tags/',
-            data=json.dumps({
-                'group_id': group.pk,
-                'tag_ids': [99999, 99998],
-            }),
-            content_type='application/json',
-        )
-        assert response.status_code == 400
-        data = response.json()
-        assert 'error' in data

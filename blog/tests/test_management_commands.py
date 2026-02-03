@@ -160,10 +160,18 @@ class TestSetupDemoContent:
 
     def test_auto_loads_initial_structure_when_missing(self) -> None:
         """Test command auto-loads initial structure if missing (covers lines 36-37)."""
+        from blog.models import Category, ContentType, Tag, TagGroup
+
+        Content.objects.all().delete()
+        Tag.objects.all().delete()
+        TagGroup.objects.all().delete()
+        Category.objects.all().delete()
+        ContentType.objects.all().delete()
+
         out = StringIO()
 
-        call_command('setup_demo_content', '--force', stdout=out)
+        call_command('setup_demo_content', stdout=out)
 
         output = out.getvalue()
-        assert 'Loading initial structure first' in output or 'Loaded' in output
+        assert 'Loading initial structure first' in output
         assert Content.objects.exists()
