@@ -397,22 +397,42 @@ class TestThumbnailTempFileCleanup:
     """Tests for temp file cleanup (covers lines 96-97)."""
 
     @patch('blog.services.subprocess.run')
+    @patch('blog.services.tempfile.NamedTemporaryFile')
+    @patch('blog.services.Image')
     @patch('blog.services.Path')
     def test_cleanup_temp_file_after_success(
-        self, mock_path_cls: MagicMock, mock_run: MagicMock
+        self,
+        mock_path_cls: MagicMock,
+        mock_image: MagicMock,
+        mock_tempfile: MagicMock,
+        mock_run: MagicMock,
     ) -> None:
         """Test temp file is deleted after successful thumbnail generation."""
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+
+        mock_tmp_file = MagicMock()
+        mock_tmp_file.name = '/tmp/test.jpg'
+        mock_tmp_file.__enter__ = MagicMock(return_value=mock_tmp_file)
+        mock_tmp_file.__exit__ = MagicMock(return_value=False)
+        mock_tempfile.return_value = mock_tmp_file
+
         mock_path_instance = MagicMock()
         mock_path_instance.exists.return_value = True
+        mock_path_instance.stat.return_value = mock_stat
+        mock_path_instance.read_bytes.return_value = b'fake_jpg_data'
         mock_path_cls.return_value = mock_path_instance
 
         mock_run.return_value = MagicMock(returncode=0)
+
+        mock_pil_image = MagicMock()
+        mock_pil_image.mode = 'RGB'
+        mock_image.open.return_value = mock_pil_image
+
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
-        mock_file.size = 1024
 
-        with patch('builtins.open', MagicMock()):
-            with patch('blog.services.ContentFile'):
-                generate_thumbnail_from_video(mock_file)
+        with patch('blog.services.ContentFile'), patch('blog.services.BytesIO'):
+            generate_thumbnail_from_video(mock_file)
 
         mock_path_instance.unlink.assert_called()

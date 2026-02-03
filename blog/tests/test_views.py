@@ -514,4 +514,5 @@ class TestSearchView:
         client = Client()
         response = client.get('/search/?q=медитаци')
         assert response.status_code == 200
-        assert 'search' in response.templates[0].name
+        template_name = response.templates[0].name or ''
+        assert 'search' in template_name

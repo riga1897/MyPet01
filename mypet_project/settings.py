@@ -182,7 +182,7 @@ LOGGING = {
         'security': {
             'handlers': ['console', 'security_file'],
             'level': 'INFO',
-            'propagate': False,
+            'propagate': True,
         },
         'django.security': {
             'handlers': ['console', 'security_file'],

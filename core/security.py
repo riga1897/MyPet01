@@ -12,7 +12,7 @@ import logging
 from functools import wraps
 from typing import TYPE_CHECKING, Any
 
-import bleach
+import bleach  # type: ignore[import-untyped]
 from django.http import HttpResponseForbidden
 from django_ratelimit.decorators import ratelimit
 
@@ -40,8 +40,8 @@ def get_client_ip(request: HttpRequest) -> str:
     """Extract client IP from request, handling proxies."""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
-        return x_forwarded_for.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', 'unknown')
+        return str(x_forwarded_for.split(',')[0].strip())
+    return str(request.META.get('REMOTE_ADDR', 'unknown'))
 
 
 def log_security_event(
@@ -87,55 +87,58 @@ def sanitize_html(content: str) -> str:
     """Sanitize HTML content, removing dangerous tags and scripts."""
     if not content:
         return content
-    return bleach.clean(
+    return str(bleach.clean(
         content,
         tags=ALLOWED_HTML_TAGS,
         attributes=ALLOWED_HTML_ATTRIBUTES,
         strip=True,
-    )
+    ))
 
 
 def sanitize_text(content: str) -> str:
     """Strip all HTML tags from content."""
     if not content:
         return content
-    return bleach.clean(content, tags=[], strip=True)
+    return str(bleach.clean(content, tags=[], strip=True))
 
 
 def rate_limit_login(
     view_func: Callable[[HttpRequest], HttpResponse],
 ) -> Callable[[HttpRequest], HttpResponse]:
     """Rate limit decorator for login attempts."""
-    return ratelimit(
+    decorated: Callable[[HttpRequest], HttpResponse] = ratelimit(
         key='ip',
         rate='5/m',
         method='POST',
         block=True,
     )(view_func)
+    return decorated
 
 
 def rate_limit_upload(
     view_func: Callable[[HttpRequest], HttpResponse],
 ) -> Callable[[HttpRequest], HttpResponse]:
     """Rate limit decorator for file uploads."""
-    return ratelimit(
+    decorated: Callable[[HttpRequest], HttpResponse] = ratelimit(
         key='user_or_ip',
         rate='20/m',
         method='POST',
         block=True,
     )(view_func)
+    return decorated
 
 
 def rate_limit_api(
     view_func: Callable[[HttpRequest], HttpResponse],
 ) -> Callable[[HttpRequest], HttpResponse]:
     """Rate limit decorator for API endpoints."""
-    return ratelimit(
+    decorated: Callable[[HttpRequest], HttpResponse] = ratelimit(
         key='user_or_ip',
         rate='60/m',
         method=['GET', 'POST'],
         block=True,
     )(view_func)
+    return decorated
 
 
 class HoneypotMiddleware:

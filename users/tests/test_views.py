@@ -23,6 +23,7 @@ class TestLoginView:
         response = client.post('/users/login/', {
             'username': 'testuser',
             'password': 'testpass123',
+            'website_url': '',
         })
         assert response.status_code == 302
         assert response.url == '/'  # type: ignore[attr-defined]
@@ -32,6 +33,7 @@ class TestLoginView:
         response = client.post('/users/login/', {
             'username': 'nonexistent',
             'password': 'wrongpass',
+            'website_url': '',
         })
         assert response.status_code == 200
         assert 'Неверное имя пользователя или пароль' in response.content.decode('utf-8')

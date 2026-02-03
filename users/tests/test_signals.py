@@ -5,46 +5,58 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import User
-from django.test import Client, override_settings
+from django.test import Client, RequestFactory, override_settings
+
+from users.signals import log_failed_login, log_successful_login
 
 
 @pytest.mark.django_db
 class TestAuthenticationSignals:
     """Tests for authentication signal handlers."""
 
-    def test_failed_login_logged(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """Failed login should be logged."""
-        client = Client()
+    def test_failed_login_signal_handler(self) -> None:
+        """Failed login signal handler should log correctly."""
+        factory = RequestFactory()
+        request = factory.post('/users/login/')
+        request.META['REMOTE_ADDR'] = '127.0.0.1'
 
-        with caplog.at_level(logging.WARNING, logger='security'):
-            client.post(
-                '/users/login/',
-                {'username': 'nonexistent', 'password': 'wrongpass'},
+        with patch.object(
+            logging.getLogger('security'), 'warning'
+        ) as mock_log:
+            log_failed_login(
+                sender=None,
+                credentials={'username': 'testuser'},
+                request=request,
             )
 
-        assert 'FAILED_LOGIN' in caplog.text
-        assert 'nonexistent' in caplog.text
+        mock_log.assert_called_once()
+        call_args = mock_log.call_args[0][0]
+        assert 'FAILED_LOGIN' in call_args
+        assert 'testuser' in call_args
 
-    def test_successful_login_logged(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """Successful login should be logged."""
-        User.objects.create_user(
+    def test_successful_login_signal_handler(self) -> None:
+        """Successful login signal handler should log correctly."""
+        user = User.objects.create_user(
             username='testuser',
             password='testpass123',
         )
-        client = Client()
+        factory = RequestFactory()
+        request = factory.post('/users/login/')
+        request.META['REMOTE_ADDR'] = '127.0.0.1'
 
-        with caplog.at_level(logging.INFO, logger='security'):
-            client.post(
-                '/users/login/',
-                {'username': 'testuser', 'password': 'testpass123'},
+        with patch.object(
+            logging.getLogger('security'), 'info'
+        ) as mock_log:
+            log_successful_login(
+                sender=User,
+                request=request,
+                user=user,
             )
 
-        assert 'LOGIN_SUCCESS' in caplog.text
-        assert 'testuser' in caplog.text
+        mock_log.assert_called_once()
+        call_args = mock_log.call_args[0][0]
+        assert 'LOGIN_SUCCESS' in call_args
+        assert 'testuser' in call_args
 
 
 @pytest.mark.django_db
@@ -55,7 +67,6 @@ class TestRateLimitedLogin:
     def test_login_view_has_rate_limit_decorator(self) -> None:
         """Verify login view is protected by rate limiting."""
         from users.views import RateLimitedLoginView
-        from django.utils.decorators import method_decorator
 
         assert hasattr(RateLimitedLoginView, 'post')
 
@@ -66,7 +77,7 @@ class TestRateLimitedLogin:
         for _ in range(3):
             response = client.post(
                 '/users/login/',
-                {'username': 'test', 'password': 'test'},
+                {'username': 'test', 'password': 'test', 'website_url': ''},
             )
             assert response.status_code in [200, 302]
 
@@ -75,16 +86,16 @@ class TestRateLimitedLogin:
         self, mock_ratelimited: object
     ) -> None:
         """Rate limiting should block excessive requests."""
+        import contextlib
+
         from django_ratelimit.exceptions import Ratelimited
 
         mock_ratelimited.return_value = True  # type: ignore[attr-defined]
         mock_ratelimited.side_effect = Ratelimited()  # type: ignore[attr-defined]
 
         client = Client()
-        try:
+        with contextlib.suppress(Ratelimited):
             client.post(
                 '/users/login/',
-                {'username': 'test', 'password': 'test'},
+                {'username': 'test', 'password': 'test', 'website_url': ''},
             )
-        except Ratelimited:
-            pass
