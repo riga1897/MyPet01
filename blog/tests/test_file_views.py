@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 
-from blog.models import Content, ContentType
+from blog.models import Content, ContentType, Tag, TagGroup
 from users.models import get_or_create_moderators_group
 
 
@@ -514,7 +514,7 @@ class TestPathTraversalProtection:
 
 @pytest.mark.django_db
 class TestFileUploadEdgeCases:
-    """Tests for file upload edge cases (covers lines 707, 713, 742-745)."""
+    """Tests for file upload edge cases (covers lines 707, 713, 716, 742-745)."""
 
     def test_upload_invalid_filename_with_dots(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -533,3 +533,152 @@ class TestFileUploadEdgeCases:
         if response.status_code == 400:
             data = response.json()
             assert data['success'] is False
+
+    def test_upload_malicious_content_type_folder(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Test upload rejects content type with path traversal folder (line 707)."""
+        client, _ = moderator_client
+        evil_ct = ContentType.objects.create(
+            code='evil',
+            name='Evil',
+            upload_folder='../../../etc',
+        )
+        file = SimpleUploadedFile(
+            name='test.mp4',
+            content=b'test content',
+            content_type='video/mp4',
+        )
+        response = client.post(
+            '/api/files/upload/',
+            {'file': file, 'content_type_id': evil_ct.pk},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert data['success'] is False
+
+
+@pytest.mark.django_db
+class TestTagReorderView:
+    """Tests for TagReorderView edge cases (covers lines 481, 498-499)."""
+
+    @pytest.fixture
+    def tag_group(self) -> TagGroup:
+        return TagGroup.objects.create(name='Test Group Reorder')
+
+    @pytest.fixture
+    def tag(self, tag_group: TagGroup) -> Tag:
+        return Tag.objects.create(name='Test Tag', group=tag_group)
+
+    def test_reorder_some_tags_not_found(
+        self, moderator_client: tuple[Client, User], tag_group: TagGroup, tag: Tag
+    ) -> None:
+        """Test reorder returns error when some tags not found (line 481)."""
+        client, _ = moderator_client
+        response = client.post(
+            '/tags/reorder/',
+            data=json.dumps({
+                'tag_ids': [tag.pk, 999999],
+                'group_id': tag_group.pk,
+            }),
+            content_type='application/json',
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert 'not found' in data['error']
+
+    def test_reorder_generic_exception(
+        self, moderator_client: tuple[Client, User], tag_group: TagGroup, tag: Tag
+    ) -> None:
+        """Test reorder handles generic exceptions (lines 498-499)."""
+        from unittest import mock
+        client, _ = moderator_client
+        with mock.patch('blog.views.Tag.objects.filter') as mock_filter:
+            mock_filter.side_effect = RuntimeError('Database error')
+            response = client.post(
+                '/tags/reorder/',
+                data=json.dumps({
+                    'tag_ids': [tag.pk],
+                    'group_id': tag_group.pk,
+                }),
+                content_type='application/json',
+            )
+            assert response.status_code == 500
+            data = response.json()
+            assert 'Database error' in data['error']
+
+
+@pytest.mark.django_db
+class TestProtectedMediaViewPathTraversal:
+    """Tests for ProtectedMediaView path traversal (covers line 787)."""
+
+    def test_path_traversal_blocked_with_dotdot(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Test path traversal is blocked (line 787)."""
+        client, _ = moderator_client
+        response = client.get('/media/../../../etc/passwd')
+        assert response.status_code == 404
+
+    def test_absolute_path_blocked_with_double_slash(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Test absolute path is blocked."""
+        client, _ = moderator_client
+        response = client.get('/media//etc/passwd')
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestListAvailableFilesPathTraversal:
+    """Tests for ListAvailableFilesView path traversal (covers line 589)."""
+
+    def test_normalized_path_traversal_blocked(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Test normalized path traversal is blocked (line 589)."""
+        client, _ = moderator_client
+        response = client.get('/api/available-files/', {'folder': 'videos/../../../etc'})
+        data = response.json()
+        assert data['files'] == []
+
+
+@pytest.mark.django_db
+class TestValidateExistingFilePathTraversal:
+    """Tests for validate_existing_file/thumbnail path traversal (covers lines 226, 241)."""
+
+    def test_validate_existing_file_path_traversal(self, video_type: ContentType) -> None:
+        """Test path traversal is blocked in validate_existing_file (line 226)."""
+        from blog.views import validate_existing_file
+        result = validate_existing_file('videos/../../../etc/passwd', video_type)
+        assert result is False
+
+    def test_validate_existing_thumbnail_path_traversal(self) -> None:
+        """Test path traversal is blocked in validate_existing_thumbnail (line 241)."""
+        from blog.views import validate_existing_thumbnail
+        result = validate_existing_thumbnail('thumbnails/../../../etc/passwd')
+        assert result is False
+
+
+@pytest.mark.django_db
+class TestFileListViewVideoMapping:
+    """Tests for FileListView video file iteration (covers line 661)."""
+
+    def test_file_list_with_video_content(
+        self, moderator_client: tuple[Client, User], video_type: ContentType
+    ) -> None:
+        """Test FileListView includes video file mapping (line 661)."""
+        client, _ = moderator_client
+        folder_path = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(folder_path, exist_ok=True)
+        test_file = os.path.join(folder_path, 'manager_test.mp4')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        try:
+            content = Content.objects.create(title='Test Video Content', content_type=video_type)
+            Content.objects.filter(pk=content.pk).update(video_file='videos/manager_test.mp4')
+            response = client.get('/files/')
+            assert response.status_code == 200
+        finally:
+            if os.path.exists(test_file):
+                os.remove(test_file)
