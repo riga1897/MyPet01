@@ -409,6 +409,7 @@ class TestThumbnailTempFileCleanup:
         mock_run.return_value = MagicMock(returncode=0)
         mock_file = MagicMock()
         mock_file.path = '/path/to/video.mp4'
+        mock_file.size = 1024
 
         with patch('builtins.open', MagicMock()):
             with patch('blog.services.ContentFile'):
