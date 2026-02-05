@@ -313,6 +313,7 @@ jobs:
 
           scp -o StrictHostKeyChecking=no \
             scripts/generate-preprod-env.sh \
+            scripts/init-letsencrypt.sh \
             ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }}:${{ secrets.PREPROD_DEPLOY_DIR }}/
 
       - name: Generate .env and deploy on preprod
@@ -465,6 +466,7 @@ jobs:
 
           scp -o StrictHostKeyChecking=no \
             scripts/generate-production-env.sh \
+            scripts/init-letsencrypt.sh \
             ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.DEPLOY_DIR }}/
 
       - name: Generate .env and deploy on production
