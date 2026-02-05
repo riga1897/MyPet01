@@ -506,13 +506,31 @@ class TestSearchView:
         content_type, _ = ContentType.objects.get_or_create(
             code='video_fuzzy', defaults={'name': 'Видео Fuzzy'}
         )
-        Content.objects.create(
+        content = Content.objects.create(
             title='Медитация для сна',
             description='Глубокий сон',
             content_type=content_type,
         )
-        client = Client()
-        response = client.get('/search/?q=медитаци')
-        assert response.status_code == 200
-        template_name = response.templates[0].name or ''
-        assert 'search' in template_name
+        from blog.views import SearchView
+        from unittest.mock import patch, MagicMock
+        
+        mock_request = MagicMock()
+        mock_request.GET = {'q': 'xyzunique123'}
+        mock_request.user = MagicMock()
+        mock_request.user.is_authenticated = False
+        
+        view = SearchView()
+        view.request = mock_request
+        
+        with (
+            patch.object(view, '_fulltext_search') as mock_fulltext,
+            patch.object(view, '_fuzzy_search') as mock_fuzzy,
+        ):
+            mock_fulltext.return_value = Content.objects.none()
+            mock_fuzzy.return_value = Content.objects.filter(pk=content.pk)
+            
+            result = view.get_queryset()
+            
+            assert result.exists()
+            assert view._search_mode == 'fuzzy'
+            assert view._suggestion == content.title
