@@ -1,0 +1,91 @@
+(mypet01-py3.14) PS D:\Projects\MyPet01> docker-compose up --build       
+[+] Running 21/21
+ ✔ redis Pulled                                                                                                                                                               12.9s 
+ ✔ db Pulled                                                                                                                                                                  39.5s 
+[+] Building 219.7s (14/14) FINISHED                                                                                                                                                
+ => [internal] load local bake definitions                                                                                                                                     0.1s
+ => => reading from stdin 484B                                                                                                                                                 0.1s
+ => [internal] load build definition from Dockerfile                                                                                                                           0.2s 
+ => => transferring dockerfile: 923B                                                                                                                                           0.0s
+ => [internal] load metadata for docker.io/library/python:3.12-slim                                                                                                            2.6s 
+ => [auth] library/python:pull token for registry-1.docker.io                                                                                                                  0.0s
+ => [internal] load .dockerignore                                                                                                                                              0.1s
+ => => transferring context: 587B                                                                                                                                              0.0s 
+ => [1/8] FROM docker.io/library/python:3.12-slim@sha256:43e4d702bbfe3bd6d5b743dc571b67c19121302eb172951a9b7b0149783a1c21                                                     19.8s 
+ => => resolve docker.io/library/python:3.12-slim@sha256:43e4d702bbfe3bd6d5b743dc571b67c19121302eb172951a9b7b0149783a1c21                                                      0.1s 
+ => => sha256:4948ee38326639b0ee49566ec9752e0500fde95ffa7a4771067a7856446029fe 251B / 251B                                                                                     1.1s 
+ => => sha256:690eaffcf0e9a6e579bf82062d0d78590bd1bc000a309b8e76ff4ca460bcdb6f 1.29MB / 1.29MB                                                                                 1.3s 
+ => => sha256:9395e1d7be50336f1932db3e6904cc05ad5b727731f03ae218688af3f525ec30 12.11MB / 12.11MB                                                                               6.9s 
+ => => sha256:0c8d55a45c0dc58de60579b9cc5b708de9e7957f4591fc7de941b67c7e245da0 29.78MB / 29.78MB                                                                              14.5s 
+ => => extracting sha256:0c8d55a45c0dc58de60579b9cc5b708de9e7957f4591fc7de941b67c7e245da0                                                                                      2.8s 
+ => => extracting sha256:690eaffcf0e9a6e579bf82062d0d78590bd1bc000a309b8e76ff4ca460bcdb6f                                                                                      0.3s 
+ => => extracting sha256:9395e1d7be50336f1932db3e6904cc05ad5b727731f03ae218688af3f525ec30                                                                                      1.3s 
+ => => extracting sha256:4948ee38326639b0ee49566ec9752e0500fde95ffa7a4771067a7856446029fe                                                                                      0.1s 
+ => [internal] load build context                                                                                                                                              1.8s 
+ => => transferring context: 2.33MB                                                                                                                                            1.6s 
+ => [2/8] WORKDIR /app                                                                                                                                                         8.6s 
+ => [3/8] RUN apt-get update && apt-get install -y     libpq-dev     gcc     redis-server     && rm -rf /var/lib/apt/lists/*                                                  46.9s 
+ => [4/8] RUN pip install poetry                                                                                                                                              51.4s 
+ => [5/8] COPY pyproject.toml poetry.lock* /app/                                                                                                                               1.0s 
+ => [6/8] RUN poetry config virtualenvs.create false     && poetry install --no-interaction --no-ansi --no-root                                                               82.2s 
+ => [7/8] COPY . /app/                                                                                                                                                         1.4s 
+ => ERROR [8/8] RUN python manage.py collectstatic --noinput                                                                                                                   3.9s 
+------                                                                                                                                                                              
+ > [8/8] RUN python manage.py collectstatic --noinput:
+3.516 Traceback (most recent call last):
+3.516   File "/usr/local/lib/python3.12/logging/config.py", line 608, in configure
+3.517     handler = self.configure_handler(handlers[name])
+3.520               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3.520   File "/usr/local/lib/python3.12/logging/config.py", line 876, in configure_handler
+3.521     result = factory(**kwargs)
+3.521              ^^^^^^^^^^^^^^^^^
+3.521   File "/usr/local/lib/python3.12/logging/handlers.py", line 155, in __init__
+3.522     BaseRotatingHandler.__init__(self, filename, mode, encoding=encoding,
+3.522   File "/usr/local/lib/python3.12/logging/handlers.py", line 58, in __init__
+3.522     logging.FileHandler.__init__(self, filename, mode=mode,
+3.522   File "/usr/local/lib/python3.12/logging/__init__.py", line 1231, in __init__
+3.523     StreamHandler.__init__(self, self._open())
+3.523                                  ^^^^^^^^^^^^
+3.524   File "/usr/local/lib/python3.12/logging/__init__.py", line 1263, in _open
+3.525     return open_func(self.baseFilename, self.mode,
+3.525            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3.526 FileNotFoundError: [Errno 2] No such file or directory: '/app/logs/security.log'
+3.526 
+3.526 The above exception was the direct cause of the following exception:
+3.526 
+3.526 Traceback (most recent call last):
+3.526   File "/app/manage.py", line 7, in <module>
+3.526     execute_from_command_line(sys.argv)
+3.526   File "/usr/local/lib/python3.12/site-packages/django/core/management/__init__.py", line 443, in execute_from_command_line
+3.526     utility.execute()
+3.526   File "/usr/local/lib/python3.12/site-packages/django/core/management/__init__.py", line 417, in execute
+3.536     django.setup()
+3.536   File "/usr/local/lib/python3.12/site-packages/django/__init__.py", line 19, in setup
+3.536     configure_logging(settings.LOGGING_CONFIG, settings.LOGGING)
+3.536   File "/usr/local/lib/python3.12/site-packages/django/utils/log.py", line 76, in configure_logging
+3.536     logging_config_func(logging_settings)
+3.536   File "/usr/local/lib/python3.12/logging/config.py", line 942, in dictConfig
+3.537     dictConfigClass(config).configure()
+3.537   File "/usr/local/lib/python3.12/logging/config.py", line 615, in configure
+3.538     raise ValueError('Unable to configure handler '
+3.538 ValueError: Unable to configure handler 'security_file'
+------
+Dockerfile:32
+
+--------------------
+
+  30 |     
+
+  31 |     # Collect static files for nginx
+
+  32 | >>> RUN python manage.py collectstatic --noinput
+
+  33 |     
+
+  34 |     # Run the application
+
+--------------------
+
+failed to solve: process "/bin/sh -c python manage.py collectstatic --noinput" did not complete successfully: exit code: 1
+
+(mypet01-py3.14) PS D:\Projects\MyPet01> 
