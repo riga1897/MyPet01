@@ -1,0 +1,253 @@
+(mypet01-py3.14) PS D:\Projects\MyPet01> pytest        
+=============================================================================== test session starts ===============================================================================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+django: version: 6.0.1, settings: mypet_project.settings (from ini)
+rootdir: D:\Projects\MyPet01
+configfile: pyproject.toml
+testpaths: tests, mypet_project/tests, core/tests, blog/tests, users/tests
+plugins: locust-2.43.1, base-url-2.1.0, cov-7.0.0, django-4.11.1, playwright-0.7.2
+collected 439 items                                                                                                                                                                
+
+tests\e2e\test_user_flows.py ................                                                                                                                                [  3%]
+tests\integration\test_django_setup.py .                                                                                                                                     [  3%]
+core\tests\test_context_processors.py ....                                                                                                                                   [  4%]
+core\tests\test_middleware.py ....                                                                                                                                           [  5%]
+core\tests\test_mixins.py ......                                                                                                                                             [  7%]
+core\tests\test_models.py ...                                                                                                                                                [  7%]
+core\tests\test_security.py ......                                                                                                                                           [  9%]
+blog\tests\test_admin.py .......                                                                                                                                             [ 10%]
+blog\tests\test_cache.py .................                                                                                                                                   [ 14%]
+blog\tests\test_content_views.py .............................F....F.                                                                                                        [ 22%]
+blog\tests\test_csp.py ....                                                                                                                                                  [ 23%]
+blog\tests\test_file_views.py ...............................F..............                                                                                                 [ 34%]
+blog\tests\test_forms.py ......                                                                                                                                              [ 35%]
+blog\tests\test_management_commands.py ...........                                                                                                                           [ 38%]
+blog\tests\test_models.py .............................................                                                                                                      [ 48%]
+blog\tests\test_ratelimit.py ..                                                                                                                                              [ 48%]
+blog\tests\test_sitemaps.py ......                                                                                                                                           [ 50%]
+blog\tests\test_tags.py .........................                                                                                                                            [ 55%]
+blog\tests\test_urls.py .....                                                                                                                                                [ 56%]
+blog\tests\test_utils.py ..............                                                                                                                                      [ 60%]
+blog\tests\test_views.py ................................................                                                                                                    [ 71%]
+users\tests\test_models.py ...........                                                                                                                                       [ 73%]
+users\tests\test_signals.py .....                                                                                                                                            [ 74%]
+users\tests\test_views.py ..................                                                                                                                                 [ 78%]
+mypet_project\tests\test_config.py ............                                                                                                                              [ 81%]
+core\tests\test_security.py ..................                                                                                                                               [ 85%]
+core\tests\test_text_utils.py ...........................                                                                                                                    [ 91%]
+blog\tests\test_forms.py ........                                                                                                                                            [ 93%]
+blog\tests\test_services.py ......................                                                                                                                           [ 98%]
+blog\tests\test_templatetags.py ...                                                                                                                                          [ 99%]
+users\tests\test_signals.py ...E                                                                                                                                             [100%]
+
+===================================================================================== ERRORS ======================================================================================
+____________________________________________________ ERROR at teardown of TestGetClientIp.test_get_client_ip_from_remote_addr _____________________________________________________
+
+request = <SubRequest 'temp_media_root' for <Function test_homepage_loads_for_guest>>
+
+    @pytest.fixture(scope='session', autouse=True)
+    def temp_media_root(request: Any) -> Generator[str, None, None]:
+        """Create a temporary MEDIA_ROOT for tests that is cleaned up after all tests."""
+        from django.conf import settings
+    
+        original_media_root = settings.MEDIA_ROOT
+        temp_dir = tempfile.mkdtemp(prefix='test_media_')
+        settings.MEDIA_ROOT = temp_dir
+    
+        yield temp_dir
+    
+        settings.MEDIA_ROOT = original_media_root
+        if Path(temp_dir).exists():
+>           shutil.rmtree(temp_dir)
+
+conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+D:\Users\RGHome\AppData\Local\Programs\Python\Python314\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+D:\Users\RGHome\AppData\Local\Programs\Python\Python314\Lib\shutil.py:705: in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_af', dir_fd = None, onexc = <function rmtree.<locals>.onexc at 0x0000023F1E44B950>
+
+    def _rmtree_unsafe(path, dir_fd, onexc):
+        if dir_fd is not None:
+            raise NotImplementedError("dir_fd unavailable on this platform")
+        try:
+            st = os.lstat(path)
+        except OSError as err:
+            onexc(os.lstat, path, err)
+            return
+        try:
+            if _rmtree_islink(st):
+                # symlinks to directories are forbidden, see bug #1669
+                raise OSError("Cannot call rmtree on a symbolic link")
+        except OSError as err:
+            onexc(os.path.islink, path, err)
+            # can't continue even if onexc hook returns
+            return
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+>                   os.unlink(fullname)
+E                   PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_af\\videos\\protected_test.mp4'                                                                                                                                       
+
+D:\Users\RGHome\AppData\Local\Programs\Python\Python314\Lib\shutil.py:701: PermissionError
+==================================================================================== FAILURES =====================================================================================
+_____________________________________________________ TestContentCreateViewExistingFiles.test_create_with_existing_thumbnail ______________________________________________________
+
+self = <blog.tests.test_content_views.TestContentCreateViewExistingFiles object at 0x0000023F1E66F490>, video_type = <ContentType: Видео>
+
+    def test_create_with_existing_thumbnail(self, video_type: ContentType) -> None:
+        user = User.objects.create_user(username='mod', password='test123')
+        group = get_or_create_moderators_group()
+        user.groups.add(group)
+        thumbnails_path = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
+        os.makedirs(thumbnails_path, exist_ok=True)
+        test_file = os.path.join(thumbnails_path, 'existing_thumb.jpg')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        try:
+            client = Client()
+            client.force_login(user)
+            response = client.post('/content/create/', {
+                'title': 'С миниатюрой',
+                'description': 'Описание',
+                'content_type': video_type.pk,
+                'existing_thumbnail': 'thumbnails/existing_thumb.jpg',
+            })
+            assert response.status_code == 302
+            content = Content.objects.get(title='С миниатюрой')
+            assert str(content.thumbnail) == 'thumbnails/existing_thumb.jpg'
+        finally:
+            if os.path.exists(test_file):
+>               os.remove(test_file)
+E               PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_af\\thumbnails\\existing_thumb.jpg'                                                                                                                                       
+
+blog\tests\test_content_views.py:321: PermissionError
+------------------------------------------------------------------------------ Captured stderr call -------------------------------------------------------------------------------
+2026-02-05 21:59:25,551 security INFO [LOGIN_SUCCESS] IP=unknown username=mod
+-------------------------------------------------------------------------------- Captured log call --------------------------------------------------------------------------------
+INFO     security:signals.py:52 [LOGIN_SUCCESS] IP=unknown username=mod
+_____________________________________________________ TestContentUpdateViewExistingFiles.test_update_with_existing_thumbnail ______________________________________________________
+
+self = <blog.tests.test_content_views.TestContentUpdateViewExistingFiles object at 0x0000023F1E66F820>, video_type = <ContentType: Видео>
+
+    def test_update_with_existing_thumbnail(self, video_type: ContentType) -> None:
+        user = User.objects.create_user(username='mod', password='test123')
+        group = get_or_create_moderators_group()
+        user.groups.add(group)
+        content = Content.objects.create(title='Контент', content_type=video_type)
+        thumbnails_path = os.path.join(settings.MEDIA_ROOT, 'thumbnails')
+        os.makedirs(thumbnails_path, exist_ok=True)
+        test_file = os.path.join(thumbnails_path, 'update_thumb.jpg')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        try:
+            client = Client()
+            client.force_login(user)
+            response = client.post(f'/content/{content.pk}/edit/', {
+                'title': 'Контент',
+                'description': '',
+                'content_type': video_type.pk,
+                'existing_thumbnail': 'thumbnails/update_thumb.jpg',
+            })
+            assert response.status_code == 302
+            content.refresh_from_db()
+            assert str(content.thumbnail) == 'thumbnails/update_thumb.jpg'
+        finally:
+            if os.path.exists(test_file):
+>               os.remove(test_file)
+E               PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_af\\thumbnails\\update_thumb.jpg'                                                                                                                                         
+
+blog\tests\test_content_views.py:428: PermissionError
+------------------------------------------------------------------------------ Captured stderr call -------------------------------------------------------------------------------
+2026-02-05 21:59:33,142 security INFO [LOGIN_SUCCESS] IP=unknown username=mod
+-------------------------------------------------------------------------------- Captured log call --------------------------------------------------------------------------------
+INFO     security:signals.py:52 [LOGIN_SUCCESS] IP=unknown username=mod
+________________________________________________________________ TestProtectedMediaView.test_successful_file_serve ________________________________________________________________
+
+self = <blog.tests.test_file_views.TestProtectedMediaView object at 0x0000023F1E5A0830>, moderator_client = (<django.test.client.Client object at 0x0000023F1EF4E850>, <User: mod>)
+
+    def test_successful_file_serve(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """Authenticated users can access media files."""
+        client, _ = moderator_client
+        folder_path = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(folder_path, exist_ok=True)
+        test_file = os.path.join(folder_path, 'protected_test.mp4')
+        with open(test_file, 'wb') as f:
+            f.write(b'test video content')
+        try:
+            response = client.get('/media/videos/protected_test.mp4')
+            assert response.status_code == 200
+            assert response.get('Content-Type') == 'video/mp4'
+        finally:
+            if os.path.exists(test_file):
+>               os.remove(test_file)
+E               PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_af\\videos\\protected_test.mp4'                                                                                                                                           
+
+blog\tests\test_file_views.py:457: PermissionError
+------------------------------------------------------------------------------ Captured stderr setup ------------------------------------------------------------------------------
+2026-02-05 22:00:22,815 security INFO [LOGIN_SUCCESS] IP=unknown username=mod
+------------------------------------------------------------------------------- Captured log setup --------------------------------------------------------------------------------
+INFO     security:signals.py:52 [LOGIN_SUCCESS] IP=unknown username=mod
+================================================================================= tests coverage ==================================================================================
+_________________________________________________________________ coverage: platform win32, python 3.14.0-final-0 _________________________________________________________________
+
+Name                                                         Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------
+blog\admin.py                                                   72      0   100%
+blog\apps.py                                                     6      0   100%
+blog\cache.py                                                   28      0   100%
+blog\forms.py                                                   58      0   100%
+blog\management\commands\create_superuser_if_not_exists.py      23      0   100%
+blog\management\commands\setup_demo_content.py                  19      0   100%
+blog\management\commands\setup_initial_structure.py             17      0   100%
+blog\models.py                                                 177      0   100%
+blog\services.py                                                80      0   100%
+blog\signals.py                                                 32      0   100%
+blog\sitemaps.py                                                21      0   100%
+blog\templatetags\blog_filters.py                                6      0   100%
+blog\urls.py                                                     4      0   100%
+blog\utils.py                                                   26      0   100%
+blog\views.py                                                  506      4    99%   182-185
+core\apps.py                                                     4      0   100%
+core\context_processors.py                                       5      0   100%
+core\middleware.py                                              23      0   100%
+core\mixins.py                                                   9      0   100%
+core\models.py                                                   6      0   100%
+core\security.py                                                79      0   100%
+core\utils\text.py                                              36      0   100%
+mypet_project\config.py                                         75      0   100%
+mypet_project\settings.py                                       44      0   100%
+mypet_project\urls.py                                           10      0   100%
+users\admin.py                                                   0      0   100%
+users\apps.py                                                    7      0   100%
+users\models.py                                                 15      0   100%
+users\signals.py                                                22      0   100%
+users\urls.py                                                    5      0   100%
+users\views.py                                                  47      0   100%
+------------------------------------------------------------------------------------------
+TOTAL                                                         1462      4    99%
+============================================================================= short test summary info =============================================================================
+FAILED blog/tests/test_content_views.py::TestContentCreateViewExistingFiles::test_create_with_existing_thumbnail - PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_a...
+FAILED blog/tests/test_content_views.py::TestContentUpdateViewExistingFiles::test_update_with_existing_thumbnail - PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_a...
+FAILED blog/tests/test_file_views.py::TestProtectedMediaView::test_successful_file_serve - PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_a...
+ERROR users/tests/test_signals.py::TestGetClientIp::test_get_client_ip_from_remote_addr - PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\Users\\RGHome\\AppData\\Local\\Temp\\test_media_zxjgl_a...
+=============================================================== 3 failed, 436 passed, 1 error in 267.66s (0:04:27) ================================================================
+(mypet01-py3.14) PS D:\Projects\MyPet01> 
