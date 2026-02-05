@@ -12,6 +12,7 @@ from blog.views import (
     validate_existing_file,
     validate_existing_thumbnail,
 )
+from tests.utils_files import safe_remove_file
 from users.models import get_or_create_moderators_group
 
 
@@ -188,7 +189,7 @@ class TestGetAvailableThumbnails:
             assert 'thumbnails/test_thumb.jpg' in result
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
 
 @pytest.mark.django_db
@@ -220,7 +221,7 @@ class TestValidateExistingFile:
             assert result is True
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
 
 @pytest.mark.django_db
@@ -249,7 +250,7 @@ class TestValidateExistingThumbnail:
             assert result is True
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
 
 @pytest.mark.django_db
@@ -277,7 +278,7 @@ class TestContentCreateViewExistingFiles:
             assert str(content.video_file) == 'videos/existing.mp4'
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_create_with_invalid_existing_file(self, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')
@@ -318,7 +319,7 @@ class TestContentCreateViewExistingFiles:
             assert str(content.thumbnail) == 'thumbnails/existing_thumb.jpg'
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_create_with_invalid_existing_thumbnail(self, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')
@@ -363,7 +364,7 @@ class TestContentUpdateViewExistingFiles:
             assert str(content.video_file) == 'videos/update_existing.mp4'
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_update_with_invalid_existing_file(self, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')
@@ -425,7 +426,7 @@ class TestContentUpdateViewExistingFiles:
             assert str(content.thumbnail) == 'thumbnails/update_thumb.jpg'
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_update_with_invalid_existing_thumbnail(self, video_type: ContentType) -> None:
         user = User.objects.create_user(username='mod', password='test123')

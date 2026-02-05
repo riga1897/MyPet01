@@ -9,6 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 
 from blog.models import Content, ContentType, Tag, TagGroup
+from tests.utils_files import safe_remove_file
 from users.models import get_or_create_moderators_group
 
 
@@ -75,7 +76,7 @@ class TestAvailableFilesView:
             assert 'available_test.mp4' in filenames
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_excludes_used_files(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -95,7 +96,7 @@ class TestAvailableFilesView:
             assert 'used_file.mp4' not in filenames
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_includes_file_for_current_content(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -118,7 +119,7 @@ class TestAvailableFilesView:
             assert 'own_file.mp4' in filenames
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_handles_invalid_content_id(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -157,7 +158,7 @@ class TestAvailableThumbnailsView:
             assert 'test_thumb_api.jpg' in filenames
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_excludes_used_thumbnails(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -177,7 +178,7 @@ class TestAvailableThumbnailsView:
             assert 'used_thumb.jpg' not in filenames
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_includes_thumb_for_current_content(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -200,7 +201,7 @@ class TestAvailableThumbnailsView:
             assert 'own_thumb.jpg' in filenames
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_handles_invalid_content_id(
         self, moderator_client: tuple[Client, User]
@@ -276,7 +277,7 @@ class TestFileUploadView:
         assert 'upload_test' in data['filename']
         uploaded_path = os.path.join(folder_path, data['filename'])
         if os.path.exists(uploaded_path):
-            os.remove(uploaded_path)
+            safe_remove_file(uploaded_path)
 
     def test_upload_existing_file_returns_existing(
         self, moderator_client: tuple[Client, User], video_type: ContentType
@@ -304,7 +305,7 @@ class TestFileUploadView:
         assert data2.get('existing') is True
         uploaded_path = os.path.join(folder_path, filename)
         if os.path.exists(uploaded_path):
-            os.remove(uploaded_path)
+            safe_remove_file(uploaded_path)
 
 
 @pytest.mark.django_db
@@ -366,7 +367,7 @@ class TestFileDeleteView:
             assert os.path.exists(test_file)
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
     def test_rejects_nonexistent_file(
         self, moderator_client: tuple[Client, User]
@@ -400,7 +401,7 @@ class TestFileDeleteView:
             assert not os.path.exists(test_file)
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
 
 @pytest.mark.django_db
@@ -454,7 +455,7 @@ class TestProtectedMediaView:
             assert response.get('Content-Type') == 'video/mp4'
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)
 
 
 @pytest.mark.django_db
@@ -681,4 +682,4 @@ class TestFileListViewVideoMapping:
             assert response.status_code == 200
         finally:
             if os.path.exists(test_file):
-                os.remove(test_file)
+                safe_remove_file(test_file)

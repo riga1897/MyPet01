@@ -8,6 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
 from blog.models import Category, Content, ContentType, Tag, TagGroup
+from tests.utils_files import safe_remove_file
 
 
 @pytest.mark.django_db
@@ -328,7 +329,7 @@ class TestContentAutoThumbnail:
                 mock_gen.assert_called_once()
         finally:
             if os.path.exists(video_path):
-                os.remove(video_path)
+                safe_remove_file(video_path)
 
     def test_process_auto_fields_photo_generates_thumbnail(
         self, photo_type: ContentType
@@ -367,7 +368,7 @@ class TestContentDelete:
             assert not os.path.exists(thumb_path)
         finally:
             if os.path.exists(thumb_path):
-                os.remove(thumb_path)
+                safe_remove_file(thumb_path)
 
     def test_delete_without_thumbnail_succeeds(self, video_type: ContentType) -> None:
         """Test that deleting content without thumbnail works."""
@@ -421,5 +422,5 @@ class TestContentThumbnailEdgeCases:
         if content.thumbnail:
             thumb_path = os.path.join(settings.MEDIA_ROOT, str(content.thumbnail))
             if os.path.exists(thumb_path):
-                os.remove(thumb_path)
+                safe_remove_file(thumb_path)
 

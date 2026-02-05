@@ -1,10 +1,11 @@
-import shutil
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
 import pytest
+
+from tests.utils_files import safe_rmtree
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -20,4 +21,4 @@ def temp_media_root(request: Any) -> Generator[str, None, None]:
     
     settings.MEDIA_ROOT = original_media_root
     if Path(temp_dir).exists():
-        shutil.rmtree(temp_dir)
+        safe_rmtree(temp_dir)
