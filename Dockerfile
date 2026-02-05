@@ -28,6 +28,9 @@ RUN poetry config virtualenvs.create false \
 # Copy the rest of the application
 COPY . /app/
 
+# Create logs directory for security logging
+RUN mkdir -p /app/logs
+
 # Collect static files for nginx
 RUN python manage.py collectstatic --noinput
 
