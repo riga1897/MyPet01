@@ -1,0 +1,136 @@
+(mypet01-py3.14) PS D:\Projects\MyPet01> docker-compose up --build
+[+] Running 21/21
+ ✔ db Pulled                                                                                                                                                                 135.6s 
+ ✔ redis Pulled                                                                                                                                                               43.8s 
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+                                                                                                                                                                                    
+[+] Building 402.8s (12/14)                                                                                                                                                         
+ => [internal] load local bake definitions                                                                                                                                     0.2s
+ => => reading from stdin 484B                                                                                                                                                 0.2s
+ => [internal] load build definition from Dockerfile                                                                                                                           0.2s 
+ => => transferring dockerfile: 867B                                                                                                                                           0.1s
+ => [internal] load metadata for docker.io/library/python:3.12-slim                                                                                                            2.6s
+ => [auth] library/python:pull token for registry-1.docker.io                                                                                                                  0.0s
+ => [internal] load .dockerignore                                                                                                                                              0.1s
+ => => transferring context: 2B                                                                                                                                                0.0s 
+ => [1/8] FROM docker.io/library/python:3.12-slim@sha256:43e4d702bbfe3bd6d5b743dc571b67c19121302eb172951a9b7b0149783a1c21                                                     26.0s 
+ => => resolve docker.io/library/python:3.12-slim@sha256:43e4d702bbfe3bd6d5b743dc571b67c19121302eb172951a9b7b0149783a1c21                                                      0.1s 
+ => => sha256:690eaffcf0e9a6e579bf82062d0d78590bd1bc000a309b8e76ff4ca460bcdb6f 1.29MB / 1.29MB                                                                                 0.9s 
+ => => sha256:4948ee38326639b0ee49566ec9752e0500fde95ffa7a4771067a7856446029fe 251B / 251B                                                                                     0.7s 
+ => => sha256:9395e1d7be50336f1932db3e6904cc05ad5b727731f03ae218688af3f525ec30 12.11MB / 12.11MB                                                                               7.9s 
+ => => sha256:0c8d55a45c0dc58de60579b9cc5b708de9e7957f4591fc7de941b67c7e245da0 29.78MB / 29.78MB                                                                              13.6s 
+ => => extracting sha256:0c8d55a45c0dc58de60579b9cc5b708de9e7957f4591fc7de941b67c7e245da0                                                                                      6.5s 
+ => => extracting sha256:690eaffcf0e9a6e579bf82062d0d78590bd1bc000a309b8e76ff4ca460bcdb6f                                                                                      0.8s 
+ => => extracting sha256:9395e1d7be50336f1932db3e6904cc05ad5b727731f03ae218688af3f525ec30                                                                                      3.3s 
+ => => extracting sha256:4948ee38326639b0ee49566ec9752e0500fde95ffa7a4771067a7856446029fe                                                                                      0.2s 
+ => [internal] load build context                                                                                                                                            294.5s 
+ => => transferring context: 449.01MB                                                                                                                                        294.0s 
+ => [2/8] WORKDIR /app                                                                                                                                                         6.1s 
+ => [3/8] RUN apt-get update && apt-get install -y     libpq-dev     gcc     redis-server     && rm -rf /var/lib/apt/lists/*                                                 130.7s 
+ => [4/8] RUN pip install poetry                                                                                                                                             105.0s 
+ => [5/8] COPY pyproject.toml poetry.lock* /app/                                                                                                                               2.3s 
+ => ERROR [6/8] RUN poetry config virtualenvs.create false     && poetry install --no-interaction --no-ansi                                                                  100.5s 
+------                                                                                                                                                                              
+ > [6/8] RUN poetry config virtualenvs.create false     && poetry install --no-interaction --no-ansi:
+7.337 Skipping virtualenv creation, as specified in config file.
+8.193 Installing dependencies from lock file
+9.206 
+9.206 Package operations: 66 installs, 1 update, 0 removals
+9.206 
+9.219   - Installing asgiref (3.11.0)
+9.219   - Installing markupsafe (3.0.3)
+9.221   - Installing sqlparse (0.5.5)
+9.223   - Installing wsproto (1.3.2)
+10.50   - Installing blinker (1.9.0)
+10.50   - Installing click (8.3.1)
+10.50   - Installing django (6.0.1)
+10.50   - Installing greenlet (3.3.1)
+10.50   - Installing iniconfig (2.3.0)
+10.51   - Installing itsdangerous (2.2.0)
+10.52   - Installing jinja2 (3.1.6)
+10.55   - Downgrading packaging (26.0 -> 25.0)
+11.01   - Installing pluggy (1.6.0)
+11.03   - Installing pygments (2.19.2)
+11.59   - Installing simple-websocket (1.1.0)
+11.82   - Installing werkzeug (3.1.5)
+12.06   - Installing zope-event (6.1)
+12.42   - Installing zope-interface (8.2)
+21.35   - Installing annotated-types (0.7.0)
+21.35   - Installing bidict (0.23.1)
+21.35   - Installing brotli (1.2.0)
+21.36   - Installing django-stubs-ext (5.2.9)
+21.36   - Installing flask (3.1.2)
+21.36   - Installing gevent (25.9.1)
+21.37   - Installing pydantic-core (2.41.5)
+21.37   - Installing pyee (13.0.0)
+22.00   - Installing pytest (9.0.2)
+22.00   - Installing python-engineio (4.13.0)
+22.03   - Installing text-unidecode (1.3)
+22.07   - Installing types-pyyaml (6.0.12.20250915)
+22.27   - Installing typing-inspection (0.4.2)
+22.75   - Installing websocket-client (1.9.0)
+23.53   - Installing configargparse (1.7.1)
+23.53   - Installing coverage (7.13.1)
+23.53   - Installing django-stubs (5.2.9)
+23.53   - Installing flask-cors (6.0.2)
+23.54   - Installing flask-login (0.6.3)
+23.54   - Installing geventhttpclient (2.3.7)
+23.55   - Installing librt (0.7.8)
+23.55   - Installing mypy-extensions (1.1.0)
+23.98   - Installing pathspec (1.0.3)
+24.03   - Installing playwright (1.57.0)
+24.07   - Installing psutil (7.2.1)
+24.14   - Installing pydantic (2.12.5)
+24.76   - Installing pytest-base-url (2.1.0)
+24.93   - Installing python-dotenv (1.2.1)
+25.08   - Installing python-slugify (8.0.4)
+25.50   - Installing python-socketio (5.16.0)
+25.59   - Installing pyzmq (27.1.0)
+25.77   - Installing types-requests (2.32.4.20260107)
+25.86   - Installing webencodings (0.5.1)
+67.64   - Installing bleach (6.3.0)
+67.64   - Installing dj-database-url (3.1.0)
+67.65   - Installing django-csp (4.0)
+67.65   - Installing django-ratelimit (4.1.0)
+67.66   - Installing djangorestframework (3.16.1)
+67.67   - Installing djangorestframework-stubs (3.16.7)
+67.69   - Installing gunicorn (23.0.0)
+67.70   - Installing locust (2.43.1)
+67.99   - Installing mypy (1.19.1)
+68.26   - Installing pillow (12.1.0)
+68.71   - Installing psycopg2-binary (2.9.11)
+69.38   - Installing pydantic-settings (2.12.0)
+69.55   - Installing pytest-cov (7.0.0)
+69.56   - Installing pytest-django (4.11.1)
+70.27   - Installing pytest-playwright (0.7.2)
+71.09   - Installing ruff (0.14.13)
+94.01 
+94.01 Installing the current project: mypet01 (0.1.0)
+94.01 
+94.01 Error: The current project could not be installed: Readme path `/app/README.md` does not exist.
+94.01 If you do not want to install the current project use --no-root.
+94.01 If you want to use Poetry only for dependency management but not for packaging, you can disable package mode by setting package-mode = false in your pyproject.toml file.
+94.01 If you did intend to install the current project, you may need to set `packages` in your pyproject.toml file.
+94.01 
+------
+Dockerfile:25
+
+--------------------
+
+  24 |     # Install dependencies
+
+  25 | >>> RUN poetry config virtualenvs.create false \
+
+  26 | >>>     && poetry install --no-interaction --no-ansi
+
+  27 |     
+
+--------------------
+
+failed to solve: process "/bin/sh -c poetry config virtualenvs.create false     && poetry install --no-interaction --no-ansi" did not complete successfully: exit code: 1
+
+(mypet01-py3.14) PS D:\Projects\MyPet01> 
