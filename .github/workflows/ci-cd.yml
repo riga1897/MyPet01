@@ -258,13 +258,60 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.PREPROD_SSH_KEY }}
 
-      - name: Install Docker on preprod VPS (if needed)
+      - name: Setup VPS infrastructure (if needed)
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFDEPS'
             set -e
 
-            echo 'Checking system dependencies...'
+            echo '=== Checking VPS infrastructure ==='
 
+            # --- Deploy directory ---
+            if [ ! -d "${{ secrets.PREPROD_DEPLOY_DIR }}" ]; then
+              echo 'Creating deploy directory...'
+              sudo mkdir -p ${{ secrets.PREPROD_DEPLOY_DIR }}
+              sudo chown -R $USER:$USER ${{ secrets.PREPROD_DEPLOY_DIR }}
+              echo 'Deploy directory created'
+            fi
+
+            # --- Firewall (UFW) ---
+            if ! command -v ufw &> /dev/null; then
+              echo 'Installing UFW...'
+              sudo apt-get update
+              sudo apt-get install -y ufw
+            fi
+
+            if sudo ufw status | grep -q "inactive"; then
+              echo 'Configuring firewall...'
+              sudo ufw default deny incoming
+              sudo ufw default allow outgoing
+              sudo ufw allow 22/tcp
+              sudo ufw allow 80/tcp
+              sudo ufw allow 443/tcp
+              sudo ufw allow 992/tcp
+              sudo ufw allow 5555/tcp
+              sudo ufw allow 500/udp
+              sudo ufw allow 4500/udp
+              sudo ufw allow 1701/udp
+              sudo ufw allow 1194/udp
+              echo 'y' | sudo ufw enable
+              echo 'Firewall configured'
+            else
+              echo 'Firewall already active'
+            fi
+
+            # --- Fail2ban ---
+            if ! command -v fail2ban-client &> /dev/null; then
+              echo 'Installing fail2ban...'
+              sudo apt-get update
+              sudo apt-get install -y fail2ban
+              sudo systemctl enable fail2ban
+              sudo systemctl start fail2ban
+              echo 'Fail2ban installed'
+            else
+              echo 'Fail2ban already installed'
+            fi
+
+            # --- Docker ---
             if ! command -v docker &> /dev/null; then
               echo 'Installing Docker...'
               sudo apt-get update
@@ -286,7 +333,7 @@ jobs:
               sudo usermod -aG docker $USER
               echo 'Docker installed!'
             else
-              echo 'Docker is already installed'
+              echo 'Docker already installed'
             fi
 
             if ! docker compose version &> /dev/null; then
@@ -295,12 +342,7 @@ jobs:
               sudo apt-get install -y docker-compose-plugin
             fi
 
-            if [ ! -d "${{ secrets.PREPROD_DEPLOY_DIR }}" ]; then
-              sudo mkdir -p ${{ secrets.PREPROD_DEPLOY_DIR }}
-              sudo chown -R $USER:$USER ${{ secrets.PREPROD_DEPLOY_DIR }}
-            fi
-
-            echo 'System ready!'
+            echo '=== VPS infrastructure ready ==='
           EOFDEPS
 
       - name: Copy files to preprod server
@@ -413,13 +455,60 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      - name: Install Docker on production VPS (if needed)
+      - name: Setup VPS infrastructure (if needed)
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOFDEPS'
             set -e
 
-            echo 'Checking system dependencies...'
+            echo '=== Checking VPS infrastructure ==='
 
+            # --- Deploy directory ---
+            if [ ! -d "${{ secrets.DEPLOY_DIR }}" ]; then
+              echo 'Creating deploy directory...'
+              sudo mkdir -p ${{ secrets.DEPLOY_DIR }}
+              sudo chown -R $USER:$USER ${{ secrets.DEPLOY_DIR }}
+              echo 'Deploy directory created'
+            fi
+
+            # --- Firewall (UFW) ---
+            if ! command -v ufw &> /dev/null; then
+              echo 'Installing UFW...'
+              sudo apt-get update
+              sudo apt-get install -y ufw
+            fi
+
+            if sudo ufw status | grep -q "inactive"; then
+              echo 'Configuring firewall...'
+              sudo ufw default deny incoming
+              sudo ufw default allow outgoing
+              sudo ufw allow 22/tcp
+              sudo ufw allow 80/tcp
+              sudo ufw allow 443/tcp
+              sudo ufw allow 992/tcp
+              sudo ufw allow 5555/tcp
+              sudo ufw allow 500/udp
+              sudo ufw allow 4500/udp
+              sudo ufw allow 1701/udp
+              sudo ufw allow 1194/udp
+              echo 'y' | sudo ufw enable
+              echo 'Firewall configured'
+            else
+              echo 'Firewall already active'
+            fi
+
+            # --- Fail2ban ---
+            if ! command -v fail2ban-client &> /dev/null; then
+              echo 'Installing fail2ban...'
+              sudo apt-get update
+              sudo apt-get install -y fail2ban
+              sudo systemctl enable fail2ban
+              sudo systemctl start fail2ban
+              echo 'Fail2ban installed'
+            else
+              echo 'Fail2ban already installed'
+            fi
+
+            # --- Docker ---
             if ! command -v docker &> /dev/null; then
               echo 'Installing Docker...'
               sudo apt-get update
@@ -441,7 +530,7 @@ jobs:
               sudo usermod -aG docker $USER
               echo 'Docker installed!'
             else
-              echo 'Docker is already installed'
+              echo 'Docker already installed'
             fi
 
             if ! docker compose version &> /dev/null; then
@@ -450,12 +539,7 @@ jobs:
               sudo apt-get install -y docker-compose-plugin
             fi
 
-            if [ ! -d "${{ secrets.DEPLOY_DIR }}" ]; then
-              sudo mkdir -p ${{ secrets.DEPLOY_DIR }}
-              sudo chown -R $USER:$USER ${{ secrets.DEPLOY_DIR }}
-            fi
-
-            echo 'System ready!'
+            echo '=== VPS infrastructure ready ==='
           EOFDEPS
 
       - name: Copy files to production server

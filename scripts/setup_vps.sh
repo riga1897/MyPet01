@@ -27,39 +27,21 @@ print_error() {
     echo -e "${RED}[ERROR] $1${NC}"
 }
 
-DEPLOY_DIR="${DEPLOY_DIR:-/opt/blog-preprod}"
 DEPLOY_USER="${DEPLOY_USER:-depuser}"
 SSH_KEY_NAME="github_deploy"
+
+if [ "$(id -u)" -ne 0 ]; then
+    print_error "Скрипт должен запускаться от root"
+    exit 1
+fi
 
 print_header "MyPet01 — Настройка VPS"
 
 echo "Параметры:"
-echo "  Директория деплоя: $DEPLOY_DIR"
-echo "  Пользователь:      $DEPLOY_USER"
+echo "  Пользователь: $DEPLOY_USER"
 echo ""
-read -p "Продолжить? (y/n): " CONFIRM
-if [ "$CONFIRM" != "y" ]; then
-    echo "Отменено."
-    exit 0
-fi
 
-print_header "1/5 — Обновление системы"
-
-apt-get update
-apt-get upgrade -y
-apt-get install -y \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release \
-    ufw \
-    fail2ban \
-    htop \
-    git
-
-print_success "Система обновлена"
-
-print_header "2/5 — Создание пользователя $DEPLOY_USER"
+print_header "1/2 — Создание пользователя $DEPLOY_USER"
 
 if id "$DEPLOY_USER" &>/dev/null; then
     print_warning "Пользователь $DEPLOY_USER уже существует"
@@ -70,19 +52,29 @@ fi
 
 SUDOERS_FILE="/etc/sudoers.d/$DEPLOY_USER"
 cat > "$SUDOERS_FILE" << 'SUDOERS_EOF'
-# Команды для первоначальной установки Docker (CI/CD)
 # Пути /bin/ и /usr/bin/ для совместимости с Ubuntu/Debian
+
+# Установка пакетов (Docker, ufw, fail2ban и др.)
 Cmnd_Alias DEPLOY_APT = /usr/bin/apt-get update, /usr/bin/apt-get install *
+
+# Настройка Docker-репозитория
 Cmnd_Alias DEPLOY_DOCKER_SETUP = /usr/sbin/usermod -aG docker *, /usr/bin/install -m 0755 -d /etc/apt/keyrings, /usr/bin/gpg --dearmor -o /etc/apt/keyrings/docker.gpg, /bin/chmod a+r /etc/apt/keyrings/docker.gpg, /usr/bin/chmod a+r /etc/apt/keyrings/docker.gpg, /usr/bin/tee /etc/apt/sources.list.d/docker.list
+
+# Создание директорий деплоя
 Cmnd_Alias DEPLOY_DIRS = /bin/mkdir -p *, /usr/bin/mkdir -p *, /bin/chown -R *, /usr/bin/chown -R *
-Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemctl start docker, /usr/bin/systemctl restart docker
+
+# Управление сервисами (docker, ufw, fail2ban)
+Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemctl start docker, /usr/bin/systemctl restart docker, /usr/bin/systemctl enable fail2ban, /usr/bin/systemctl start fail2ban, /usr/bin/systemctl restart fail2ban
+
+# Настройка файрвола
+Cmnd_Alias DEPLOY_UFW = /usr/sbin/ufw default *, /usr/sbin/ufw allow *, /usr/sbin/ufw enable, /usr/sbin/ufw status *
 SUDOERS_EOF
-echo "$DEPLOY_USER ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL" >> "$SUDOERS_FILE"
+echo "$DEPLOY_USER ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL, DEPLOY_UFW" >> "$SUDOERS_FILE"
 chmod 440 "$SUDOERS_FILE"
 visudo -cf "$SUDOERS_FILE"
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "3/5 — SSH ключ для GitHub Actions"
+print_header "2/2 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(eval echo ~$DEPLOY_USER)
 SSH_DIR="$DEPLOY_HOME/.ssh"
@@ -129,35 +121,6 @@ else
 fi
 echo ""
 
-print_header "4/5 — Директория деплоя"
-
-mkdir -p "$DEPLOY_DIR"
-chown -R "$DEPLOY_USER:$DEPLOY_USER" "$DEPLOY_DIR"
-print_success "Директория создана: $DEPLOY_DIR"
-
-print_header "5/5 — Настройка файрвола (UFW)"
-
-if ufw status | grep -q "inactive"; then
-    ufw default deny incoming
-    ufw default allow outgoing
-
-    ufw allow 22/tcp      # SSH
-    ufw allow 80/tcp      # HTTP
-    ufw allow 443/tcp     # HTTPS / SSTP VPN
-    ufw allow 992/tcp     # SoftEther
-    ufw allow 5555/tcp    # SoftEther
-    ufw allow 500/udp     # IPsec
-    ufw allow 4500/udp    # IPsec NAT
-    ufw allow 1701/udp    # L2TP
-    ufw allow 1194/udp    # OpenVPN
-
-    echo "y" | ufw enable
-    print_success "Файрвол настроен"
-else
-    print_warning "Файрвол уже активен"
-    ufw status verbose
-fi
-
 print_header "Настройка завершена!"
 
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
@@ -168,15 +131,18 @@ echo "Информация для GitHub Secrets:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo -e "  PREPROD_SERVER_IP:   ${YELLOW}$SERVER_IP${NC}"
 echo -e "  PREPROD_SSH_USER:    ${YELLOW}$DEPLOY_USER${NC}"
-echo -e "  PREPROD_DEPLOY_DIR:  ${YELLOW}$DEPLOY_DIR${NC}"
+echo -e "  PREPROD_DEPLOY_DIR:  ${YELLOW}/opt/blog-preprod${NC}"
 echo -e "  PREPROD_SSH_KEY:     ${YELLOW}(приватный ключ выше)${NC}"
 echo ""
-echo -e "${BLUE}Примечание: Docker будет установлен автоматически${NC}"
-echo -e "${BLUE}при первом деплое через GitHub Actions (CI/CD).${NC}"
+echo -e "${BLUE}При первом деплое CI/CD автоматически установит:${NC}"
+echo -e "${BLUE}  - Docker CE и Docker Compose${NC}"
+echo -e "${BLUE}  - UFW (файрвол)${NC}"
+echo -e "${BLUE}  - Fail2ban (защита от брутфорса)${NC}"
+echo -e "${BLUE}  - Создаст директорию деплоя${NC}"
 echo ""
 echo "Следующий шаг:"
 echo "  1. Скопируйте приватный ключ в GitHub Secret"
 echo "  2. Добавьте остальные секреты (см. docs/DEPLOY_CHECKLIST.md)"
 echo "  3. Сделайте git push в release/* ветку"
-echo "  4. Docker установится автоматически при первом деплое"
+echo "  4. Всё остальное CI/CD сделает автоматически"
 echo ""

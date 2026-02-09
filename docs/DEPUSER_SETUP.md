@@ -24,7 +24,8 @@ scp scripts/setup_vps.sh root@<IP>:/tmp/
 ssh root@<IP> "bash /tmp/setup_vps.sh"
 ```
 
-Скрипт создаст пользователя `depuser` со всеми необходимыми правами.
+Скрипт создаст пользователя `depuser` с ограниченным sudo и SSH-ключом.
+Всё остальное (Docker, UFW, fail2ban, директория деплоя) будет установлено автоматически при первом деплое через CI/CD.
 
 ---
 
@@ -46,19 +47,30 @@ adduser --disabled-password --gecos "Deploy User" depuser
 
 ### Шаг 2: Настройка ограниченных прав sudo
 
-> **Примечание**: Docker будет установлен автоматически при первом деплое через GitHub Actions. CI/CD также добавит `depuser` в группу `docker`.
+> **Примечание**: Docker, UFW, fail2ban и директория деплоя будут установлены/созданы автоматически при первом деплое через GitHub Actions.
 
 Создайте файл sudoers с ограниченными правами:
 
 ```bash
 cat > /etc/sudoers.d/depuser << 'EOF'
-# Команды для первоначальной установки Docker (CI/CD)
 # Пути /bin/ и /usr/bin/ для совместимости с Ubuntu/Debian
+
+# Установка пакетов (Docker, ufw, fail2ban и др.)
 Cmnd_Alias DEPLOY_APT = /usr/bin/apt-get update, /usr/bin/apt-get install *
+
+# Настройка Docker-репозитория
 Cmnd_Alias DEPLOY_DOCKER_SETUP = /usr/sbin/usermod -aG docker *, /usr/bin/install -m 0755 -d /etc/apt/keyrings, /usr/bin/gpg --dearmor -o /etc/apt/keyrings/docker.gpg, /bin/chmod a+r /etc/apt/keyrings/docker.gpg, /usr/bin/chmod a+r /etc/apt/keyrings/docker.gpg, /usr/bin/tee /etc/apt/sources.list.d/docker.list
+
+# Создание директорий деплоя
 Cmnd_Alias DEPLOY_DIRS = /bin/mkdir -p *, /usr/bin/mkdir -p *, /bin/chown -R *, /usr/bin/chown -R *
-Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemctl start docker, /usr/bin/systemctl restart docker
-depuser ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL
+
+# Управление сервисами (docker, ufw, fail2ban)
+Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemctl start docker, /usr/bin/systemctl restart docker, /usr/bin/systemctl enable fail2ban, /usr/bin/systemctl start fail2ban, /usr/bin/systemctl restart fail2ban
+
+# Настройка файрвола
+Cmnd_Alias DEPLOY_UFW = /usr/sbin/ufw default *, /usr/sbin/ufw allow *, /usr/sbin/ufw enable, /usr/sbin/ufw status *
+
+depuser ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL, DEPLOY_UFW
 EOF
 chmod 440 /etc/sudoers.d/depuser
 ```
@@ -75,18 +87,19 @@ visudo -cf /etc/sudoers.d/depuser
 
 | Категория | Команды | Назначение |
 |-----------|---------|------------|
-| APT | `apt-get update`, `apt-get install` | Установка пакетов (Docker при первом деплое) |
+| APT | `apt-get update`, `apt-get install` | Установка пакетов (Docker, ufw, fail2ban) |
 | Docker Setup | `usermod`, `install`, `gpg`, `chmod`, `tee` | Настройка Docker репозитория |
 | Директории | `mkdir -p`, `chown -R` | Создание директории деплоя |
-| Systemctl | `systemctl enable/start/restart docker` | Управление Docker сервисом |
+| Systemctl | `systemctl enable/start/restart docker/fail2ban` | Управление сервисами |
+| UFW | `ufw default/allow/enable/status` | Настройка файрвола |
 
 #### Что запрещено:
 
 - Редактирование файлов (`nano`, `vim`, `vi`)
 - Удаление файлов и директорий (`rm`, `rmdir`)
 - Управление пользователями (`adduser`, `deluser`, `passwd`)
-- Изменение сетевых настроек (`iptables`, `ufw`)
-- Доступ к другим сервисам (`systemctl` кроме docker)
+- Изменение сетевых настроек (`iptables`)
+- Доступ к другим сервисам (`systemctl` кроме docker и fail2ban)
 - Полный root-доступ
 
 ### Шаг 3: Генерация SSH-ключа
@@ -117,19 +130,7 @@ chmod 600 /home/depuser/.ssh/github_deploy
 chmod 600 /home/depuser/.ssh/github_deploy.pub
 ```
 
-### Шаг 5: Создание директории деплоя
-
-```bash
-# Для pre-production
-mkdir -p /opt/blog-preprod
-chown -R depuser:depuser /opt/blog-preprod
-
-# Для production
-mkdir -p /opt/blog
-chown -R depuser:depuser /opt/blog
-```
-
-### Шаг 6: Скопировать приватный ключ
+### Шаг 5: Скопировать приватный ключ
 
 Выведите приватный ключ на экран:
 
@@ -149,7 +150,7 @@ cat /home/depuser/.ssh/github_deploy
 
 | Secret | Значение |
 |--------|----------|
-| `PREPROD_SSH_KEY` | Приватный ключ (скопированный на Шаге 6) |
+| `PREPROD_SSH_KEY` | Приватный ключ (скопированный на Шаге 5) |
 | `PREPROD_SSH_USER` | `depuser` |
 | `PREPROD_SERVER_IP` | IP адрес VPS |
 | `PREPROD_DEPLOY_DIR` | `/opt/blog-preprod` |
@@ -176,12 +177,14 @@ cat /home/depuser/.ssh/github_deploy
 ssh -i ~/.ssh/depuser_key depuser@<IP_VPS>
 ```
 
-### Проверить права docker (после первого деплоя)
+### Проверить инфраструктуру (после первого деплоя)
 
 ```bash
-# Под пользователем depuser (Docker будет доступен после первого деплоя CI/CD)
+# Под пользователем depuser (всё ниже доступно после первого деплоя CI/CD)
 docker ps
 docker compose version
+sudo ufw status
+sudo systemctl status fail2ban
 ```
 
 ### Проверить ограничения sudo
@@ -222,14 +225,14 @@ sudo nano /etc/hosts # ← не сработает
 `depuser` работает по принципу **least privilege**:
 - Docker-команды выполняются через членство в группе `docker` (без sudo)
 - sudo разрешён только для ограниченного набора команд, необходимых при первоначальной настройке
-- После установки Docker sudo фактически не используется при обычном деплое
+- После установки инфраструктуры sudo фактически не используется при обычном деплое
 
 ---
 
 ## FAQ
 
 **Q: Что если Docker уже установлен?**
-A: CI/CD проверяет наличие Docker и пропускает установку. В этом случае sudo-команды не выполняются вообще.
+A: CI/CD проверяет наличие Docker и пропускает установку. То же для UFW и fail2ban.
 
 **Q: Можно использовать другое имя пользователя?**
 A: Да, в скрипте `setup_vps.sh` можно задать: `DEPLOY_USER=myuser bash setup_vps.sh`. Не забудьте указать это имя в GitHub Secret `SSH_USER`.
