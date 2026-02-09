@@ -10,16 +10,15 @@
 # Подключиться к VPS как root
 ssh root@<IP_ВАШЕГО_VPS>
 
-# Скачать и запустить скрипт
-curl -sSL https://raw.githubusercontent.com/<OWNER>/MyPet01/main/scripts/setup_vps.sh | bash
-# Или скопировать scripts/setup_vps.sh на VPS и запустить:
+# Скопировать и запустить скрипт
 scp scripts/setup_vps.sh root@<IP>:/tmp/
 ssh root@<IP> "bash /tmp/setup_vps.sh"
 ```
 
 Скрипт автоматически:
 - Обновит систему и установит зависимости
-- Создаст пользователя `deploy` с sudo
+- Создаст пользователя `depuser` с ограниченными правами sudo
+- Добавит `depuser` в группу `docker`
 - Установит Docker и Docker Compose v2
 - Сгенерирует SSH ключ для GitHub Actions
 - Создаст директорию `/opt/blog-preprod`
@@ -27,14 +26,18 @@ ssh root@<IP> "bash /tmp/setup_vps.sh"
 
 ### Ручная настройка
 
-Если предпочитаете настроить вручную:
+Подробная инструкция по ручному созданию пользователя: **[DEPUSER_SETUP.md](./DEPUSER_SETUP.md)**
+
+Краткий чек-лист:
 
 - [ ] Обновить систему: `apt update && apt upgrade -y`
-- [ ] Создать пользователя: `adduser deploy && usermod -aG sudo deploy`
+- [ ] Создать пользователя: `adduser --disabled-password --gecos "" depuser`
+- [ ] Добавить в группу docker: `usermod -aG docker depuser`
+- [ ] Настроить ограниченный sudo (см. [DEPUSER_SETUP.md](./DEPUSER_SETUP.md#шаг-3-настройка-ограниченных-прав-sudo))
 - [ ] Установить Docker CE и Docker Compose v2
-- [ ] Сгенерировать SSH ключ: `ssh-keygen -t ed25519 -C "github-actions-deploy"`
+- [ ] Сгенерировать SSH ключ: `ssh-keygen -t ed25519 -C "github-actions-deploy" -f /home/depuser/.ssh/github_deploy -N ""`
 - [ ] Добавить публичный ключ в `~/.ssh/authorized_keys`
-- [ ] Создать директорию: `mkdir -p /opt/blog-preprod`
+- [ ] Создать директорию: `mkdir -p /opt/blog-preprod && chown depuser:depuser /opt/blog-preprod`
 - [ ] Настроить файрвол (порты: 22, 80, 443, 992, 5555, 500/udp, 4500/udp, 1701/udp, 1194/udp)
 
 ### Требования к VPS
@@ -75,7 +78,7 @@ ssh root@<IP> "bash /tmp/setup_vps.sh"
 | # | Secret | Значение | Статус |
 |---|--------|----------|--------|
 | 2 | `PREPROD_SSH_KEY` | Приватный SSH ключ (из скрипта настройки VPS) | ☐ |
-| 3 | `PREPROD_SSH_USER` | `deploy` (или ваш пользователь) | ☐ |
+| 3 | `PREPROD_SSH_USER` | `depuser` | ☐ |
 | 4 | `PREPROD_SERVER_IP` | IP адрес VPS | ☐ |
 | 5 | `PREPROD_DEPLOY_DIR` | `/opt/blog-preprod` | ☐ |
 
@@ -84,7 +87,7 @@ ssh root@<IP> "bash /tmp/setup_vps.sh"
 | # | Secret | Значение | Статус |
 |---|--------|----------|--------|
 | 6 | `SSH_KEY` | Приватный SSH ключ для prod VPS | ☐ |
-| 7 | `SSH_USER` | Пользователь SSH | ☐ |
+| 7 | `SSH_USER` | `depuser` | ☐ |
 | 8 | `SERVER_IP` | IP адрес production VPS | ☐ |
 | 9 | `DEPLOY_DIR` | `/opt/blog` | ☐ |
 
@@ -96,7 +99,7 @@ ssh root@<IP> "bash /tmp/setup_vps.sh"
 - [ ] Линтеры чистые: `poetry run ruff check .` и `poetry run mypy .`
 - [ ] Docker образ собирается локально: `docker-compose build`
 - [ ] GitHub Secrets заполнены (минимум: GHCR_TOKEN + PREPROD_*)
-- [ ] VPS доступен по SSH: `ssh deploy@<IP>`
+- [ ] VPS доступен по SSH: `ssh depuser@<IP>`
 
 ---
 
@@ -130,7 +133,7 @@ CI/CD автоматически:
 После успешного деплоя настройте HTTPS сертификаты:
 
 ```bash
-ssh deploy@<IP>
+ssh depuser@<IP>
 cd /opt/blog-preprod
 
 # Первый запуск — тестовый сертификат (проверить что всё работает)
@@ -179,7 +182,7 @@ STAGING=0 bash init-letsencrypt.sh
 
 ```bash
 # Подключиться к VPS
-ssh deploy@<IP>
+ssh depuser@<IP>
 cd /opt/blog-preprod
 
 # Логи контейнеров
@@ -219,7 +222,7 @@ CI/CD автоматически задеплоит на production VPS.
 ## Откат при проблемах
 
 ```bash
-ssh deploy@<IP>
+ssh depuser@<IP>
 cd /opt/blog-preprod
 
 # Посмотреть логи

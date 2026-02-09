@@ -28,7 +28,7 @@ print_error() {
 }
 
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/blog-preprod}"
-DEPLOY_USER="${DEPLOY_USER:-deploy}"
+DEPLOY_USER="${DEPLOY_USER:-depuser}"
 SSH_KEY_NAME="github_deploy"
 
 print_header "MyPet01 — Настройка VPS"
@@ -68,19 +68,22 @@ else
     print_success "Пользователь $DEPLOY_USER создан"
 fi
 
-if ! groups "$DEPLOY_USER" | grep -q "\bsudo\b"; then
-    usermod -aG sudo "$DEPLOY_USER"
-fi
+usermod -aG docker "$DEPLOY_USER" 2>/dev/null || true
+print_success "Пользователь добавлен в группу docker"
 
 SUDOERS_FILE="/etc/sudoers.d/$DEPLOY_USER"
-SUDOERS_LINE="$DEPLOY_USER ALL=(ALL) NOPASSWD:ALL"
-if [ ! -f "$SUDOERS_FILE" ] || ! grep -qF "$SUDOERS_LINE" "$SUDOERS_FILE"; then
-    echo "$SUDOERS_LINE" > "$SUDOERS_FILE"
-    chmod 440 "$SUDOERS_FILE"
-    print_success "Sudo настроен для $DEPLOY_USER"
-else
-    print_warning "Sudo для $DEPLOY_USER уже настроен"
-fi
+cat > "$SUDOERS_FILE" << 'SUDOERS_EOF'
+# Команды для первоначальной установки Docker (CI/CD)
+# Пути /bin/ и /usr/bin/ для совместимости с Ubuntu/Debian
+Cmnd_Alias DEPLOY_APT = /usr/bin/apt-get update, /usr/bin/apt-get install *
+Cmnd_Alias DEPLOY_DOCKER_SETUP = /usr/sbin/usermod -aG docker *, /usr/bin/install -m 0755 -d /etc/apt/keyrings, /usr/bin/gpg --dearmor -o /etc/apt/keyrings/docker.gpg, /bin/chmod a+r /etc/apt/keyrings/docker.gpg, /usr/bin/chmod a+r /etc/apt/keyrings/docker.gpg, /usr/bin/tee /etc/apt/sources.list.d/docker.list
+Cmnd_Alias DEPLOY_DIRS = /bin/mkdir -p *, /usr/bin/mkdir -p *, /bin/chown -R *, /usr/bin/chown -R *
+Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemctl start docker, /usr/bin/systemctl restart docker
+SUDOERS_EOF
+echo "$DEPLOY_USER ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL" >> "$SUDOERS_FILE"
+chmod 440 "$SUDOERS_FILE"
+visudo -cf "$SUDOERS_FILE"
+print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
 print_header "3/6 — Установка Docker"
 
@@ -154,9 +157,10 @@ fi
 
 echo ""
 echo -e "${YELLOW}╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${YELLOW}║  ВАЖНО: Скопируйте приватный ключ в GitHub Secret   ║${NC}"
-echo -e "${YELLOW}║  Secret name: PREPROD_SSH_KEY (или SSH_KEY для prod) ║${NC}"
-echo -e "${YELLOW}╚══════════════════════════════════════════════════════╝${NC}"
+echo -e "${YELLOW}║  ВАЖНО: Скопируйте приватный ключ в GitHub Secret    ║${NC}"
+echo -e "${YELLOW}║  Secret name: PREPROD_SSH_KEY (или SSH_KEY для prod)  ║${NC}"
+echo -e "${YELLOW}║  SSH_USER: $DEPLOY_USER                               ║${NC}"
+echo -e "${YELLOW}╚═══════════════════════════════════════════════════════╝${NC}"
 echo ""
 if [ "$KEY_EXISTED" = true ]; then
     print_warning "Ключ был создан ранее. Если нужно показать его снова:"

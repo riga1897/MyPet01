@@ -32,7 +32,7 @@ GitHub Secrets используются для безопасного хране
 | Secret | Описание | Пример |
 |--------|----------|--------|
 | `SSH_KEY` | Приватный SSH ключ | `-----BEGIN OPENSSH PRIVATE KEY-----` |
-| `SSH_USER` | Имя пользователя SSH | `root` или `ubuntu` |
+| `SSH_USER` | Имя пользователя SSH | `depuser` |
 | `SERVER_IP` | IP адрес production VPS | `123.45.67.89` |
 | `DEPLOY_DIR` | Путь для деплоя | `/opt/blog` |
 
@@ -51,7 +51,7 @@ cat ~/.ssh/github_deploy
 | Secret | Описание | Пример |
 |--------|----------|--------|
 | `PREPROD_SSH_KEY` | SSH ключ для препрода | `-----BEGIN OPENSSH PRIVATE KEY-----` |
-| `PREPROD_SSH_USER` | Пользователь SSH | `ubuntu` |
+| `PREPROD_SSH_USER` | Пользователь SSH | `depuser` |
 | `PREPROD_SERVER_IP` | IP препрод сервера | `192.168.1.100` |
 | `PREPROD_DEPLOY_DIR` | Путь деплоя | `/opt/blog-preprod` |
 
