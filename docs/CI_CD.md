@@ -156,15 +156,25 @@ git push origin main
 
 ## Zero-Configuration VPS
 
-При первом деплое автоматически устанавливается:
-- Docker CE
-- Docker Compose v2
-- Создаётся директория деплоя
+Подготовка VPS выполняется в два этапа:
+
+**1. `setup_vps.sh` (root, один раз):**
+- Создаёт пользователя `depuser` с ограниченным sudo
+- Генерирует SSH-ключ для GitHub Actions
+- Создаёт директорию деплоя
+- Настраивает файрвол (UFW)
+
+**2. GitHub Actions (depuser, при первом деплое):**
+- Устанавливает Docker CE и Docker Compose v2
+- Добавляет `depuser` в группу `docker`
+- Запускает Docker-сервис (`systemctl enable/start docker`)
+
+При последующих деплоях шаг установки Docker пропускается.
 
 **Требования к VPS:**
 - Ubuntu 20.04/22.04 или Debian 11/12
 - SSH доступ по ключу
-- sudo права
+- sudo права (ограниченные, настраиваются setup_vps.sh)
 - Минимум 1GB RAM, 10GB диск
 
 ## Health Checks

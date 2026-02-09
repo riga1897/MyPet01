@@ -44,17 +44,9 @@ ssh root@<IP_ВАШЕГО_VPS>
 adduser --disabled-password --gecos "Deploy User" depuser
 ```
 
-### Шаг 2: Добавление в группу docker
+### Шаг 2: Настройка ограниченных прав sudo
 
-Чтобы `depuser` мог управлять контейнерами без sudo:
-
-```bash
-usermod -aG docker depuser
-```
-
-> **Важно**: Docker должен быть установлен до этого шага. Если Docker ещё не установлен — сначала установите его (см. [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)).
-
-### Шаг 3: Настройка ограниченных прав sudo
+> **Примечание**: Docker будет установлен автоматически при первом деплое через GitHub Actions. CI/CD также добавит `depuser` в группу `docker`.
 
 Создайте файл sudoers с ограниченными правами:
 
@@ -97,7 +89,7 @@ visudo -cf /etc/sudoers.d/depuser
 - Доступ к другим сервисам (`systemctl` кроме docker)
 - Полный root-доступ
 
-### Шаг 4: Генерация SSH-ключа
+### Шаг 3: Генерация SSH-ключа
 
 Создайте SSH-ключ для авторизации GitHub Actions:
 
@@ -115,7 +107,7 @@ cat /home/depuser/.ssh/github_deploy.pub >> /home/depuser/.ssh/authorized_keys
 sort -u /home/depuser/.ssh/authorized_keys -o /home/depuser/.ssh/authorized_keys
 ```
 
-### Шаг 5: Настройка прав на файлы
+### Шаг 4: Настройка прав на файлы
 
 ```bash
 chown -R depuser:depuser /home/depuser/.ssh
@@ -125,7 +117,7 @@ chmod 600 /home/depuser/.ssh/github_deploy
 chmod 600 /home/depuser/.ssh/github_deploy.pub
 ```
 
-### Шаг 6: Создание директории деплоя
+### Шаг 5: Создание директории деплоя
 
 ```bash
 # Для pre-production
@@ -137,7 +129,7 @@ mkdir -p /opt/blog
 chown -R depuser:depuser /opt/blog
 ```
 
-### Шаг 7: Скопировать приватный ключ
+### Шаг 6: Скопировать приватный ключ
 
 Выведите приватный ключ на экран:
 
@@ -157,7 +149,7 @@ cat /home/depuser/.ssh/github_deploy
 
 | Secret | Значение |
 |--------|----------|
-| `PREPROD_SSH_KEY` | Приватный ключ (скопированный на Шаге 7) |
+| `PREPROD_SSH_KEY` | Приватный ключ (скопированный на Шаге 6) |
 | `PREPROD_SSH_USER` | `depuser` |
 | `PREPROD_SERVER_IP` | IP адрес VPS |
 | `PREPROD_DEPLOY_DIR` | `/opt/blog-preprod` |
@@ -184,10 +176,10 @@ cat /home/depuser/.ssh/github_deploy
 ssh -i ~/.ssh/depuser_key depuser@<IP_VPS>
 ```
 
-### Проверить права docker
+### Проверить права docker (после первого деплоя)
 
 ```bash
-# Под пользователем depuser
+# Под пользователем depuser (Docker будет доступен после первого деплоя CI/CD)
 docker ps
 docker compose version
 ```

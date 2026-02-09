@@ -16,13 +16,13 @@ ssh root@<IP> "bash /tmp/setup_vps.sh"
 ```
 
 Скрипт автоматически:
-- Обновит систему и установит зависимости
+- Обновит систему и установит базовые зависимости
 - Создаст пользователя `depuser` с ограниченными правами sudo
-- Добавит `depuser` в группу `docker`
-- Установит Docker и Docker Compose v2
 - Сгенерирует SSH ключ для GitHub Actions
 - Создаст директорию `/opt/blog-preprod`
 - Настроит файрвол (UFW)
+
+> **Примечание**: Docker и Docker Compose будут установлены автоматически при первом деплое через GitHub Actions (CI/CD). Скрипт настройки VPS **не** устанавливает Docker.
 
 ### Ручная настройка
 
@@ -32,13 +32,12 @@ ssh root@<IP> "bash /tmp/setup_vps.sh"
 
 - [ ] Обновить систему: `apt update && apt upgrade -y`
 - [ ] Создать пользователя: `adduser --disabled-password --gecos "" depuser`
-- [ ] Добавить в группу docker: `usermod -aG docker depuser`
 - [ ] Настроить ограниченный sudo (см. [DEPUSER_SETUP.md](./DEPUSER_SETUP.md#шаг-3-настройка-ограниченных-прав-sudo))
-- [ ] Установить Docker CE и Docker Compose v2
 - [ ] Сгенерировать SSH ключ: `ssh-keygen -t ed25519 -C "github-actions-deploy" -f /home/depuser/.ssh/github_deploy -N ""`
 - [ ] Добавить публичный ключ в `~/.ssh/authorized_keys`
 - [ ] Создать директорию: `mkdir -p /opt/blog-preprod && chown depuser:depuser /opt/blog-preprod`
 - [ ] Настроить файрвол (порты: 22, 80, 443, 992, 5555, 500/udp, 4500/udp, 1701/udp, 1194/udp)
+- [ ] Docker установится автоматически при первом деплое (CI/CD)
 
 ### Требования к VPS
 

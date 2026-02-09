@@ -43,7 +43,7 @@ if [ "$CONFIRM" != "y" ]; then
     exit 0
 fi
 
-print_header "1/6 — Обновление системы"
+print_header "1/5 — Обновление системы"
 
 apt-get update
 apt-get upgrade -y
@@ -59,7 +59,7 @@ apt-get install -y \
 
 print_success "Система обновлена"
 
-print_header "2/6 — Создание пользователя $DEPLOY_USER"
+print_header "2/5 — Создание пользователя $DEPLOY_USER"
 
 if id "$DEPLOY_USER" &>/dev/null; then
     print_warning "Пользователь $DEPLOY_USER уже существует"
@@ -67,9 +67,6 @@ else
     adduser --disabled-password --gecos "" "$DEPLOY_USER"
     print_success "Пользователь $DEPLOY_USER создан"
 fi
-
-usermod -aG docker "$DEPLOY_USER" 2>/dev/null || true
-print_success "Пользователь добавлен в группу docker"
 
 SUDOERS_FILE="/etc/sudoers.d/$DEPLOY_USER"
 cat > "$SUDOERS_FILE" << 'SUDOERS_EOF'
@@ -85,47 +82,7 @@ chmod 440 "$SUDOERS_FILE"
 visudo -cf "$SUDOERS_FILE"
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "3/6 — Установка Docker"
-
-if command -v docker &>/dev/null; then
-    print_warning "Docker уже установлен: $(docker --version)"
-else
-    . /etc/os-release
-    DISTRO="$ID"
-
-    if [ "$DISTRO" != "ubuntu" ] && [ "$DISTRO" != "debian" ]; then
-        print_error "Поддерживаются только Ubuntu и Debian. Обнаружен: $DISTRO"
-        exit 1
-    fi
-
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL "https://download.docker.com/linux/$DISTRO/gpg" | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
-
-    echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$DISTRO \
-        $VERSION_CODENAME stable" | \
-        tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-    apt-get update
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-    usermod -aG docker "$DEPLOY_USER"
-
-    systemctl enable docker
-    systemctl start docker
-
-    print_success "Docker установлен: $(docker --version)"
-fi
-
-if docker compose version &>/dev/null; then
-    print_success "Docker Compose: $(docker compose version)"
-else
-    print_error "Docker Compose v2 не найден!"
-    exit 1
-fi
-
-print_header "4/6 — SSH ключ для GitHub Actions"
+print_header "3/5 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(eval echo ~$DEPLOY_USER)
 SSH_DIR="$DEPLOY_HOME/.ssh"
@@ -172,13 +129,13 @@ else
 fi
 echo ""
 
-print_header "5/6 — Директория деплоя"
+print_header "4/5 — Директория деплоя"
 
 mkdir -p "$DEPLOY_DIR"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$DEPLOY_DIR"
 print_success "Директория создана: $DEPLOY_DIR"
 
-print_header "6/6 — Настройка файрвола (UFW)"
+print_header "5/5 — Настройка файрвола (UFW)"
 
 if ufw status | grep -q "inactive"; then
     ufw default deny incoming
@@ -214,8 +171,12 @@ echo -e "  PREPROD_SSH_USER:    ${YELLOW}$DEPLOY_USER${NC}"
 echo -e "  PREPROD_DEPLOY_DIR:  ${YELLOW}$DEPLOY_DIR${NC}"
 echo -e "  PREPROD_SSH_KEY:     ${YELLOW}(приватный ключ выше)${NC}"
 echo ""
+echo -e "${BLUE}Примечание: Docker будет установлен автоматически${NC}"
+echo -e "${BLUE}при первом деплое через GitHub Actions (CI/CD).${NC}"
+echo ""
 echo "Следующий шаг:"
 echo "  1. Скопируйте приватный ключ в GitHub Secret"
 echo "  2. Добавьте остальные секреты (см. docs/DEPLOY_CHECKLIST.md)"
 echo "  3. Сделайте git push в release/* ветку"
+echo "  4. Docker установится автоматически при первом деплое"
 echo ""
