@@ -88,6 +88,9 @@ REDIS_URL=redis://redis:6379/0
 DJANGO_SUPERUSER_USERNAME=admin
 DJANGO_SUPERUSER_EMAIL=admin@preprod.mine-craft.su
 DJANGO_SUPERUSER_PASSWORD=$SUPERUSER_PASSWORD
+
+# Загрузка демо-данных (из GitHub переменной)
+LOAD_DEMO_DATA=${LOAD_DEMO_DATA:-false}
 EOF
 
 chmod 600 "$ENV_FILE"
