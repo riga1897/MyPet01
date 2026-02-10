@@ -40,7 +40,13 @@ echo "Параметры:"
 echo "  Пользователь: $DEPLOY_USER"
 echo ""
 
-print_header "1/2 — Создание пользователя $DEPLOY_USER"
+print_header "1/3 — Обновление системы"
+
+apt-get update -y
+apt-get upgrade -y
+print_success "Система обновлена"
+
+print_header "2/3 — Создание пользователя $DEPLOY_USER"
 
 if getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
     print_success "Пользователь $DEPLOY_USER уже существует"
@@ -102,7 +108,7 @@ if ! visudo -cf "$SUDOERS_FILE"; then
 fi
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "2/2 — SSH ключ для GitHub Actions"
+print_header "3/3 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
 if [ -z "$DEPLOY_HOME" ]; then
