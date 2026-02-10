@@ -1,0 +1,73 @@
+root@vdska:/opt/blog-preprod# docker compose -f docker-compose.prod.yml exec nginx nginx -T 2>&1 | grep -B2 -A5 "location"
+    client_max_body_size 100M;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+--
+    gzip_comp_level 6;
+
+    location /static/ {
+        alias /app/staticfiles/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+        gzip_static on;
+    }
+
+    location /protected-media/ {
+        internal;
+        alias /app/media/;
+        expires 7d;
+        add_header Cache-Control "public";
+        access_log off;
+    }
+
+    location / {
+        proxy_pass http://blog_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+--
+    }
+
+    location /favicon.ico {
+        alias /app/staticfiles/favicon.png;
+        expires 30d;
+        access_log off;
+    }
+
+    location /robots.txt {
+        alias /app/staticfiles/robots.txt;
+        expires 7d;
+        access_log off;
+    }
+}
+root@vdska:/opt/blog-preprod#
+root@vdska:/opt/blog-preprod#
+root@vdska:/opt/blog-preprod# docker compose -f docker-compose.prod.yml exec nginx ls -la / | grep app; docker compose -f docker-compose.prod.yml exec nginx ls -la /app/; docker compose -f docker-compose.prod.yml exec nginx ls -la /app/media/; docker compose -f docker-compose.prod.yml exec nginx ls -la /app/media/thumbnails/ | head -3
+drwxr-xr-x    4 root     root          4096 Feb 10 21:29 app
+total 16
+drwxr-xr-x    4 root     root          4096 Feb 10 21:29 .
+drwxr-xr-x    1 root     root          4096 Feb 10 21:29 ..
+drwxr-xr-x    3 root     root          4096 Feb 10 21:29 media
+drwxr-xr-x    5 root     root          4096 Feb 10 22:17 staticfiles
+total 12
+drwxr-xr-x    3 root     root          4096 Feb 10 21:29 .
+drwxr-xr-x    4 root     root          4096 Feb 10 21:29 ..
+drwxr-xr-x    2 root     root          4096 Feb 10 21:29 thumbnails
+total 1280
+drwxr-xr-x    2 root     root          4096 Feb 10 21:29 .
+drwxr-xr-x    3 root     root          4096 Feb 10 21:29 ..
+root@vdska:/opt/blog-preprod#
+root@vdska:/opt/blog-preprod# docker compose -f docker-compose.prod.yml exec nginx su -s /bin/sh nginx -c "cat /app/media/thumbnails/yoga_meditation_peac_c09a094e.jpg | wc -c"
+259123
+root@vdska:/opt/blog-preprod#
