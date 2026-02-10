@@ -776,11 +776,11 @@ class FileDeleteView(ModeratorRequiredMixin, View):
 class ProtectedMediaView(View):
     """Serve media files only to authenticated users.
 
-    In DEBUG mode: serves files directly via FileResponse.
-    In production: uses X-Accel-Redirect for Nginx to serve files.
+    Files are served directly via FileResponse.
+    Django handles authentication, then streams the file.
     """
 
-    def get(self, request: HttpRequest, path: str) -> FileResponse | HttpResponse:
+    def get(self, request: HttpRequest, path: str) -> FileResponse:
         if '..' in path or path.startswith('/'):
             raise Http404("Invalid path")
 
@@ -796,12 +796,7 @@ class ProtectedMediaView(View):
         import mimetypes
         content_type, _ = mimetypes.guess_type(full_path)
 
-        if settings.DEBUG:
-            return FileResponse(
-                open(full_path, 'rb'),
-                content_type=content_type or 'application/octet-stream',
-            )
-
-        response = HttpResponse(content_type=content_type or 'application/octet-stream')
-        response['X-Accel-Redirect'] = f'/protected-media/{path}'
-        return response
+        return FileResponse(
+            open(full_path, 'rb'),
+            content_type=content_type or 'application/octet-stream',
+        )

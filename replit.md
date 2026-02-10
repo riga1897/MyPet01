@@ -41,7 +41,7 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
   - **Security Logging**: All suspicious requests and auth events logged to `logs/security.log` and console.
   - **CSP (Content Security Policy)**: Strict policy limiting script/style sources.
 - **Caching**: Implements both server-side caching (local memory, DB, Redis, or Memcached) and browser caching with configurable `Cache-Control` headers. Server-side cache invalidation is automated via Django signals on content changes.
-- **File Management**: Handles image and video uploads, with thumbnails automatically compressed and unique MD5 hash names. Supports selecting existing files and path traversal protection.
+- **File Management**: Handles image and video uploads, with thumbnails automatically compressed and unique MD5 hash names. Supports selecting existing files and path traversal protection. Media files are served via Django's `FileResponse` through `ProtectedMediaView` (requires authentication via `@login_required`).
 - **Configuration**: Environment variables are managed via `pydantic-settings` for typed configuration, with support for `.env` files and fallbacks.
 
 **System Design Choices:**
