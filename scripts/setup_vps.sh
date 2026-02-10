@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -43,15 +42,29 @@ echo ""
 
 print_header "1/2 — Создание пользователя $DEPLOY_USER"
 
-if id "$DEPLOY_USER" &>/dev/null; then
-    print_warning "Пользователь $DEPLOY_USER уже существует"
+if getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
+    print_success "Пользователь $DEPLOY_USER уже существует"
 else
-    adduser --disabled-password --gecos "" "$DEPLOY_USER"
+    if id "$DEPLOY_USER" &>/dev/null || [ -d "/home/$DEPLOY_USER" ]; then
+        print_warning "Обнаружены остатки от предыдущего создания $DEPLOY_USER. Очищаю..."
+        userdel -r "$DEPLOY_USER" 2>/dev/null || true
+        rm -rf "/home/$DEPLOY_USER" 2>/dev/null || true
+    fi
+
+    if ! adduser --disabled-password --gecos "" "$DEPLOY_USER"; then
+        print_error "Не удалось создать пользователя $DEPLOY_USER"
+        exit 1
+    fi
     print_success "Пользователь $DEPLOY_USER создан"
 fi
 
+if ! getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
+    print_error "Пользователь $DEPLOY_USER не найден после создания. Проверьте систему."
+    exit 1
+fi
+
 SUDOERS_FILE="/etc/sudoers.d/$DEPLOY_USER"
-cat > "$SUDOERS_FILE" << 'SUDOERS_EOF'
+if ! cat > "$SUDOERS_FILE" << 'SUDOERS_EOF'
 # Пути /bin/ и /usr/bin/ для совместимости с Ubuntu/Debian
 
 # Установка пакетов (Docker, ufw, fail2ban и др.)
@@ -69,25 +82,47 @@ Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemc
 # Настройка файрвола
 Cmnd_Alias DEPLOY_UFW = /usr/sbin/ufw default *, /usr/sbin/ufw allow *, /usr/sbin/ufw enable, /usr/sbin/ufw status *
 SUDOERS_EOF
+then
+    print_error "Не удалось создать файл sudoers"
+    exit 1
+fi
 echo "$DEPLOY_USER ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL, DEPLOY_UFW" >> "$SUDOERS_FILE"
-chmod 440 "$SUDOERS_FILE"
-visudo -cf "$SUDOERS_FILE"
+if ! chmod 440 "$SUDOERS_FILE"; then
+    print_error "Не удалось установить права на sudoers"
+    rm -f "$SUDOERS_FILE"
+    exit 1
+fi
+if ! visudo -cf "$SUDOERS_FILE"; then
+    print_error "Ошибка синтаксиса в sudoers. Удаляю битый файл."
+    rm -f "$SUDOERS_FILE"
+    exit 1
+fi
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
 print_header "2/2 — SSH ключ для GitHub Actions"
 
-DEPLOY_HOME=$(eval echo ~$DEPLOY_USER)
+DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
+if [ -z "$DEPLOY_HOME" ]; then
+    print_error "Не удалось определить домашнюю директорию $DEPLOY_USER"
+    exit 1
+fi
 SSH_DIR="$DEPLOY_HOME/.ssh"
 KEY_PATH="$SSH_DIR/$SSH_KEY_NAME"
 
-mkdir -p "$SSH_DIR"
+if ! mkdir -p "$SSH_DIR"; then
+    print_error "Не удалось создать директорию $SSH_DIR"
+    exit 1
+fi
 
 KEY_EXISTED=false
 if [ -f "$KEY_PATH" ]; then
     print_warning "SSH ключ уже существует: $KEY_PATH"
     KEY_EXISTED=true
 else
-    ssh-keygen -t ed25519 -C "github-actions-deploy" -f "$KEY_PATH" -N ""
+    if ! ssh-keygen -t ed25519 -C "github-actions-deploy" -f "$KEY_PATH" -N ""; then
+        print_error "Не удалось сгенерировать SSH ключ"
+        exit 1
+    fi
 
     touch "$SSH_DIR/authorized_keys"
     cat "$KEY_PATH.pub" >> "$SSH_DIR/authorized_keys"
@@ -96,7 +131,14 @@ else
     print_success "SSH ключ сгенерирован"
 fi
 
-chown -R "$DEPLOY_USER:$DEPLOY_USER" "$SSH_DIR"
+if ! getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
+    print_error "Пользователь $DEPLOY_USER не найден перед chown. Невозможно установить владельца."
+    exit 1
+fi
+if ! chown -R "$DEPLOY_USER:$DEPLOY_USER" "$SSH_DIR"; then
+    print_error "Не удалось установить владельца $SSH_DIR"
+    exit 1
+fi
 chmod 700 "$SSH_DIR"
 chmod 600 "$SSH_DIR/authorized_keys"
 if [ -f "$KEY_PATH" ]; then
