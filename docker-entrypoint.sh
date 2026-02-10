@@ -11,6 +11,9 @@ echo "=== Loading initial structure ==="
 python manage.py loaddata blog/fixtures/initial_structure.json
 
 if [ "${LOAD_DEMO_DATA}" = "true" ]; then
+    echo "=== Copying demo media files ==="
+    cp -rn blog/fixtures/demo_media/* media/ 2>/dev/null || true
+
     echo "=== Loading demo content ==="
     python manage.py loaddata blog/fixtures/demo_content.json
 fi
