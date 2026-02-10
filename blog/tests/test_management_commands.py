@@ -1,6 +1,7 @@
 """Tests for management commands."""
 
 from io import StringIO
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -139,14 +140,16 @@ class TestSetupDemoContent:
         assert 'demo content items' in out.getvalue()
 
     def test_skips_when_content_exists(self) -> None:
-        """Test command skips when content already exists."""
+        """Test command skips when content already exists but still copies media."""
         call_command('setup_initial_structure', '--force')
         call_command('setup_demo_content', '--force')
         out = StringIO()
 
         call_command('setup_demo_content', stdout=out)
 
-        assert 'already exists' in out.getvalue()
+        output = out.getvalue()
+        assert 'already exists' in output
+        assert 'Copying demo media files' in output
 
     def test_force_reloads_content(self) -> None:
         """Test --force flag reloads content."""
@@ -175,3 +178,57 @@ class TestSetupDemoContent:
         output = out.getvalue()
         assert 'Loading initial structure first' in output
         assert Content.objects.exists()
+
+    def test_copies_demo_media_files(self, tmp_path: Path) -> None:
+        """Test demo media files are copied to MEDIA_ROOT."""
+        demo_media = tmp_path / 'demo_media' / 'thumbnails'
+        demo_media.mkdir(parents=True)
+        test_file = demo_media / 'test_image.jpg'
+        test_file.write_bytes(b'fake image data')
+
+        media_root = tmp_path / 'media'
+        media_root.mkdir()
+
+        with patch(
+            'blog.management.commands.setup_demo_content.DEMO_MEDIA_DIR',
+            tmp_path / 'demo_media',
+        ), patch('django.conf.settings.MEDIA_ROOT', str(media_root)):
+            call_command('setup_initial_structure', '--force')
+            out = StringIO()
+            call_command('setup_demo_content', '--force', stdout=out)
+
+        assert (media_root / 'thumbnails' / 'test_image.jpg').exists()
+        assert 'Copied 1 media files' in out.getvalue()
+
+    def test_skips_existing_media_files(self, tmp_path: Path) -> None:
+        """Test existing media files are not overwritten."""
+        demo_media = tmp_path / 'demo_media' / 'thumbnails'
+        demo_media.mkdir(parents=True)
+        (demo_media / 'existing.jpg').write_bytes(b'new data')
+
+        media_root = tmp_path / 'media' / 'thumbnails'
+        media_root.mkdir(parents=True)
+        (media_root / 'existing.jpg').write_bytes(b'old data')
+
+        with patch(
+            'blog.management.commands.setup_demo_content.DEMO_MEDIA_DIR',
+            tmp_path / 'demo_media',
+        ), patch('django.conf.settings.MEDIA_ROOT', str(tmp_path / 'media')):
+            call_command('setup_initial_structure', '--force')
+            out = StringIO()
+            call_command('setup_demo_content', '--force', stdout=out)
+
+        assert (media_root / 'existing.jpg').read_bytes() == b'old data'
+        assert 'Copied 0 media files' in out.getvalue()
+
+    def test_handles_missing_demo_media_dir(self, tmp_path: Path) -> None:
+        """Test graceful handling when demo_media directory doesn't exist."""
+        with patch(
+            'blog.management.commands.setup_demo_content.DEMO_MEDIA_DIR',
+            tmp_path / 'nonexistent',
+        ):
+            call_command('setup_initial_structure', '--force')
+            out = StringIO()
+            call_command('setup_demo_content', '--force', stdout=out)
+
+        assert 'Demo media directory not found' in out.getvalue()
