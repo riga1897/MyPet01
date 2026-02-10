@@ -20,7 +20,7 @@ from django_ratelimit.decorators import ratelimit
 
 from core.utils.text import convert_layout
 from core.mixins import ModeratorRequiredMixin
-from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse_lazy
@@ -774,9 +774,13 @@ class FileDeleteView(ModeratorRequiredMixin, View):
 
 @method_decorator(login_required, name='dispatch')
 class ProtectedMediaView(View):
-    """Serve media files only to authenticated users via X-Accel-Redirect."""
+    """Serve media files only to authenticated users.
 
-    def get(self, request: HttpRequest, path: str) -> HttpResponse:
+    In DEBUG mode: serves files directly via FileResponse.
+    In production: uses X-Accel-Redirect for Nginx to serve files.
+    """
+
+    def get(self, request: HttpRequest, path: str) -> FileResponse | HttpResponse:
         if '..' in path or path.startswith('/'):
             raise Http404("Invalid path")
 
@@ -791,6 +795,12 @@ class ProtectedMediaView(View):
 
         import mimetypes
         content_type, _ = mimetypes.guess_type(full_path)
+
+        if settings.DEBUG:
+            return FileResponse(
+                open(full_path, 'rb'),
+                content_type=content_type or 'application/octet-stream',
+            )
 
         response = HttpResponse(content_type=content_type or 'application/octet-stream')
         response['X-Accel-Redirect'] = f'/protected-media/{path}'

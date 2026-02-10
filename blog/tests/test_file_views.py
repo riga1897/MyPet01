@@ -6,7 +6,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client
+from django.test import Client, override_settings
 
 from blog.models import Content, ContentType, Tag, TagGroup
 from tests.utils_files import safe_remove_file
@@ -439,10 +439,32 @@ class TestProtectedMediaView:
         response = client.get('/media/videos/nonexistent.mp4')
         assert response.status_code == 404
 
-    def test_successful_file_serve_with_x_accel(
+    @override_settings(DEBUG=True)
+    def test_successful_file_serve_debug_mode(
         self, moderator_client: tuple[Client, User]
     ) -> None:
-        """Authenticated users get X-Accel-Redirect for media files."""
+        """In DEBUG mode, files are served directly via FileResponse."""
+        client, _ = moderator_client
+        folder_path = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(folder_path, exist_ok=True)
+        test_file = os.path.join(folder_path, 'protected_test.mp4')
+        with open(test_file, 'wb') as f:
+            f.write(b'test video content')
+        try:
+            response = client.get('/media/videos/protected_test.mp4')
+            assert response.status_code == 200
+            assert response.get('Content-Type') == 'video/mp4'
+            assert response.get('X-Accel-Redirect') is None
+            assert b'test video content' in b''.join(response.streaming_content)  # type: ignore[attr-defined]
+        finally:
+            if os.path.exists(test_file):
+                safe_remove_file(test_file)
+
+    @override_settings(DEBUG=False)
+    def test_successful_file_serve_x_accel_redirect(
+        self, moderator_client: tuple[Client, User]
+    ) -> None:
+        """In production, files are served via X-Accel-Redirect."""
         client, _ = moderator_client
         folder_path = os.path.join(settings.MEDIA_ROOT, 'videos')
         os.makedirs(folder_path, exist_ok=True)
