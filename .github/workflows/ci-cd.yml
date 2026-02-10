@@ -461,6 +461,7 @@ jobs:
           EOFSETUP
 
       - name: Create draft PR to main
+        if: vars.CREATE_PR_ON_PREDEPLOY != 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

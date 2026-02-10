@@ -78,6 +78,15 @@ cat ~/.ssh/github_deploy
 - [ ] `PREPROD_SERVER_IP`
 - [ ] `PREPROD_DEPLOY_DIR`
 
+## Repository Variables (опциональные)
+
+Переменные настраиваются в: **Settings** → **Secrets and variables** → **Actions** → вкладка **Variables**
+
+| Variable | Описание | Значения | По умолчанию |
+|----------|----------|----------|--------------|
+| `CREATE_PR_ON_PREDEPLOY` | Создавать draft PR в main при деплое на препрод | `true` / `false` | `true` (если не задана) |
+| `CERTBOT_STAGING` | Использовать staging Let's Encrypt (тестовые сертификаты) | `0` / `1` | `0` |
+
 ## Идемпотентность
 
 Скрипт `generate-production-env.sh`:
