@@ -31,8 +31,9 @@ COPY . /app/
 # Create logs directory for security logging
 RUN mkdir -p /app/logs
 
-# Collect static files for nginx
-RUN python manage.py collectstatic --noinput
+# Copy and set entrypoint
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
-# Run the application
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "mypet_project.wsgi:application"]
