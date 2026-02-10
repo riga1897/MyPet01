@@ -27,7 +27,9 @@ print_error() {
 }
 
 DEPLOY_USER="${DEPLOY_USER:-depuser}"
+ADMIN_USER="${ADMIN_USER:-useradmin}"
 SSH_KEY_NAME="github_deploy"
+ADMIN_SSH_KEY_NAME="admin_key"
 
 if [ "$(id -u)" -ne 0 ]; then
     print_error "Скрипт должен запускаться от root"
@@ -37,16 +39,97 @@ fi
 print_header "MyPet01 — Настройка VPS"
 
 echo "Параметры:"
-echo "  Пользователь: $DEPLOY_USER"
+echo "  Пользователь деплоя:        $DEPLOY_USER"
+echo "  Пользователь администратор: $ADMIN_USER"
 echo ""
 
-print_header "1/3 — Обновление системы"
+print_header "1/5 — Обновление системы"
 
+export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get upgrade -y
+apt-get upgrade -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 print_success "Система обновлена"
 
-print_header "2/3 — Создание пользователя $DEPLOY_USER"
+print_header "2/5 — Создание администратора $ADMIN_USER"
+
+if getent passwd "$ADMIN_USER" > /dev/null 2>&1; then
+    print_success "Пользователь $ADMIN_USER уже существует"
+else
+    if id "$ADMIN_USER" &>/dev/null || [ -d "/home/$ADMIN_USER" ]; then
+        print_warning "Обнаружены остатки от предыдущего создания $ADMIN_USER. Очищаю..."
+        userdel -r "$ADMIN_USER" 2>/dev/null || true
+        rm -rf "/home/$ADMIN_USER" 2>/dev/null || true
+    fi
+
+    if ! adduser --disabled-password --gecos "" "$ADMIN_USER"; then
+        print_error "Не удалось создать пользователя $ADMIN_USER"
+        exit 1
+    fi
+    print_success "Пользователь $ADMIN_USER создан"
+fi
+
+if ! getent passwd "$ADMIN_USER" > /dev/null 2>&1; then
+    print_error "Пользователь $ADMIN_USER не найден после создания. Проверьте систему."
+    exit 1
+fi
+
+usermod -aG sudo "$ADMIN_USER"
+print_success "$ADMIN_USER добавлен в группу sudo"
+
+ADMIN_SUDOERS_FILE="/etc/sudoers.d/$ADMIN_USER"
+echo "$ADMIN_USER ALL=(ALL) NOPASSWD: ALL" > "$ADMIN_SUDOERS_FILE"
+if ! chmod 440 "$ADMIN_SUDOERS_FILE"; then
+    print_error "Не удалось установить права на sudoers для $ADMIN_USER"
+    rm -f "$ADMIN_SUDOERS_FILE"
+    exit 1
+fi
+if ! visudo -cf "$ADMIN_SUDOERS_FILE"; then
+    print_error "Ошибка синтаксиса в sudoers для $ADMIN_USER. Удаляю битый файл."
+    rm -f "$ADMIN_SUDOERS_FILE"
+    exit 1
+fi
+print_success "Sudo настроен для $ADMIN_USER (полные права, без пароля)"
+
+ADMIN_HOME=$(getent passwd "$ADMIN_USER" | cut -d: -f6)
+if [ -z "$ADMIN_HOME" ]; then
+    print_error "Не удалось определить домашнюю директорию $ADMIN_USER"
+    exit 1
+fi
+ADMIN_SSH_DIR="$ADMIN_HOME/.ssh"
+ADMIN_KEY_PATH="$ADMIN_SSH_DIR/$ADMIN_SSH_KEY_NAME"
+
+if ! mkdir -p "$ADMIN_SSH_DIR"; then
+    print_error "Не удалось создать директорию $ADMIN_SSH_DIR"
+    exit 1
+fi
+
+ADMIN_KEY_EXISTED=false
+if [ -f "$ADMIN_KEY_PATH" ]; then
+    print_warning "SSH ключ администратора уже существует: $ADMIN_KEY_PATH"
+    ADMIN_KEY_EXISTED=true
+else
+    if ! ssh-keygen -t ed25519 -C "$ADMIN_USER@$(hostname)" -f "$ADMIN_KEY_PATH" -N ""; then
+        print_error "Не удалось сгенерировать SSH ключ для $ADMIN_USER"
+        exit 1
+    fi
+    print_success "SSH ключ для $ADMIN_USER сгенерирован"
+fi
+
+touch "$ADMIN_SSH_DIR/authorized_keys"
+if [ -f "$ADMIN_KEY_PATH.pub" ]; then
+    cat "$ADMIN_KEY_PATH.pub" >> "$ADMIN_SSH_DIR/authorized_keys"
+    sort -u "$ADMIN_SSH_DIR/authorized_keys" -o "$ADMIN_SSH_DIR/authorized_keys"
+fi
+
+chown -R "$ADMIN_USER:$ADMIN_USER" "$ADMIN_SSH_DIR"
+chmod 700 "$ADMIN_SSH_DIR"
+chmod 600 "$ADMIN_SSH_DIR/authorized_keys"
+if [ -f "$ADMIN_KEY_PATH" ]; then
+    chmod 600 "$ADMIN_KEY_PATH"
+    chmod 600 "$ADMIN_KEY_PATH.pub"
+fi
+
+print_header "3/5 — Создание пользователя $DEPLOY_USER"
 
 if getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
     print_success "Пользователь $DEPLOY_USER уже существует"
@@ -108,7 +191,7 @@ if ! visudo -cf "$SUDOERS_FILE"; then
 fi
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "3/3 — SSH ключ для GitHub Actions"
+print_header "4/5 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
 if [ -z "$DEPLOY_HOME" ]; then
@@ -132,12 +215,13 @@ else
         print_error "Не удалось сгенерировать SSH ключ"
         exit 1
     fi
+    print_success "SSH ключ сгенерирован"
+fi
 
-    touch "$SSH_DIR/authorized_keys"
+touch "$SSH_DIR/authorized_keys"
+if [ -f "$KEY_PATH.pub" ]; then
     cat "$KEY_PATH.pub" >> "$SSH_DIR/authorized_keys"
     sort -u "$SSH_DIR/authorized_keys" -o "$SSH_DIR/authorized_keys"
-
-    print_success "SSH ключ сгенерирован"
 fi
 
 if ! getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
@@ -155,20 +239,57 @@ if [ -f "$KEY_PATH" ]; then
     chmod 600 "$KEY_PATH.pub"
 fi
 
+print_header "5/5 — Отключение root SSH"
+
+SSHD_CONFIG="/etc/ssh/sshd_config"
+if [ -f "$SSHD_CONFIG" ]; then
+    if grep -q "^PermitRootLogin" "$SSHD_CONFIG"; then
+        sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' "$SSHD_CONFIG"
+    elif grep -q "^#PermitRootLogin" "$SSHD_CONFIG"; then
+        sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' "$SSHD_CONFIG"
+    else
+        echo "PermitRootLogin no" >> "$SSHD_CONFIG"
+    fi
+    print_success "PermitRootLogin no установлен в $SSHD_CONFIG"
+
+    if systemctl restart sshd 2>/dev/null || systemctl restart ssh 2>/dev/null; then
+        print_success "SSH сервис перезапущен"
+    else
+        print_warning "Не удалось перезапустить SSH. Перезапустите вручную: systemctl restart sshd"
+    fi
+else
+    print_warning "Файл $SSHD_CONFIG не найден. Настройте PermitRootLogin вручную."
+fi
+
 echo ""
-echo -e "${YELLOW}╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${YELLOW}║  ВАЖНО: Скопируйте приватный ключ в GitHub Secret    ║${NC}"
-echo -e "${YELLOW}║  Secret name: PREPROD_SSH_KEY (или SSH_KEY для prod)  ║${NC}"
-echo -e "${YELLOW}║  SSH_USER: $DEPLOY_USER                               ║${NC}"
-echo -e "${YELLOW}╚═══════════════════════════════════════════════════════╝${NC}"
+echo -e "${YELLOW}╔══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${YELLOW}║  ВАЖНО: Скопируйте приватные ключи!                     ║${NC}"
+echo -e "${YELLOW}║                                                          ║${NC}"
+echo -e "${YELLOW}║  1. Ключ $ADMIN_USER — для подключения к серверу по SSH   ║${NC}"
+echo -e "${YELLOW}║  2. Ключ $DEPLOY_USER — в GitHub Secret для CI/CD        ║${NC}"
+echo -e "${YELLOW}║     Secret name: PREPROD_SSH_KEY (или SSH_KEY для prod)   ║${NC}"
+echo -e "${YELLOW}╚══════════════════════════════════════════════════════════╝${NC}"
 echo ""
+
+echo -e "${BLUE}=== SSH ключ администратора ($ADMIN_USER) ===${NC}"
+if [ "$ADMIN_KEY_EXISTED" = true ]; then
+    print_warning "Ключ был создан ранее. Если нужно показать его снова:"
+    echo "  cat $ADMIN_KEY_PATH"
+else
+    echo -e "${GREEN}--- НАЧАЛО КЛЮЧА $ADMIN_USER ---${NC}"
+    cat "$ADMIN_KEY_PATH"
+    echo -e "${GREEN}--- КОНЕЦ КЛЮЧА $ADMIN_USER ---${NC}"
+fi
+echo ""
+
+echo -e "${BLUE}=== SSH ключ деплоя ($DEPLOY_USER) ===${NC}"
 if [ "$KEY_EXISTED" = true ]; then
     print_warning "Ключ был создан ранее. Если нужно показать его снова:"
     echo "  cat $KEY_PATH"
 else
-    echo -e "${GREEN}--- НАЧАЛО КЛЮЧА (скопируйте всё включая BEGIN и END) ---${NC}"
+    echo -e "${GREEN}--- НАЧАЛО КЛЮЧА $DEPLOY_USER ---${NC}"
     cat "$KEY_PATH"
-    echo -e "${GREEN}--- КОНЕЦ КЛЮЧА ---${NC}"
+    echo -e "${GREEN}--- КОНЕЦ КЛЮЧА $DEPLOY_USER ---${NC}"
 fi
 echo ""
 
@@ -178,12 +299,19 @@ SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
 
 echo -e "${GREEN}VPS готов к деплою!${NC}"
 echo ""
+echo "Информация для подключения к серверу:"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo -e "  IP сервера:          ${YELLOW}$SERVER_IP${NC}"
+echo -e "  Администратор:       ${YELLOW}$ADMIN_USER${NC} (sudo без пароля)"
+echo -e "  Подключение:         ${YELLOW}ssh -i admin_key $ADMIN_USER@$SERVER_IP${NC}"
+echo -e "  Root SSH:            ${RED}ОТКЛЮЧЁН${NC}"
+echo ""
 echo "Информация для GitHub Secrets:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo -e "  PREPROD_SERVER_IP:   ${YELLOW}$SERVER_IP${NC}"
 echo -e "  PREPROD_SSH_USER:    ${YELLOW}$DEPLOY_USER${NC}"
 echo -e "  PREPROD_DEPLOY_DIR:  ${YELLOW}/opt/blog-preprod${NC}"
-echo -e "  PREPROD_SSH_KEY:     ${YELLOW}(приватный ключ выше)${NC}"
+echo -e "  PREPROD_SSH_KEY:     ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
 echo ""
 echo -e "${BLUE}При первом деплое CI/CD автоматически установит:${NC}"
 echo -e "${BLUE}  - Docker CE и Docker Compose${NC}"
@@ -192,8 +320,9 @@ echo -e "${BLUE}  - Fail2ban (защита от брутфорса)${NC}"
 echo -e "${BLUE}  - Создаст директорию деплоя${NC}"
 echo ""
 echo "Следующий шаг:"
-echo "  1. Скопируйте приватный ключ в GitHub Secret"
-echo "  2. Добавьте остальные секреты (см. docs/DEPLOY_CHECKLIST.md)"
-echo "  3. Сделайте git push в release/* ветку"
-echo "  4. Всё остальное CI/CD сделает автоматически"
+echo "  1. Скопируйте ключ $ADMIN_USER — для подключения к серверу"
+echo "  2. Скопируйте ключ $DEPLOY_USER в GitHub Secret"
+echo "  3. Добавьте остальные секреты (см. docs/DEPLOY_CHECKLIST.md)"
+echo "  4. Сделайте git push в release/* ветку"
+echo "  5. Всё остальное CI/CD сделает автоматически"
 echo ""
