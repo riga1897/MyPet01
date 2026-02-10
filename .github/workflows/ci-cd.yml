@@ -403,6 +403,30 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} "cd ${{ secrets.PREPROD_DEPLOY_DIR }} && docker compose -f docker-compose.prod.yml logs --tail=50"
           exit 1
 
+      - name: Setup SSL certificate (if needed)
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFSSL'
+            set -e
+            cd ${{ secrets.PREPROD_DEPLOY_DIR }}
+
+            CERT_DIR="/etc/letsencrypt/live/www.mine-craft.su"
+            CERT_EXISTS=$(docker compose -f docker-compose.prod.yml exec -T nginx sh -c "
+              if [ -f '$CERT_DIR/fullchain.pem' ] && openssl x509 -in '$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Dummy'; then
+                echo 'true'
+              else
+                echo 'false'
+              fi
+            " 2>/dev/null | tail -1)
+
+            if [ "$CERT_EXISTS" = "true" ]; then
+              echo 'Real SSL certificate already installed. Skipping.'
+            else
+              echo 'Real SSL certificate not found. Running init-letsencrypt...'
+              chmod +x init-letsencrypt.sh
+              STAGING=${{ vars.CERTBOT_STAGING || '0' }} ./init-letsencrypt.sh --auto
+            fi
+          EOFSSL
+
       - name: Run database migrations and setup
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFSETUP'
@@ -598,6 +622,30 @@ jobs:
           echo "Health check failed!"
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.DEPLOY_DIR }} && docker compose -f docker-compose.prod.yml logs --tail=50"
           exit 1
+
+      - name: Setup SSL certificate (if needed)
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOFSSL'
+            set -e
+            cd ${{ secrets.DEPLOY_DIR }}
+
+            CERT_DIR="/etc/letsencrypt/live/www.mine-craft.su"
+            CERT_EXISTS=$(docker compose -f docker-compose.prod.yml exec -T nginx sh -c "
+              if [ -f '$CERT_DIR/fullchain.pem' ] && openssl x509 -in '$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Dummy'; then
+                echo 'true'
+              else
+                echo 'false'
+              fi
+            " 2>/dev/null | tail -1)
+
+            if [ "$CERT_EXISTS" = "true" ]; then
+              echo 'Real SSL certificate already installed. Skipping.'
+            else
+              echo 'Real SSL certificate not found. Running init-letsencrypt...'
+              chmod +x init-letsencrypt.sh
+              STAGING=${{ vars.CERTBOT_STAGING || '0' }} ./init-letsencrypt.sh --auto
+            fi
+          EOFSSL
 
       - name: Run database migrations and setup
         run: |

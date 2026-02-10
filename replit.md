@@ -48,6 +48,8 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
 - **Containerization**: Designed to be container-compatible, running within Docker and Docker Compose environments.
 - **Database**: Utilizes PostgreSQL as the primary database.
 - **Code Quality**: Emphasizes TDD, 100% test coverage, and strict linting with `ruff` and static analysis with `mypy`.
+- **SSL/TLS Bootstrap**: Nginx uses a custom entrypoint (`nginx/docker-entrypoint.sh`) that creates a self-signed certificate on first deploy if none exists, allowing Nginx to start immediately. CI/CD then runs `init-letsencrypt.sh --auto` to replace it with a real Let's Encrypt certificate. Precomputed DH params are bundled as `nginx/ssl-dhparams.pem`.
+- **VPS Deployment**: Two separate VPS (preprod + production). `setup_vps.sh` creates depuser + SSH key only. CI/CD handles all infrastructure (Docker, UFW, fail2ban) on first deploy.
 
 ## Testing
 

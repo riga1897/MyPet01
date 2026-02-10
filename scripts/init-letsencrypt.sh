@@ -31,6 +31,13 @@ DOMAINS="${DOMAINS:-www.mine-craft.su site.mine-craft.su}"
 EMAIL="${EMAIL:-admin@mine-craft.su}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 STAGING="${STAGING:-0}"
+AUTO_MODE=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --auto) AUTO_MODE=true ;;
+    esac
+done
 
 CERT_NAME=$(echo "$DOMAINS" | awk '{print $1}')
 
@@ -42,16 +49,19 @@ echo "  Email:      $EMAIL"
 echo "  Compose:    $COMPOSE_FILE"
 echo "  Staging:    $STAGING (1 = тестовый режим)"
 echo "  Cert name:  $CERT_NAME"
+echo "  Auto mode:  $AUTO_MODE"
 echo ""
 
 if [ "$STAGING" = "1" ]; then
     print_warning "STAGING режим: будет выдан тестовый сертификат (не доверенный браузерами)"
 fi
 
-read -p "Продолжить? (y/n): " CONFIRM
-if [ "$CONFIRM" != "y" ]; then
-    echo "Отменено."
-    exit 0
+if [ "$AUTO_MODE" = false ]; then
+    read -p "Продолжить? (y/n): " CONFIRM
+    if [ "$CONFIRM" != "y" ]; then
+        echo "Отменено."
+        exit 0
+    fi
 fi
 
 print_header "1/5 — Скачивание параметров Diffie-Hellman"
