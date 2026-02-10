@@ -342,6 +342,16 @@ jobs:
               sudo apt-get install -y docker-compose-plugin
             fi
 
+            # --- Allow unprivileged port binding (for HAProxy in network_mode: host) ---
+            if ! grep -q 'net.ipv4.ip_unprivileged_port_start=0' /etc/sysctl.conf 2>/dev/null; then
+              echo 'Configuring unprivileged port binding...'
+              echo 'net.ipv4.ip_unprivileged_port_start=0' | sudo tee -a /etc/sysctl.conf
+              sudo sysctl -p
+              echo 'Unprivileged port binding configured'
+            else
+              echo 'Unprivileged port binding already configured'
+            fi
+
             echo '=== VPS infrastructure ready ==='
           EOFDEPS
 
@@ -561,6 +571,16 @@ jobs:
               echo 'Installing Docker Compose v2...'
               sudo apt-get update
               sudo apt-get install -y docker-compose-plugin
+            fi
+
+            # --- Allow unprivileged port binding (for HAProxy in network_mode: host) ---
+            if ! grep -q 'net.ipv4.ip_unprivileged_port_start=0' /etc/sysctl.conf 2>/dev/null; then
+              echo 'Configuring unprivileged port binding...'
+              echo 'net.ipv4.ip_unprivileged_port_start=0' | sudo tee -a /etc/sysctl.conf
+              sudo sysctl -p
+              echo 'Unprivileged port binding configured'
+            else
+              echo 'Unprivileged port binding already configured'
             fi
 
             echo '=== VPS infrastructure ready ==='

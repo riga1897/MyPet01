@@ -2,7 +2,6 @@ services:
   haproxy:
     image: haproxy:2.9-alpine
     network_mode: host
-    user: root
     cap_add:
       - NET_BIND_SERVICE
     volumes:
