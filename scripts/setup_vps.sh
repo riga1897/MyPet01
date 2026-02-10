@@ -81,12 +81,15 @@ Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemc
 
 # Настройка файрвола
 Cmnd_Alias DEPLOY_UFW = /usr/sbin/ufw default *, /usr/sbin/ufw allow *, /usr/sbin/ufw enable, /usr/sbin/ufw status *
+
+# Настройка sysctl (net.ipv4.ip_unprivileged_port_start для HAProxy)
+Cmnd_Alias DEPLOY_SYSCTL = /usr/sbin/sysctl -p, /usr/bin/tee -a /etc/sysctl.conf
 SUDOERS_EOF
 then
     print_error "Не удалось создать файл sudoers"
     exit 1
 fi
-echo "$DEPLOY_USER ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL, DEPLOY_UFW" >> "$SUDOERS_FILE"
+echo "$DEPLOY_USER ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL, DEPLOY_UFW, DEPLOY_SYSCTL" >> "$SUDOERS_FILE"
 if ! chmod 440 "$SUDOERS_FILE"; then
     print_error "Не удалось установить права на sudoers"
     rm -f "$SUDOERS_FILE"
