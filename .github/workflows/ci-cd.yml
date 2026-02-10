@@ -379,7 +379,7 @@ jobs:
             cd ${{ secrets.PREPROD_DEPLOY_DIR }}
 
             chmod +x generate-preprod-env.sh
-            SERVER_IP=${{ secrets.PREPROD_SERVER_IP }} ./generate-preprod-env.sh
+            SERVER_IP=${{ secrets.PREPROD_SERVER_IP }} LOAD_DEMO_DATA=${{ vars.LOAD_DEMO_DATA || 'false' }} ./generate-preprod-env.sh
 
             # Update Docker image config in .env (idempotent)
             grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=preprod-latest/" .env || echo "IMAGE_TAG=preprod-latest" >> .env
