@@ -439,10 +439,10 @@ class TestProtectedMediaView:
         response = client.get('/media/videos/nonexistent.mp4')
         assert response.status_code == 404
 
-    def test_successful_file_serve(
+    def test_successful_file_serve_with_x_accel(
         self, moderator_client: tuple[Client, User]
     ) -> None:
-        """Authenticated users can access media files."""
+        """Authenticated users get X-Accel-Redirect for media files."""
         client, _ = moderator_client
         folder_path = os.path.join(settings.MEDIA_ROOT, 'videos')
         os.makedirs(folder_path, exist_ok=True)
@@ -453,6 +453,7 @@ class TestProtectedMediaView:
             response = client.get('/media/videos/protected_test.mp4')
             assert response.status_code == 200
             assert response.get('Content-Type') == 'video/mp4'
+            assert response.get('X-Accel-Redirect') == '/protected-media/videos/protected_test.mp4'
         finally:
             if os.path.exists(test_file):
                 safe_remove_file(test_file)
