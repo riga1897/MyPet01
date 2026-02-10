@@ -38,7 +38,7 @@ cat > "$ENV_FILE" << EOF
 # Основные настройки
 DEBUG=False
 SECRET_KEY=$SECRET_KEY
-ALLOWED_HOSTS=$SERVER_IP,localhost,127.0.0.1
+ALLOWED_HOSTS=$SERVER_IP,www.mine-craft.su,site.mine-craft.su,localhost,127.0.0.1
 
 # База данных
 DATABASE_URL=postgresql://blog_user:$POSTGRES_PASSWORD@db:5432/blog_db
@@ -49,7 +49,7 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 
 # CSRF
-CSRF_TRUSTED_ORIGINS=http://$SERVER_IP,https://$SERVER_IP
+CSRF_TRUSTED_ORIGINS=http://$SERVER_IP,https://$SERVER_IP,https://www.mine-craft.su,https://site.mine-craft.su
 CSRF_COOKIE_HTTPONLY=True
 CSRF_COOKIE_SAMESITE=Lax
 
