@@ -456,7 +456,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          gh pr create --base main --head "$BRANCH_NAME" --title "Release to Production" --draft || echo "PR already exists or cannot be created"
+          gh pr create --base main --head "$BRANCH_NAME" --title "Release to Production" --body "Automated PR from release branch $BRANCH_NAME" --draft || echo "PR already exists or cannot be created"
 
   deploy-production:
     runs-on: ubuntu-latest
