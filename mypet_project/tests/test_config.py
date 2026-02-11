@@ -47,7 +47,7 @@ class TestSettings:
 
     @patch.dict(os.environ, {}, clear=True)
     def test_production_security_defaults(self) -> None:
-        settings = Settings(_env_file=None)
+        settings = Settings(_env_file=None)  # type: ignore[call-arg]
         assert settings.is_secure_ssl_redirect is False
         assert settings.get_secure_hsts_seconds == 0
         assert settings.is_secure_hsts_include_subdomains is False
