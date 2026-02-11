@@ -1,0 +1,23 @@
+root@vdska:~# # Какие контейнеры запущены
+docker ps
+
+# Есть ли certbot контейнер
+docker ps -a | grep certbot
+
+# Статус nginx (может быть в Docker)
+docker ps | grep nginx
+
+# Проверить сертификаты в Docker-томе
+docker volume ls | grep cert
+CONTAINER ID   IMAGE                             COMMAND                  CREATED         STATUS                   PORTS                                                                                                                                                                           NAMES
+42e017b6f9fa   haproxy:2.9-alpine                "docker-entrypoint.s…"   7 minutes ago   Up 7 minutes                                                                                                                                                                                             blog-haproxy-1
+14bd49288c8f   nginx:alpine                      "/docker-entrypoint-…"   7 minutes ago   Up 7 minutes             127.0.0.1:8443->8443/tcp, 127.0.0.1:8080->80/tcp                                                                                                                                blog-nginx-1
+bde39cfa0cf6   ghcr.io/riga1897/mypet01:latest   "/app/docker-entrypo…"   7 minutes ago   Up 7 minutes             127.0.0.1:8000->8000/tcp                                                                                                                                                        blog-web-1
+882b220d7164   postgres:15-alpine                "docker-entrypoint.s…"   7 minutes ago   Up 7 minutes (healthy)   5432/tcp                                                                                                                                                                        blog-db-1
+1941f78fd53d   redis:7-alpine                    "docker-entrypoint.s…"   7 minutes ago   Up 7 minutes (healthy)   6379/tcp                                                                                                                                                                        blog-redis-1
+84f6d703af2e   certbot/certbot:latest            "/bin/sh -c 'trap ex…"   7 minutes ago   Up 7 minutes             80/tcp, 443/tcp                                                                                                                                                                 blog-certbot-1
+225be6864869   softethervpn/vpnserver:stable     "/usr/local/bin/vpns…"   7 minutes ago   Up 7 minutes             0.0.0.0:500->500/udp, 0.0.0.0:1194->1194/udp, 0.0.0.0:1701->1701/udp, 0.0.0.0:992->992/tcp, 0.0.0.0:4500->4500/udp, 0.0.0.0:5555->5555/tcp, 1194/tcp, 127.0.0.1:4443->443/tcp   blog-softether-1
+84f6d703af2e   certbot/certbot:latest            "/bin/sh -c 'trap ex…"   7 minutes ago   Up 7 minutes             80/tcp, 443/tcp                                                                                                                                                                 blog-certbot-1
+14bd49288c8f   nginx:alpine                      "/docker-entrypoint-…"   7 minutes ago   Up 7 minutes             127.0.0.1:8443->8443/tcp, 127.0.0.1:8080->80/tcp                                                                                                                                blog-nginx-1
+local     blog_certbot_conf
+local     blog_certbot_www
