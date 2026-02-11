@@ -44,7 +44,7 @@ class Settings(BaseSettings):
 
     secure_browser_xss_filter: bool = True
     secure_content_type_nosniff: bool = True
-    x_frame_options: str = 'DENY'
+    x_frame_options: str = 'ALLOWALL'
 
     admin_show_facets: bool = True
 

@@ -146,7 +146,7 @@ CONTENT_SECURITY_POLICY = {
         "connect-src": [
             "'self'",
         ],
-        "frame-ancestors": ["'self'"],
+        "frame-ancestors": ["'self'", "https://*.replit.dev", "https://*.repl.co"],
         "base-uri": ["'self'"],
         "form-action": ["'self'"],
     }

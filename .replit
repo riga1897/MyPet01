@@ -1,4 +1,4 @@
-modules = ["ruff-0.4.4", "python-3.12", "pyright-extended-2.0.13", "postgresql-16"]
+modules = ["python-3.12", "web", "bash", "nodejs-20"]
 
 [[ports]]
 localPort = 5000
@@ -35,6 +35,10 @@ waitForPort = 5000
 [userenv]
 
 [userenv.shared]
+DEBUG = "True"
+ALLOWED_HOSTS = "*"
+X_FRAME_OPTIONS = "ALLOWALL"
+CSRF_TRUSTED_ORIGINS = "https://*.replit.dev,https://*.repl.co,https://*.pike.replit.dev,https://*.janeway.replit.dev"
 
 [nix]
 channel = "stable-25_05"
