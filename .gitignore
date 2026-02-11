@@ -216,3 +216,9 @@ media/
 logs/*.log
 
 .tmp/
+
+# Node.js (Tailwind CSS build)
+node_modules/
+
+# Built CSS (generated from tailwind-input.css)
+static/css/tailwind.css

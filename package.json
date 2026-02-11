@@ -1,0 +1,21 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "Веб-приложение для публикации и просмотра фото- и видеоконтента.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build:css": "npx @tailwindcss/cli -i static/css/tailwind-input.css -o static/css/tailwind.css --minify",
+    "watch:css": "npx @tailwindcss/cli -i static/css/tailwind-input.css -o static/css/tailwind.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "tailwindcss": "^4.1.18"
+  }
+}
