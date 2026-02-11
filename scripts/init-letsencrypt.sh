@@ -78,33 +78,12 @@ docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" certbot sh -c "
 
 print_success "TLS параметры загружены"
 
-print_header "2/5 — Создание временного самоподписанного сертификата"
+print_header "2/5 — Проверка существующих сертификатов"
 
 CERT_DIR="/etc/letsencrypt/live/$CERT_NAME"
 
-docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" certbot sh -c "
-    if [ -d '$CERT_DIR' ] && [ -f '$CERT_DIR/fullchain.pem' ]; then
-        echo 'Certificate already exists. Checking if it is a dummy...'
-        if openssl x509 -in '$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -q 'O=Dummy'; then
-            echo 'Dummy certificate found, will be replaced.'
-        else
-            echo 'Real certificate found. Skipping dummy creation.'
-            echo 'REAL_CERT_EXISTS=true'
-            exit 0
-        fi
-    fi
-
-    echo 'Creating dummy certificate for nginx startup...'
-    mkdir -p '$CERT_DIR'
-    openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
-        -keyout '$CERT_DIR/privkey.pem' \
-        -out '$CERT_DIR/fullchain.pem' \
-        -subj '/CN=localhost/O=Dummy'
-    echo 'Dummy certificate created.'
-"
-
 REAL_EXISTS=$(docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" certbot sh -c "
-    if [ -f '$CERT_DIR/fullchain.pem' ] && openssl x509 -in '$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Dummy'; then
+    if [ -f '$CERT_DIR/fullchain.pem' ] && [ ! -L '$CERT_DIR/fullchain.pem' ] && openssl x509 -in '$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Temporary'; then
         echo 'true'
     else
         echo 'false'
@@ -119,7 +98,7 @@ if [ "$REAL_EXISTS" = "true" ]; then
     exit 0
 fi
 
-print_success "Временный сертификат создан"
+print_success "Настоящий сертификат не найден — будет получен от Let's Encrypt"
 
 print_header "3/5 — Запуск nginx с временным сертификатом"
 
@@ -148,8 +127,11 @@ fi
 
 docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" certbot sh -c "
     rm -rf /etc/letsencrypt/live/$CERT_NAME
+    rm -rf /etc/letsencrypt/live/$CERT_NAME-*
     rm -rf /etc/letsencrypt/archive/$CERT_NAME
+    rm -rf /etc/letsencrypt/archive/$CERT_NAME-*
     rm -rf /etc/letsencrypt/renewal/$CERT_NAME.conf
+    rm -rf /etc/letsencrypt/renewal/$CERT_NAME-*.conf
 "
 
 docker compose -f "$COMPOSE_FILE" run --rm certbot certonly \
