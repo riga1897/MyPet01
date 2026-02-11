@@ -1,0 +1,139 @@
+<script>
+let selectedCategoryFilters = new Set();
+
+function initCategoryFilters() {
+    document.querySelectorAll('.category-filter-checkbox').forEach(cb => {
+        if (cb.checked) {
+            selectedCategoryFilters.add(cb.dataset.categoryCode);
+        }
+    });
+}
+
+function toggleCategoryFilterDropdown(button) {
+    const dropdown = button.closest('.category-filter-dropdown');
+    const menu = dropdown.querySelector('.dropdown-menu');
+    const arrow = button.querySelector('.dropdown-arrow');
+    
+    document.querySelectorAll('.category-filter-dropdown .dropdown-menu').forEach(m => {
+        if (m !== menu) {
+            m.classList.add('hidden');
+            m.closest('.category-filter-dropdown').querySelector('.dropdown-arrow').classList.remove('rotate-180');
+        }
+    });
+    
+    menu.classList.toggle('hidden');
+    arrow.classList.toggle('rotate-180');
+}
+
+function handleCategoryFilterSelectAll(checkbox) {
+    const isChecked = checkbox.checked;
+    
+    document.querySelectorAll('.category-filter-checkbox').forEach(cb => {
+        cb.checked = isChecked;
+        if (isChecked) {
+            selectedCategoryFilters.add(cb.dataset.categoryCode);
+        } else {
+            selectedCategoryFilters.delete(cb.dataset.categoryCode);
+        }
+    });
+    
+    updateCategoryFilterCount();
+    applyCategoryFilter();
+}
+
+function handleCategoryFilterCheckboxChange(checkbox) {
+    const code = checkbox.dataset.categoryCode;
+    
+    if (checkbox.checked) {
+        selectedCategoryFilters.add(code);
+    } else {
+        selectedCategoryFilters.delete(code);
+    }
+    
+    updateCategoryFilterSelectAllState();
+    updateCategoryFilterCount();
+    applyCategoryFilter();
+}
+
+function updateCategoryFilterSelectAllState() {
+    const allCheckboxes = document.querySelectorAll('.category-filter-checkbox');
+    const selectAllCheckbox = document.getElementById('category-filter-select-all');
+    
+    if (allCheckboxes.length === 0) return;
+    
+    const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+    selectAllCheckbox.checked = allChecked;
+}
+
+function updateCategoryFilterCount() {
+    const allCheckboxes = document.querySelectorAll('.category-filter-checkbox');
+    const checkedCount = Array.from(allCheckboxes).filter(cb => cb.checked).length;
+    const totalCount = allCheckboxes.length;
+    const countBadge = document.getElementById('category-filter-count');
+    
+    if (checkedCount > 0 && checkedCount < totalCount) {
+        countBadge.textContent = checkedCount;
+        countBadge.classList.remove('hidden');
+    } else {
+        countBadge.classList.add('hidden');
+    }
+}
+
+function getSelectedCategoryFilters() {
+    return Array.from(selectedCategoryFilters);
+}
+
+function matchesCategoryFilter(categoryData) {
+    const allCheckboxes = document.querySelectorAll('.category-filter-checkbox');
+    const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+    const noneChecked = selectedCategoryFilters.size === 0;
+    
+    if (allChecked) return true;
+    
+    const categories = categoryData ? categoryData.split(',').filter(c => c).map(c => c.toLowerCase()) : [];
+    
+    if (noneChecked) {
+        return categories.length === 0;
+    }
+    
+    if (categories.length === 0) {
+        return false;
+    }
+    
+    return categories.some(cat => selectedCategoryFilters.has(cat));
+}
+
+function applyCategoryFilter() {
+    if (typeof applyFilters === 'function') {
+        applyFilters();
+    }
+    if (typeof updateTagDropdownsVisibility === 'function') {
+        updateTagDropdownsForCategories();
+    }
+}
+
+function updateTagDropdownsForCategories() {
+    const selectedCats = getSelectedCategoryFilters();
+    const allCheckboxes = document.querySelectorAll('.category-filter-checkbox');
+    const allSelected = selectedCats.length === allCheckboxes.length;
+    
+    if (typeof updateTagDropdownsVisibility === 'function') {
+        updateTagDropdownsVisibility(allSelected ? ['all'] : selectedCats);
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.category-filter-dropdown')) {
+        document.querySelectorAll('.category-filter-dropdown .dropdown-menu').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+        document.querySelectorAll('.category-filter-dropdown .dropdown-arrow').forEach(arrow => {
+            arrow.classList.remove('rotate-180');
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCategoryFilters();
+});
+</script>

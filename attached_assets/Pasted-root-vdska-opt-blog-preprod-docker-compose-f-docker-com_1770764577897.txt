@@ -1,0 +1,48 @@
+root@vdska:/opt/blog-preprod# docker compose -f docker-compose.prod.yml exec web python manage.py shell -c "
+from django.test import Client
+from django.contrib.auth.models import User
+
+client = Client(SERVER_NAME='site.mine-craft.su')
+user = User.objects.first()
+client.force_login(user)
+response = client.get('/media/thumbnails/yoga_meditation_peac_c09a094e.jpg', SERVER_NAME='site.mine-craft.su')
+print(f'status={response.status_code}')
+for k, v in response.items():
+    print(f'{k}: {v}')
+"
+16 objects imported automatically (use -v 2 for details).
+
+2026-02-10 23:00:52,479 security INFO [LOGIN_SUCCESS] IP=unknown username=admin
+status=200
+Content-Type: image/jpeg
+X-Accel-Redirect: /protected-media/thumbnails/yoga_meditation_peac_c09a094e.jpg
+Cache-Control: public, max-age=86400
+X-Frame-Options: DENY
+Content-Length: 0
+Vary: Cookie
+Content-Security-Policy: connect-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; default-src 'self'; script-src 'self' 'unsafe-inline' cdn.tailwindcss.com; img-src 'self' data: blob:; media-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; font-src 'self' fonts.gstatic.com; form-action 'self'
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+Cross-Origin-Opener-Policy: same-origin
+root@vdska:/opt/blog-preprod# docker compose -f docker-compose.prod.yml exec web python manage.py shell -c "
+from django.contrib.sessions.backends.db import SessionStore
+from django.contrib.auth.models import User
+from django.contrib.auth import login
+from django.test import RequestFactory
+
+session = SessionStore()
+user = User.objects.first()
+session['_auth_user_id'] = str(user.pk)
+session['_auth_user_backend'] = 'django.contrib.auth.backends.ModelBackend'
+session['_auth_user_hash'] = user.get_session_auth_hash()
+session.save()
+print(f'sessionid={session.session_key}')
+"
+16 objects imported automatically (use -v 2 for details).
+
+sessionid=2sle9whhhse0t7d4zb0l8yla16tqgu80
+root@vdska:/opt/blog-preprod# docker compose -f docker-compose.prod.yml exec nginx wget -S -O /dev/null "http://web:8000/media/thumbnails/yoga_meditation_peac_c09a094e.jpg" --header="Cookie: sessionid=2sle9whhhse0t7d4zb0l8yla16tqgu80" 2>&1
+Connecting to web:8000 (172.18.0.4:8000)
+  HTTP/1.1 400 Bad Request
+wget: server returned error: HTTP/1.1 400 Bad Request
+root@vdska:/opt/blog-preprod#

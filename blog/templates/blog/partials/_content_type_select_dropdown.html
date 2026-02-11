@@ -1,0 +1,113 @@
+{% comment %}
+Content type select with checkboxes (single selection or none).
+Requires:
+  - content_types: QuerySet of ContentType
+  - selected_content_type_id: Selected content type ID (optional)
+  - has_file: Boolean indicating if file is already uploaded (locks selection)
+Usage: {% include 'blog/partials/_content_type_select_dropdown.html' with content_types=content_types selected_content_type_id=selected_content_type_id %}
+{% endcomment %}
+
+<input type="hidden" name="content_type" id="content_type_hidden" value="{% if selected_content_type_id %}{{ selected_content_type_id }}{% endif %}">
+
+<div id="content-type-select-dropdown" 
+     class="content-type-select-dropdown relative inline-block {% if has_file %}pointer-events-none opacity-50{% endif %}" 
+     data-has-file="{{ has_file|yesno:'true,false' }}">
+    
+    <button type="button" 
+            onclick="toggleContentTypeDropdown(this)"
+            {% if has_file %}disabled{% endif %}
+            class="dropdown-toggle">
+        <span class="selected-type-name">{% if selected_content_type_id %}{% for ct in content_types %}{% if ct.id == selected_content_type_id %}{{ ct.name }}{% endif %}{% endfor %}{% else %}Выберите тип{% endif %}</span>
+        <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
+    
+    {% if has_file %}
+    <p class="text-xs text-muted-foreground mt-1">(нельзя изменить после загрузки файла)</p>
+    {% endif %}
+    
+    <div class="dropdown-menu hidden">
+        {% for ct in content_types %}
+        <label class="content-type-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
+            <input type="checkbox" 
+                   class="content-type-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                   value="{{ ct.id }}"
+                   data-content-type-code="{{ ct.code }}"
+                   data-content-type-name="{{ ct.name }}"
+                   data-upload-folder="{{ ct.upload_folder }}"
+                   {% if ct.id == selected_content_type_id %}checked{% endif %}
+                   onchange="handleContentTypeCheckboxChange(this)">
+            <span class="text-sm">{{ ct.name }}</span>
+        </label>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+if (typeof window._contentTypeSelectInitialized === 'undefined') {
+    window._contentTypeSelectInitialized = true;
+
+    function toggleContentTypeDropdown(button) {
+        const dropdown = button.closest('.content-type-select-dropdown');
+        if (dropdown.dataset.hasFile === 'true') return;
+        
+        const menu = dropdown.querySelector('.dropdown-menu');
+        const arrow = dropdown.querySelector('.dropdown-arrow');
+        const isOpen = !menu.classList.contains('hidden');
+        
+        document.querySelectorAll('.content-type-select-dropdown .dropdown-menu, .category-select-dropdown .dropdown-menu, .tag-group-select .dropdown-menu').forEach(m => {
+            m.classList.add('hidden');
+            const arrowEl = m.closest('.content-type-select-dropdown, .category-select-dropdown, .tag-group-select')?.querySelector('.dropdown-arrow');
+            if (arrowEl) arrowEl.classList.remove('rotate-180');
+        });
+        
+        if (!isOpen) {
+            menu.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        }
+    }
+    window.toggleContentTypeDropdown = toggleContentTypeDropdown;
+
+    function handleContentTypeCheckboxChange(checkbox) {
+        const dropdown = checkbox.closest('.content-type-select-dropdown');
+        const allCheckboxes = dropdown.querySelectorAll('.content-type-checkbox');
+        const nameSpan = dropdown.querySelector('.selected-type-name');
+        const hiddenInput = document.getElementById('content_type_hidden');
+        
+        if (checkbox.checked) {
+            allCheckboxes.forEach(cb => {
+                if (cb !== checkbox) {
+                    cb.checked = false;
+                }
+            });
+            nameSpan.textContent = checkbox.dataset.contentTypeName;
+            hiddenInput.value = checkbox.value;
+        } else {
+            nameSpan.textContent = 'Выберите тип';
+            hiddenInput.value = '';
+        }
+        
+        notifyContentTypeChange();
+    }
+    window.handleContentTypeCheckboxChange = handleContentTypeCheckboxChange;
+
+    function notifyContentTypeChange() {
+        if (typeof onContentTypeChanged === 'function') {
+            const selectedCheckbox = document.querySelector('.content-type-checkbox:checked');
+            const code = selectedCheckbox ? selectedCheckbox.dataset.contentTypeCode : '';
+            onContentTypeChanged(code ? [code] : []);
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.content-type-select-dropdown')) {
+            document.querySelectorAll('.content-type-select-dropdown .dropdown-menu').forEach(menu => {
+                menu.classList.add('hidden');
+                const arrow = menu.closest('.content-type-select-dropdown')?.querySelector('.dropdown-arrow');
+                if (arrow) arrow.classList.remove('rotate-180');
+            });
+        }
+    });
+}
+</script>

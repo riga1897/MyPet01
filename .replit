@@ -1,0 +1,41 @@
+modules = ["ruff-0.4.4", "python-3.12", "pyright-extended-2.0.13", "postgresql-16"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[agent]
+expertMode = true
+integrations = ["python_database:1.0.0"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Run Django App"
+
+[[workflows.workflow]]
+name = "Run Django App"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "poetry run python manage.py runserver 0.0.0.0:5000 --noreload"
+waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+
+[nix]
+channel = "stable-25_05"
+packages = ["ffmpeg", "freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]

@@ -1,0 +1,666 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} контент — Гармония Души{% endblock %}
+
+{% block content %}
+{% include "blog/partials/_header.html" %}
+
+<div class="min-h-screen p-4 pt-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-semibold text-foreground">{{ action }} контент</h1>
+            <a href="{% url 'blog:content_list' %}" class="text-primary hover:underline">← Назад к списку</a>
+        </div>
+        
+        <div class="card-lg">
+            <form method="post" enctype="multipart/form-data" class="space-y-5" id="content-form">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="id_title" class="form-label">
+                        Заголовок
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                    <p class="form-error">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_description" class="form-label">
+                        Описание
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <p class="form-error">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="form-label">
+                        Тип контента
+                    </label>
+                    {% include "blog/partials/_content_type_select_dropdown.html" with content_types=content_types selected_content_type_id=selected_content_type_id has_file=has_file %}
+                    {% if form.content_type.errors %}
+                    <p class="form-error">{{ form.content_type.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="form-label">
+                        Категория
+                    </label>
+                    {% include "blog/partials/_category_select_dropdown.html" with categories=categories selected_category_ids=selected_category_ids %}
+                    {% if form.categories.errors %}
+                    <p class="form-error">{{ form.categories.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="form-label">
+                        Теги
+                    </label>
+                    {% include "blog/partials/_tag_filter_dropdowns.html" with tag_groups=tag_groups field_name='tags' selected_tag_ids=selected_tag_ids %}
+                    {% if form.tags.errors %}
+                    <p class="form-error">{{ form.tags.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div id="file-upload-section">
+                    <label class="form-label">
+                        <span id="file-label">Файл</span>
+                    </label>
+                    
+                    <div id="file-mode-buttons" class="mode-toggle-buttons">
+                        <button type="button" id="btn-file-upload-mode" onclick="setFileMode('upload')"
+                                class="btn-primary-sm">
+                            Загрузить
+                        </button>
+                        <button type="button" id="btn-file-select-mode" onclick="setFileMode('select')"
+                                class="btn-tab-inactive">
+                            Выбрать из имеющихся
+                        </button>
+                    </div>
+                    
+                    <div id="file-upload-mode">
+                        <div id="file-upload-area" class="hidden">
+                            <button type="button" onclick="openFileDialog()" class="file-upload-area">
+                                Нажмите для выбора файла
+                            </button>
+                        </div>
+                        <div id="file-selected-display" class="hidden file-selected-display">
+                            <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span id="file-name-display" class="text-sm text-foreground flex-1 truncate"></span>
+                            <button type="button" onclick="clearFileSelection()" 
+                                    class="btn-icon-danger flex-shrink-0" title="Убрать файл">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="file-select-mode" class="hidden">
+                        <select id="existing-file-select" onchange="onExistingFileSelected(this)"
+                                class="form-input">
+                            <option value="">— Сначала выберите тип контента —</option>
+                        </select>
+                        <p id="no-files-message" class="hidden text-sm text-muted-foreground mt-1">
+                            Нет доступных файлов в папке этого типа контента
+                        </p>
+                    </div>
+                    
+                    <input type="file" 
+                           name="video_file" 
+                           id="id_video_file"
+                           class="hidden"
+                           accept=""
+                           onchange="onFileSelected(this)">
+                    <input type="hidden" name="existing_file" id="existing_file_input" value="">
+                    
+                    {% if object.video_file %}
+                    <div id="current-file-info" class="current-file-info">
+                        <span class="text-sm text-foreground flex-1">{{ object.video_file.name|truncatechars:50 }}</span>
+                        <button type="button" onclick="detachFile()" 
+                                class="btn-icon-danger" title="Открепить файл">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <input type="hidden" name="detach_file" id="detach_file_input" value="">
+                    </div>
+                    {% endif %}
+                    {% if form.video_file.errors %}
+                    <p class="form-error">{{ form.video_file.errors.0 }}</p>
+                    {% endif %}
+                    <p id="file-hint" class="form-hint"></p>
+                </div>
+                
+                <div id="thumbnail-section">
+                    <label class="form-label">
+                        Миниатюра (необязательно)
+                    </label>
+                    
+                    <div id="thumb-mode-buttons" class="mode-toggle-buttons">
+                        <button type="button" id="btn-thumb-upload-mode" onclick="setThumbMode('upload')"
+                                class="btn-primary-sm">
+                            Загрузить
+                        </button>
+                        <button type="button" id="btn-thumb-select-mode" onclick="setThumbMode('select')"
+                                class="btn-tab-inactive">
+                            Выбрать из имеющихся
+                        </button>
+                    </div>
+                    
+                    <div id="thumb-upload-mode">
+                        <div id="thumb-upload-area" class="hidden">
+                            <button type="button" onclick="openThumbDialog()" class="file-upload-area">
+                                Нажмите для выбора изображения
+                            </button>
+                        </div>
+                        <div id="thumb-selected-display" class="hidden file-selected-display">
+                            <svg class="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span id="thumb-name-display" class="text-sm text-foreground flex-1 truncate"></span>
+                            <button type="button" onclick="clearThumbSelection()" 
+                                    class="btn-icon-danger flex-shrink-0" title="Убрать миниатюру">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="thumb-select-mode" class="hidden">
+                        <select id="existing-thumb-select" onchange="onExistingThumbSelected(this)"
+                                class="form-input">
+                            <option value="">— Выберите миниатюру —</option>
+                        </select>
+                        <p id="no-thumbs-message" class="hidden text-sm text-muted-foreground mt-1">
+                            Нет доступных миниатюр
+                        </p>
+                    </div>
+                    
+                    <input type="file" 
+                           name="thumbnail" 
+                           id="id_thumbnail"
+                           class="hidden"
+                           accept="image/*"
+                           onchange="onThumbSelected(this)">
+                    <input type="hidden" name="existing_thumbnail" id="existing_thumbnail_input" value="">
+                    
+                    {% if object.thumbnail %}
+                    <div id="current-thumbnail-info" class="current-file-info">
+                        <span class="text-sm text-foreground flex-1">{{ object.thumbnail.name|truncatechars:50 }}</span>
+                        <button type="button" onclick="detachThumbnail()" 
+                                class="btn-icon-danger" title="Открепить миниатюру">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <input type="hidden" name="detach_thumbnail" id="detach_thumbnail_input" value="">
+                    </div>
+                    {% endif %}
+                    {% if form.thumbnail.errors %}
+                    <p class="form-error">{{ form.thumbnail.errors.0 }}</p>
+                    {% endif %}
+                    <p class="form-hint">
+                        Если не выбрана, будет сгенерирована автоматически (для фото/видео) или использована заглушка
+                    </p>
+                </div>
+                
+                
+                <div id="upload-progress-section" class="hidden">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="progress-bar-container">
+                            <div id="upload-progress-bar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                        <span id="upload-progress-text" class="text-sm text-muted-foreground min-w-[50px]">0%</span>
+                    </div>
+                    <p id="upload-status-text" class="form-hint">Загрузка файла...</p>
+                </div>
+                
+                <div id="submit-buttons" class="flex justify-between pt-4">
+                    <button type="submit" id="submit-btn" class="btn-primary">
+                        Сохранить
+                    </button>
+                    <a href="{% url 'blog:content_list' %}" class="btn-secondary">
+                        Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const hasExistingFile = {{ has_file|yesno:"true,false" }};
+    const contentId = {{ object.pk|default:"null" }};
+    let fileSelected = false;
+    let currentFileMode = 'upload';
+    let currentThumbMode = 'upload';
+    
+    function getSelectedContentTypeFolder() {
+        const selected = document.querySelector('.content-type-checkbox:checked');
+        return selected ? selected.dataset.uploadFolder : '';
+    }
+    
+    function getSelectedContentTypeCode() {
+        const selected = document.querySelector('.content-type-checkbox:checked');
+        return selected ? selected.dataset.contentTypeCode : '';
+    }
+    
+    function showContentTypeWarning() {
+        const existingWarning = document.getElementById('content-type-warning');
+        if (existingWarning) existingWarning.remove();
+        
+        const warning = document.createElement('div');
+        warning.id = 'content-type-warning';
+        warning.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
+        warning.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <span>Сначала выберите тип контента</span>
+        `;
+        document.body.appendChild(warning);
+        
+        setTimeout(() => {
+            warning.classList.add('opacity-0', 'transition-opacity');
+            setTimeout(() => warning.remove(), 300);
+        }, 3000);
+    }
+    
+    function setFileMode(mode) {
+        currentFileMode = mode;
+        const uploadBtn = document.getElementById('btn-file-upload-mode');
+        const selectBtn = document.getElementById('btn-file-select-mode');
+        const uploadMode = document.getElementById('file-upload-mode');
+        const selectMode = document.getElementById('file-select-mode');
+        const uploadArea = document.getElementById('file-upload-area');
+        
+        if (mode === 'upload') {
+            uploadBtn.className = 'btn-primary-sm';
+            selectBtn.className = 'btn-tab-inactive';
+            uploadMode.classList.remove('hidden');
+            selectMode.classList.add('hidden');
+            uploadArea.classList.remove('hidden');
+        } else {
+            uploadBtn.className = 'btn-tab-inactive';
+            selectBtn.className = 'btn-primary-sm';
+            uploadMode.classList.add('hidden');
+            selectMode.classList.remove('hidden');
+            loadAvailableFiles();
+        }
+    }
+    window.setFileMode = setFileMode;
+    
+    function setThumbMode(mode) {
+        currentThumbMode = mode;
+        const uploadBtn = document.getElementById('btn-thumb-upload-mode');
+        const selectBtn = document.getElementById('btn-thumb-select-mode');
+        const uploadMode = document.getElementById('thumb-upload-mode');
+        const selectMode = document.getElementById('thumb-select-mode');
+        const uploadArea = document.getElementById('thumb-upload-area');
+        
+        if (mode === 'upload') {
+            uploadBtn.className = 'btn-primary-sm';
+            selectBtn.className = 'btn-tab-inactive';
+            uploadMode.classList.remove('hidden');
+            selectMode.classList.add('hidden');
+            uploadArea.classList.remove('hidden');
+        } else {
+            uploadBtn.className = 'btn-tab-inactive';
+            selectBtn.className = 'btn-primary-sm';
+            uploadMode.classList.add('hidden');
+            selectMode.classList.remove('hidden');
+            loadAvailableThumbnails();
+        }
+    }
+    window.setThumbMode = setThumbMode;
+    
+    function loadAvailableThumbnails() {
+        const select = document.getElementById('existing-thumb-select');
+        const noThumbsMsg = document.getElementById('no-thumbs-message');
+        
+        select.innerHTML = '<option value="">— Загрузка... —</option>';
+        noThumbsMsg.classList.add('hidden');
+        
+        fetch(`{% url 'blog:available_thumbnails' %}?content_id=${contentId || ''}`)
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">— Выберите миниатюру —</option>';
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.path;
+                        option.textContent = file.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">— Нет доступных миниатюр —</option>';
+                    noThumbsMsg.classList.remove('hidden');
+                }
+            })
+            .catch(() => {
+                select.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+            });
+    }
+    window.loadAvailableThumbnails = loadAvailableThumbnails;
+    
+    function loadAvailableFiles() {
+        const folder = getSelectedContentTypeFolder();
+        const select = document.getElementById('existing-file-select');
+        const noFilesMsg = document.getElementById('no-files-message');
+        
+        select.innerHTML = '<option value="">— Загрузка... —</option>';
+        noFilesMsg.classList.add('hidden');
+        
+        if (!folder) {
+            select.innerHTML = '<option value="">— Сначала выберите тип контента —</option>';
+            return;
+        }
+        
+        fetch(`{% url 'blog:available_files' %}?folder=${encodeURIComponent(folder)}&content_id=${contentId || ''}`)
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">— Выберите файл —</option>';
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.path;
+                        option.textContent = file.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">— Нет доступных файлов —</option>';
+                    noFilesMsg.classList.remove('hidden');
+                }
+            })
+            .catch(() => {
+                select.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+            });
+    }
+    window.loadAvailableFiles = loadAvailableFiles;
+    
+    function onExistingFileSelected(select) {
+        const existingFileInput = document.getElementById('existing_file_input');
+        existingFileInput.value = select.value;
+        
+        if (select.value) {
+            const dropdown = document.getElementById('content-type-select-dropdown');
+            if (!hasExistingFile) {
+                dropdown.classList.add('pointer-events-none', 'opacity-50');
+                dropdown.dataset.hasFile = 'true';
+            }
+        }
+    }
+    window.onExistingFileSelected = onExistingFileSelected;
+    
+    function onExistingThumbSelected(select) {
+        const existingThumbInput = document.getElementById('existing_thumbnail_input');
+        existingThumbInput.value = select.value;
+    }
+    window.onExistingThumbSelected = onExistingThumbSelected;
+    
+    function openFileDialog() {
+        const contentTypeCode = getSelectedContentTypeCode();
+        if (!contentTypeCode) {
+            showContentTypeWarning();
+            return;
+        }
+        document.getElementById('id_video_file').click();
+    }
+    window.openFileDialog = openFileDialog;
+    
+    function clearFileSelection() {
+        document.getElementById('id_video_file').value = '';
+        document.getElementById('existing_file_input').value = '';
+        document.getElementById('file-selected-display').classList.add('hidden');
+        document.getElementById('file-upload-area').classList.remove('hidden');
+        fileSelected = false;
+        
+        const dropdown = document.getElementById('content-type-select-dropdown');
+        if (!hasExistingFile) {
+            dropdown.classList.remove('pointer-events-none', 'opacity-50');
+            dropdown.dataset.hasFile = 'false';
+            const hint = dropdown.querySelector('.file-lock-hint');
+            if (hint) hint.remove();
+        }
+    }
+    window.clearFileSelection = clearFileSelection;
+    
+    function detachFile() {
+        document.getElementById('detach_file_input').value = 'true';
+        document.getElementById('current-file-info').classList.add('hidden');
+        
+        const dropdown = document.getElementById('content-type-select-dropdown');
+        dropdown.classList.remove('pointer-events-none', 'opacity-50');
+        dropdown.dataset.hasFile = 'false';
+        const hint = dropdown.querySelector('.file-lock-hint, p.text-xs.text-muted-foreground');
+        if (hint) hint.remove();
+    }
+    window.detachFile = detachFile;
+    
+    function updateFileInput() {
+        const code = getSelectedContentTypeCode();
+        const fileInput = document.getElementById('id_video_file');
+        const fileHint = document.getElementById('file-hint');
+        
+        if (code === 'video') {
+            fileInput.accept = 'video/*';
+            fileHint.textContent = 'Поддерживаемые форматы: MP4, WebM, AVI, MOV';
+        } else if (code === 'photo') {
+            fileInput.accept = 'image/*';
+            fileHint.textContent = 'Поддерживаемые форматы: JPG, PNG, WebP, GIF';
+        } else {
+            fileInput.accept = '*/*';
+            fileHint.textContent = '';
+        }
+        
+        if (currentFileMode === 'select') {
+            loadAvailableFiles();
+        }
+    }
+    
+    function onContentTypeChanged(codes) {
+        const fileInput = document.getElementById('id_video_file');
+        const existingFileInput = document.getElementById('existing_file_input');
+        const existingSelect = document.getElementById('existing-file-select');
+        
+        if (fileInput) fileInput.value = '';
+        if (existingFileInput) existingFileInput.value = '';
+        if (existingSelect) existingSelect.value = '';
+        
+        const fileSelectedDisplay = document.getElementById('file-selected-display');
+        const fileUploadArea = document.getElementById('file-upload-area');
+        if (fileSelectedDisplay) fileSelectedDisplay.classList.add('hidden');
+        if (fileUploadArea && currentFileMode === 'upload') fileUploadArea.classList.remove('hidden');
+        
+        const dropdown = document.getElementById('content-type-select-dropdown');
+        if (dropdown && !hasExistingFile) {
+            dropdown.classList.remove('pointer-events-none', 'opacity-50');
+            dropdown.dataset.hasFile = 'false';
+            const hint = dropdown.querySelector('.file-lock-hint');
+            if (hint) hint.remove();
+        }
+        
+        let typeHint = document.getElementById('file-type-change-hint');
+        if (!typeHint) {
+            typeHint = document.createElement('p');
+            typeHint.id = 'file-type-change-hint';
+            typeHint.className = 'text-sm text-amber-600 mt-2';
+            const fileSection = document.getElementById('file-upload-section');
+            if (fileSection) fileSection.appendChild(typeHint);
+        }
+        typeHint.textContent = 'Тип изменён. Выберите файл соответствующего типа.';
+        setTimeout(() => { if (typeHint) typeHint.textContent = ''; }, 5000);
+        
+        updateFileInput();
+    }
+    window.onContentTypeChanged = onContentTypeChanged;
+    
+    function onFileSelected(input) {
+        if (input.files.length > 0) {
+            fileSelected = true;
+            
+            const fileName = input.files[0].name;
+            document.getElementById('file-name-display').textContent = fileName;
+            document.getElementById('file-selected-display').classList.remove('hidden');
+            document.getElementById('file-upload-area').classList.add('hidden');
+            
+            if (!hasExistingFile) {
+                const dropdown = document.getElementById('content-type-select-dropdown');
+                dropdown.classList.add('pointer-events-none', 'opacity-50');
+                dropdown.dataset.hasFile = 'true';
+                
+                let hint = dropdown.querySelector('.file-lock-hint');
+                if (!hint) {
+                    hint = document.createElement('p');
+                    hint.className = 'file-lock-hint text-xs text-muted-foreground mt-1';
+                    hint.textContent = '(нельзя изменить после загрузки файла)';
+                    dropdown.appendChild(hint);
+                }
+            }
+        }
+    }
+    window.onFileSelected = onFileSelected;
+    
+    function openThumbDialog() {
+        document.getElementById('id_thumbnail').click();
+    }
+    window.openThumbDialog = openThumbDialog;
+    
+    function onThumbSelected(input) {
+        if (input.files.length > 0) {
+            const fileName = input.files[0].name;
+            document.getElementById('thumb-name-display').textContent = fileName;
+            document.getElementById('thumb-selected-display').classList.remove('hidden');
+            document.getElementById('thumb-upload-area').classList.add('hidden');
+        }
+    }
+    window.onThumbSelected = onThumbSelected;
+    
+    function clearThumbSelection() {
+        document.getElementById('id_thumbnail').value = '';
+        document.getElementById('existing_thumbnail_input').value = '';
+        document.getElementById('thumb-selected-display').classList.add('hidden');
+        document.getElementById('thumb-upload-area').classList.remove('hidden');
+    }
+    window.clearThumbSelection = clearThumbSelection;
+    
+    function detachThumbnail() {
+        const detachInput = document.getElementById('detach_thumbnail_input');
+        if (detachInput) {
+            detachInput.value = 'true';
+        }
+        const currentInfo = document.getElementById('current-thumbnail-info');
+        if (currentInfo) {
+            currentInfo.classList.add('hidden');
+        }
+    }
+    window.detachThumbnail = detachThumbnail;
+    
+    function setupFormUpload() {
+        const form = document.getElementById('content-form');
+        const progressSection = document.getElementById('upload-progress-section');
+        const progressBar = document.getElementById('upload-progress-bar');
+        const progressText = document.getElementById('upload-progress-text');
+        const statusText = document.getElementById('upload-status-text');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitButtons = document.getElementById('submit-buttons');
+        
+        form.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('id_video_file');
+            const thumbInput = document.getElementById('id_thumbnail');
+            const hasFile = (fileInput && fileInput.files.length > 0) || 
+                           (thumbInput && thumbInput.files.length > 0);
+            
+            if (!hasFile) {
+                return true;
+            }
+            
+            e.preventDefault();
+            
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressSection.classList.remove('hidden');
+            
+            const formData = new FormData(form);
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressText.textContent = percent + '%';
+                    
+                    if (percent < 100) {
+                        statusText.textContent = 'Загрузка файла...';
+                    } else {
+                        statusText.textContent = 'Обработка на сервере...';
+                    }
+                }
+            });
+            
+            xhr.addEventListener('load', function() {
+                if (xhr.status >= 200 && xhr.status < 400) {
+                    statusText.textContent = 'Сохранено!';
+                    progressBar.classList.remove('bg-primary');
+                    progressBar.classList.add('bg-green-500');
+                    
+                    const redirectUrl = xhr.responseURL;
+                    if (redirectUrl && redirectUrl !== window.location.href) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = '{% url "blog:content_list" %}';
+                    }
+                } else {
+                    statusText.textContent = 'Ошибка сохранения';
+                    progressBar.classList.remove('bg-primary');
+                    progressBar.classList.add('bg-red-500');
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(xhr.responseText, 'text/html');
+                    const newForm = doc.querySelector('#content-form');
+                    if (newForm) {
+                        form.innerHTML = newForm.innerHTML;
+                        setupFormUpload();
+                    }
+                }
+            });
+            
+            xhr.addEventListener('error', function() {
+                statusText.textContent = 'Ошибка соединения';
+                progressBar.classList.remove('bg-primary');
+                progressBar.classList.add('bg-red-500');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+            
+            xhr.open('POST', form.action || window.location.href);
+            xhr.send(formData);
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        setFileMode('upload');
+        setThumbMode('upload');
+        updateFileInput();
+        setupFormUpload();
+        
+        {% if selected_category_codes %}
+        if (typeof updateTagDropdownsVisibility === 'function') {
+            updateTagDropdownsVisibility([{% for code in selected_category_codes %}'{{ code }}'{% if not forloop.last %}, {% endif %}{% endfor %}]);
+        }
+        {% endif %}
+    });
+})();
+</script>
+{% endblock %}
