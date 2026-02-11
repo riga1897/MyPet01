@@ -44,8 +44,16 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
 - **File Management**: Handles image and video uploads, with thumbnails automatically compressed and unique MD5 hash names. Supports selecting existing files and path traversal protection. Media files are served via Django's `FileResponse` through `ProtectedMediaView` (requires authentication via `@login_required`).
 - **Configuration**: Environment variables are managed via `pydantic-settings` for typed configuration, with support for `.env` files and fallbacks.
 
+**Performance Optimizations:**
+- **Tailwind CSS**: Local build via Tailwind v4 CLI (`@tailwindcss/cli`) instead of CDN. Input: `static/css/tailwind-input.css` with `@source` directives for template scanning. Output: `static/css/tailwind.css` (~28KB minified vs ~300KB+ CDN). Docker multi-stage build compiles CSS in `node:20-slim` builder stage.
+- **Gzip Pre-compression**: `docker-entrypoint.sh` runs `gzip -9 -k` on all CSS/JS/SVG/HTML/JSON/XML/TXT files in staticfiles after `collectstatic`. Nginx `gzip_static on` serves pre-compressed files directly.
+- **Media Caching**: Nginx `/media/` location with `expires 7d` and `Cache-Control: public`.
+- **Browser Caching**: `BrowserCacheMiddleware` with `BROWSER_CACHE_ENABLED` env var (default: False). When enabled, static/media requests get `Cache-Control: public, max-age=86400`.
+- **FOUC Prevention**: Inline CSS in `base.html` hides `#mobile-menu` and `#menu-close-icon` with `display: none` before Tailwind loads.
+- **Query-level Caching**: `blog/cache.py` caches content IDs and filter context (5min TTL) with signal-based invalidation on content changes.
+
 **System Design Choices:**
-- **Containerization**: Designed to be container-compatible, running within Docker and Docker Compose environments.
+- **Containerization**: Designed to be container-compatible, running within Docker and Docker Compose environments. Multi-stage build: Node.js (Tailwind) → Python (app).
 - **Database**: Utilizes PostgreSQL as the primary database.
 - **Code Quality**: Emphasizes TDD, 100% test coverage, and strict linting with `ruff` and static analysis with `mypy`.
 - **SSL/TLS Bootstrap**: Nginx uses a custom entrypoint (`nginx/docker-entrypoint.sh`) that creates a self-signed certificate on first deploy if none exists, allowing Nginx to start immediately. CI/CD then runs `init-letsencrypt.sh --auto` to replace it with a real Let's Encrypt certificate. Precomputed DH params are bundled as `nginx/ssl-dhparams.pem`.
