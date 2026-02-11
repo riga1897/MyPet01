@@ -24,15 +24,10 @@
     
     <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     
     <title>{% block title %}Гармония Души{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
-    </script>
     <style>
         :root {
             --background: #F9FAFA;
@@ -147,6 +142,10 @@
             opacity: 0.85;
         }
     </style>
+    <style>
+        #mobile-menu { display: none; }
+        #menu-close-icon { display: none; }
+    </style>
     {% block extra_css %}{% endblock %}
     <script>
         (function() {
@@ -169,9 +168,18 @@
             const openIcon = document.getElementById('menu-open-icon');
             const closeIcon = document.getElementById('menu-close-icon');
             
-            if (menu) menu.classList.toggle('hidden');
-            if (openIcon) openIcon.classList.toggle('hidden');
-            if (closeIcon) closeIcon.classList.toggle('hidden');
+            if (menu) {
+                const isHidden = menu.style.display === 'none' || menu.style.display === '';
+                menu.style.display = isHidden ? 'block' : 'none';
+            }
+            if (openIcon) {
+                const isHidden = openIcon.style.display === 'none';
+                openIcon.style.display = isHidden ? 'block' : 'none';
+            }
+            if (closeIcon) {
+                const isHidden = closeIcon.style.display === 'none' || closeIcon.style.display === '';
+                closeIcon.style.display = isHidden ? 'block' : 'none';
+            }
         }
     </script>
 </head>

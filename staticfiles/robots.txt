@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /content/
+Disallow: /tags/
+Disallow: /files/
+Disallow: /users/
+Disallow: /api/
+
+Sitemap: https://www.mine-craft.su/sitemap.xml
+Sitemap: https://site.mine-craft.su/sitemap.xml

@@ -2,24 +2,48 @@
 
 Пошаговая инструкция для подготовки VPS и GitHub к первому деплою.
 
-## Этап 1: Подготовка VPS
+## Этап 1: Подготовка VPS + GitHub Secrets
 
-### Автоматическая настройка (рекомендуется)
+### Полностью автоматическая настройка (рекомендуется)
+
+Один скрипт делает всё: настраивает VPS и устанавливает GitHub Secrets.
+
+**Требования:**
+- Git Bash (Windows) или bash (Linux/Mac)
+- GitHub CLI (`gh`) — [установка и авторизация](./GITHUB_SECRETS.md#автоматическая-настройка-рекомендуется)
 
 ```bash
-# Подключиться к VPS как root
-ssh root@<IP_ВАШЕГО_VPS>
+# В Git Bash из директории проекта:
 
-# Скопировать и запустить скрипт
-scp scripts/setup_vps.sh root@<IP>:/tmp/
-ssh root@<IP> "bash /tmp/setup_vps.sh"
+# Препрод
+./scripts/setup-github.sh preprod 217.147.15.220
+
+# Прод
+./scripts/setup-github.sh prod 91.204.75.25
 ```
 
 Скрипт автоматически:
-- Создаст пользователя `depuser` с ограниченными правами sudo
-- Сгенерирует SSH ключ для GitHub Actions
+- Подключится к VPS как root (запросит пароль)
+- Создаст пользователей `depuser` (деплой) и `useradmin` (администратор)
+- Сгенерирует SSH ключи для GitHub Actions и администратора
+- Сменит пароль root на новый случайный
+- Отключит root SSH
+- Установит GitHub Secrets (`SSH_KEY`/`PREPROD_SSH_KEY`, `SERVER_IP`, и др.)
+- Для препрода — установит Variables (`CERTBOT_STAGING`, `LOAD_DEMO_DATA`, `CREATE_PR_ON_PREDEPLOY`)
+- Выведет пароль root и ключ администратора — **сохраните их!**
 
 > **Примечание**: Docker, UFW, fail2ban и директория деплоя будут установлены/созданы автоматически при первом деплое через GitHub Actions (CI/CD).
+
+### Только настройка VPS (без GitHub)
+
+Если нужно только настроить VPS без автоматической установки GitHub Secrets:
+
+```bash
+# На VPS от root:
+./setup_vps.sh preprod   # или prod
+```
+
+Затем вручную скопируйте SSH ключ деплоя в GitHub Secret (см. [GITHUB_SECRETS.md](./GITHUB_SECRETS.md#ручная-настройка)).
 
 ### Ручная настройка
 
@@ -167,7 +191,9 @@ STAGING=0 bash init-letsencrypt.sh
 ```
 
 **Требования:**
-- Домен (`www.mine-craft.su`, `site.mine-craft.su`) должен указывать на IP сервера (DNS A-записи)
+- Домены должны указывать на IP серверов (DNS A-записи):
+  - **Прод**: `www.mine-craft.su` → прод VPS, `mainsrv01.mine-craft.su` → прод VPS
+  - **Препрод**: `site.mine-craft.su` → препрод VPS, `vpn.mine-craft.su` → препрод VPS
 - Порт 80 должен быть открыт (для ACME-challenge через HAProxy)
 
 **Автообновление:**

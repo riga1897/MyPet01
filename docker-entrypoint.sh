@@ -7,6 +7,9 @@ python manage.py migrate --noinput
 echo "=== Collecting static files ==="
 python manage.py collectstatic --noinput
 
+echo "=== Pre-compressing static files (gzip) ==="
+find /app/staticfiles -type f \( -name "*.css" -o -name "*.js" -o -name "*.svg" -o -name "*.html" -o -name "*.json" -o -name "*.xml" -o -name "*.txt" \) -exec gzip -9 -k -f {} \;
+
 echo "=== Loading initial structure ==="
 python manage.py loaddata blog/fixtures/initial_structure.json
 

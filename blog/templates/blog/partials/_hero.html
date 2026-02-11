@@ -18,7 +18,7 @@
             и целительную силу натуральных эфирных масел.
         </p>
         
-        <div class="flex flex-wrap justify-center gap-4">
+        <div class="relative z-10 flex flex-wrap justify-center gap-4">
             {% if user.is_authenticated %}
             <a href="#cards" class="btn-primary-lg">
                 Смотреть
@@ -34,6 +34,6 @@
         </div>
     </div>
     
-    <div class="absolute top-20 left-10 w-20 h-20 rounded-full bg-accent/20 blur-3xl"></div>
-    <div class="absolute bottom-20 right-10 w-32 h-32 rounded-full bg-secondary/20 blur-3xl"></div>
+    <div class="absolute top-20 left-10 w-20 h-20 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-20 right-10 w-32 h-32 rounded-full bg-secondary/20 blur-3xl pointer-events-none"></div>
 </section>

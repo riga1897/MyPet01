@@ -1,0 +1,381 @@
+/* Components CSS - Unified styles for reusable components */
+
+/* Dropdown Menu - works with Tailwind 'hidden' class for JS toggle */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    min-width: 180px;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.dark .dropdown-menu {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+/* Dropdown Toggle Button */
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.dropdown-toggle:hover {
+    background-color: var(--muted);
+}
+
+/* Primary Button - Base styles */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.5rem;
+    min-width: 140px;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary:hover {
+    background-color: color-mix(in srgb, var(--primary) 90%, black);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Secondary Button - Base styles */
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.5rem;
+    min-width: 140px;
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background-color: color-mix(in srgb, var(--secondary) 90%, black);
+}
+
+/* Primary Button - Small */
+.btn-primary-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    min-width: 120px;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary-sm:hover {
+    background-color: color-mix(in srgb, var(--primary) 90%, black);
+}
+
+.btn-primary-sm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Secondary Button - Small */
+.btn-secondary-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    min-width: 120px;
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-secondary-sm:hover {
+    background-color: color-mix(in srgb, var(--secondary) 90%, black);
+}
+
+/* Primary Button - Large (Hero) */
+.btn-primary-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    min-width: 160px;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary-lg:hover {
+    background-color: color-mix(in srgb, var(--primary) 90%, black);
+}
+
+/* Secondary Button - Large (Hero) */
+.btn-secondary-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    min-width: 160px;
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-secondary-lg:hover {
+    background-color: color-mix(in srgb, var(--secondary) 90%, black);
+}
+
+/* Primary Button - Full Width */
+.btn-primary-full {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary-full:hover {
+    background-color: color-mix(in srgb, var(--primary) 90%, black);
+}
+
+/* Tab Button - Inactive state */
+.btn-tab-inactive {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.btn-tab-inactive:hover {
+    background-color: var(--muted);
+}
+
+/* Danger Button */
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.5rem;
+    min-width: 140px;
+    background-color: #dc2626;
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+/* Alert Success */
+.alert-success {
+    padding: 0.75rem 1rem;
+    background-color: #dcfce7;
+    border: 1px solid #4ade80;
+    color: #15803d;
+    border-radius: 0.5rem;
+}
+
+/* Form Input */
+.form-input {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background-color: var(--card);
+}
+
+.form-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+/* Form Label */
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+    margin-bottom: 0.25rem;
+}
+
+/* Form Error */
+.form-error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Form Hint */
+.form-hint {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* File Upload Area (dashed border) */
+.file-upload-area {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    border: 2px dashed var(--border);
+    background-color: transparent;
+    color: var(--muted-foreground);
+    transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.file-upload-area:hover {
+    border-color: var(--primary);
+    background-color: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+/* File Selected Display */
+.file-selected-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: var(--muted);
+    border-radius: 0.5rem;
+}
+
+/* Current File Info */
+.current-file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    padding: 0.5rem;
+    background-color: var(--muted);
+    border-radius: 0.5rem;
+}
+
+/* Card Container */
+.card {
+    background-color: var(--card);
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+/* Card Large - matches Tailwind shadow-lg */
+.card-lg {
+    background-color: var(--card);
+    border-radius: 1rem;
+    /* Tailwind shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+/* Mode Toggle Buttons Container */
+.mode-toggle-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Icon Button (small, for remove/close actions) */
+.btn-icon-danger {
+    color: #dc2626;
+    padding: 0.25rem;
+    transition: color 0.15s ease-in-out;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.btn-icon-danger:hover {
+    color: #b91c1c;
+}
+
+/* Progress Bar Container */
+.progress-bar-container {
+    flex: 1;
+    background-color: var(--muted);
+    border-radius: 9999px;
+    height: 0.75rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: var(--primary);
+    height: 100%;
+    transition: width 0.3s ease-in-out;
+}
