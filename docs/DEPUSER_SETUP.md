@@ -70,7 +70,10 @@ Cmnd_Alias DEPLOY_SYSTEMCTL = /usr/bin/systemctl enable docker, /usr/bin/systemc
 # Настройка файрвола
 Cmnd_Alias DEPLOY_UFW = /usr/sbin/ufw default *, /usr/sbin/ufw allow *, /usr/sbin/ufw enable, /usr/sbin/ufw status *
 
-depuser ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL, DEPLOY_UFW
+# Настройка sysctl (unprivileged port binding для HAProxy)
+Cmnd_Alias DEPLOY_SYSCTL = /usr/bin/tee -a /etc/sysctl.conf, /usr/sbin/sysctl -p
+
+depuser ALL=(ALL) NOPASSWD: DEPLOY_APT, DEPLOY_DOCKER_SETUP, DEPLOY_DIRS, DEPLOY_SYSTEMCTL, DEPLOY_UFW, DEPLOY_SYSCTL
 EOF
 chmod 440 /etc/sudoers.d/depuser
 ```
@@ -92,6 +95,7 @@ visudo -cf /etc/sudoers.d/depuser
 | Директории | `mkdir -p`, `chown -R` | Создание директории деплоя |
 | Systemctl | `systemctl enable/start/restart docker/fail2ban` | Управление сервисами |
 | UFW | `ufw default/allow/enable/status` | Настройка файрвола |
+| Sysctl | `tee -a /etc/sysctl.conf`, `sysctl -p` | Unprivileged port binding (HAProxy) |
 
 #### Что запрещено:
 

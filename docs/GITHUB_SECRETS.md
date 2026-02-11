@@ -61,6 +61,20 @@ cat ~/.ssh/github_deploy
 - `SECRET_KEY` — Django secret (50 chars)
 - `POSTGRES_PASSWORD` — Пароль БД (24 chars)
 
+## Repository Variables
+
+Переменные настраиваются в: **Settings** → **Secrets and variables** → **Actions** → вкладка **Variables**
+
+| Variable | Описание | Значения | По умолчанию | Область действия |
+|----------|----------|----------|--------------|------------------|
+| `LOAD_DEMO_DATA` | Загрузка демо-данных при деплое | `true` / `false` | `false` | Только препрод |
+| `CERTBOT_STAGING` | Использовать staging Let's Encrypt (тестовые сертификаты) | `0` / `1` | `0` | Только препрод |
+| `CREATE_PR_ON_PREDEPLOY` | Создавать draft PR в main при деплое на препрод | `true` / `false` | `true` | Только препрод |
+
+> **Важно:** `CERTBOT_STAGING` и `LOAD_DEMO_DATA` влияют **только на препрод**. В production:
+> - SSL сертификат **всегда реальный** (`STAGING=0` захардкожен в `ci.yml`)
+> - Демо-данные **не загружаются**
+
 ## Чек-лист
 
 ### Общие
@@ -78,19 +92,15 @@ cat ~/.ssh/github_deploy
 - [ ] `PREPROD_SERVER_IP`
 - [ ] `PREPROD_DEPLOY_DIR`
 
-## Repository Variables (опциональные)
-
-Переменные настраиваются в: **Settings** → **Secrets and variables** → **Actions** → вкладка **Variables**
-
-| Variable | Описание | Значения | По умолчанию |
-|----------|----------|----------|--------------|
-| `CREATE_PR_ON_PREDEPLOY` | Создавать draft PR в main при деплое на препрод | `true` / `false` | `true` (если не задана) |
-| `CERTBOT_STAGING` | Использовать staging Let's Encrypt (тестовые сертификаты) | `0` / `1` | `0` |
+### Variables (опциональные)
+- [ ] `LOAD_DEMO_DATA` — `true` для препрода
+- [ ] `CERTBOT_STAGING` — `1` для тестовых сертификатов на препроде
+- [ ] `CREATE_PR_ON_PREDEPLOY` — `false` если не нужны автоматические PR
 
 ## Идемпотентность
 
-Скрипт `generate-production-env.sh`:
-- Если `.env` существует → **НЕ перезаписывает**
+Скрипты `generate-production-env.sh` и `generate-preprod-env.sh`:
+- Если `.env` существует → **НЕ перезаписывают**
 - Секреты сохраняются между деплоями
 - Для пересоздания: удалите `.env` вручную
 
@@ -108,3 +118,8 @@ git push origin main
 ### .env не изменился после деплоя
 Скрипт пропускает генерацию если `.env` уже существует.
 Удалите `.env` на VPS и запустите деплой снова.
+
+### Демо-данные не загрузились
+1. Проверьте что `LOAD_DEMO_DATA=true` в GitHub Variables
+2. Проверьте `.env` на VPS: `grep LOAD_DEMO_DATA .env`
+3. Можно загрузить вручную: `docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content`

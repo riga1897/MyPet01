@@ -131,14 +131,27 @@ poetry run mypy .
 
 Проект использует GitHub Actions для автоматизации:
 
-**Workflow:** `.github/workflows/ci-cd.yml`
+**Workflows:**
+- `.github/workflows/ci-cd.yml` — Pre-production (release/* → preprod VPS)
+- `.github/workflows/ci.yml` — Production (main → prod VPS)
 
-**Jobs:**
-1. **Test** — pytest + PostgreSQL + Redis (coverage 80%+)
+**ci-cd.yml Jobs (Pre-Production):**
+1. **Test** — pytest + PostgreSQL + Redis (coverage 100%)
 2. **Lint** — ruff, mypy
 3. **Build** — Docker → GitHub Container Registry
-4. **Deploy Pre-Prod** — release/* → preprod VPS
-5. **Deploy Production** — main → prod VPS
+4. **Deploy Pre-Prod** — инфраструктура VPS, SSL, миграции, демо-данные
+
+**ci.yml Jobs (Production):**
+1. **Build** — Docker → GitHub Container Registry
+2. **Deploy Production** — инфраструктура VPS, SSL (реальный сертификат), миграции
+
+**GitHub Variables:**
+- `LOAD_DEMO_DATA` — загрузка демо-данных (только препрод)
+- `CERTBOT_STAGING` — тестовый SSL (только препрод, в проде захардкожен `STAGING=0`)
+- `CREATE_PR_ON_PREDEPLOY` — создание draft PR
+
+**docker-entrypoint.sh:**
+- Миграции → collectstatic → initial_structure → setup_demo_content (если `LOAD_DEMO_DATA=true`) → createsuperuser → Gunicorn
 
 **Gitflow:**
 ```
@@ -150,3 +163,4 @@ feature/* → develop → release/* → main
 **Документация:**
 - [docs/CI_CD.md](docs/CI_CD.md)
 - [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md)
+- [docs/DEPLOY_CHECKLIST.md](docs/DEPLOY_CHECKLIST.md)

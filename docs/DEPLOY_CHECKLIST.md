@@ -84,13 +84,25 @@ ssh root@<IP> "bash /tmp/setup_vps.sh"
 | 8 | `SERVER_IP` | IP адрес production VPS | ☐ |
 | 9 | `DEPLOY_DIR` | `/opt/blog` | ☐ |
 
+### Repository Variables (опциональные)
+
+Вкладка **Variables** (не Secrets):
+
+| # | Variable | Значение | Описание | Статус |
+|---|----------|----------|----------|--------|
+| 1 | `LOAD_DEMO_DATA` | `true` | Загрузка демо-данных на препроде | ☐ |
+| 2 | `CERTBOT_STAGING` | `1` | Тестовый SSL на препроде (только препрод) | ☐ |
+| 3 | `CREATE_PR_ON_PREDEPLOY` | `false` | Автосоздание draft PR | ☐ |
+
+> **Важно:** `CERTBOT_STAGING` влияет только на препрод. В production всегда используется реальный сертификат.
+
 ---
 
 ## Этап 4: Проверка перед деплоем
 
 - [ ] Все тесты проходят: `poetry run pytest`
 - [ ] Линтеры чистые: `poetry run ruff check .` и `poetry run mypy .`
-- [ ] Docker образ собирается локально: `docker-compose build`
+- [ ] Docker образ собирается локально: `docker compose build`
 - [ ] GitHub Secrets заполнены (минимум: GHCR_TOKEN + PREPROD_*)
 - [ ] VPS доступен по SSH: `ssh depuser@<IP>`
 
@@ -113,42 +125,46 @@ CI/CD автоматически:
 2. Проверит линтеры (ruff + mypy)
 3. Соберёт Docker образ → GitHub Container Registry
 4. Подключится к VPS по SSH
-5. Сгенерирует `.env` (если не существует)
-6. Запустит контейнеры (web, db, redis, nginx, haproxy)
-7. Применит миграции, создаст суперпользователя, загрузит данные
+5. Настроит инфраструктуру VPS (Docker, UFW, fail2ban — при первом деплое)
+6. Сгенерирует `.env` (если не существует)
+7. Запустит контейнеры (web, db, redis, nginx, haproxy)
 8. Проверит health check
-9. Создаст draft PR в main
+9. **Настроит SSL** (автоматически, staging или production — зависит от `CERTBOT_STAGING`)
+10. Применит миграции, создаст суперпользователя, загрузит данные
+11. **Загрузит демо-контент** (если `LOAD_DEMO_DATA=true`)
+12. Создаст draft PR в main
 
 ---
 
-## Этап 6: Настройка SSL (Let's Encrypt)
+## Этап 6: SSL сертификаты
 
-После успешного деплоя настройте HTTPS сертификаты:
+### Автоматическая настройка (CI/CD)
+
+SSL сертификаты настраиваются автоматически при деплое:
+- **Препрод:** Зависит от `CERTBOT_STAGING` (`1` = тестовый, `0` = реальный)
+- **Production:** Всегда реальный сертификат (захардкожен `STAGING=0`)
+
+При первом деплое:
+1. Nginx стартует с самоподписанным (dummy) сертификатом
+2. CI/CD обнаруживает отсутствие реального сертификата
+3. Запускает `init-letsencrypt.sh` для получения сертификата от Let's Encrypt
+4. Certbot автоматически обновляет сертификат каждые 12 часов (если нужно)
+
+### Ручная настройка (если нужно)
 
 ```bash
 ssh depuser@<IP>
 cd /opt/blog-preprod
 
-# Первый запуск — тестовый сертификат (проверить что всё работает)
+# Получить тестовый сертификат
 STAGING=1 bash init-letsencrypt.sh
 
-# Если тест прошёл — получить настоящий сертификат
-# Сначала удалить тестовый
+# Удалить тестовый и получить реальный
 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
     rm -rf /etc/letsencrypt/live /etc/letsencrypt/archive /etc/letsencrypt/renewal
 
-# Получить настоящий сертификат
 STAGING=0 bash init-letsencrypt.sh
 ```
-
-Скрипт `init-letsencrypt.sh` автоматически:
-1. Скачивает рекомендуемые TLS параметры
-2. Создаёт временный самоподписанный сертификат
-3. Запускает nginx с временным сертификатом
-4. Запрашивает настоящий сертификат у Let's Encrypt
-5. Перезагружает nginx с новым сертификатом
-6. Запускает контейнер certbot для автообновления
-7. Добавляет cron задачу для перезагрузки nginx
 
 **Требования:**
 - Домен (`www.mine-craft.su`, `site.mine-craft.su`) должен указывать на IP сервера (DNS A-записи)
@@ -167,7 +183,8 @@ STAGING=0 bash init-letsencrypt.sh
 - [ ] HTTP редиректит на HTTPS
 - [ ] Админка доступна: `https://<DOMAIN>/admin/`
 - [ ] Логин работает
-- [ ] Контент отображается
+- [ ] Контент отображается (демо-данные загружены)
+- [ ] Медиафайлы доступны для авторизованных пользователей
 - [ ] Статика загружается (CSS, JS, изображения)
 - [ ] SSL сертификат валидный (замочек в браузере)
 
@@ -193,6 +210,9 @@ docker compose -f docker-compose.prod.yml exec web python manage.py shell
 
 # Сбросить кэш
 docker compose -f docker-compose.prod.yml exec web python manage.py shell -c "from django.core.cache import cache; cache.clear(); print('OK')"
+
+# Загрузить демо-данные вручную
+docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content
 ```
 
 ---
@@ -208,7 +228,7 @@ git merge release/v1.0
 git push origin main
 ```
 
-CI/CD автоматически задеплоит на production VPS.
+CI/CD автоматически задеплоит на production VPS с **реальным SSL сертификатом**.
 
 ---
 
@@ -232,6 +252,22 @@ rm .env
 SERVER_IP=<IP> ./generate-preprod-env.sh
 docker compose -f docker-compose.prod.yml restart
 ```
+
+---
+
+## Настройка VPN (SoftEther)
+
+VPN-сервер SoftEther стартует вместе с остальными контейнерами, но требует ручной настройки после первого деплоя:
+
+1. Настроить через `vpncmd` или SoftEther Admin GUI
+2. Или скопировать готовый конфиг с другого сервера:
+
+```bash
+docker cp vpn_server.config $(docker ps -q -f name=softether):/usr/vpnserver/vpn_server.config
+docker restart $(docker ps -q -f name=softether)
+```
+
+> **Важно:** Конфиг VPN содержит пароли и ключи. Не храните его в Git-репозитории.
 
 ---
 
