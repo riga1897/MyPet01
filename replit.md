@@ -46,6 +46,13 @@ The project is built on Python 3.12 with Django and Django REST Framework. It us
 
 **Performance Optimizations:**
 - **Tailwind CSS**: Local build via Tailwind v4 CLI (`@tailwindcss/cli`) instead of CDN. Input: `static/css/tailwind-input.css` with `@source` directives for template scanning. Output: `static/css/tailwind.css` (~28KB minified vs ~300KB+ CDN). Docker multi-stage build compiles CSS in `node:20-slim` builder stage.
+  - **Пайплайн сборки CSS:**
+    1. **Docker multi-stage build** (в `Dockerfile`) — при сборке образа первым этапом запускается `node:20-slim`, который компилирует Tailwind CSS. Готовый `tailwind.css` копируется в финальный Python-образ. Node.js нужен только на этапе сборки, в рабочем контейнере его нет.
+    2. **CI/CD pipeline** — при пуше кода GitHub Actions собирает Docker-образ, и Tailwind компилируется автоматически внутри `docker build`.
+    3. **docker-entrypoint.sh** — при старте контейнера `collectstatic` собирает все статические файлы (включая скомпилированный `tailwind.css`), а затем `gzip -9 -k` сжимает их для nginx.
+    4. **Итого цепочка**: `git push → CI/CD → docker build (Tailwind компилируется) → deploy → collectstatic → gzip → nginx отдаёт`
+    5. **Локальная разработка**: Команда `npm run build:css` нужна **только** для локальной разработки в Replit, чтобы увидеть изменения в стилях без пересборки Docker-образа.
+    6. **Пересборка в проде**: Пересобрать Docker-образ и задеплоить заново (`docker compose -f docker-compose.prod.yml build web && docker compose -f docker-compose.prod.yml up -d web`). Внутри работающего контейнера Node.js нет — изменения идут только через пересборку образа.
 - **Gzip Pre-compression**: `docker-entrypoint.sh` runs `gzip -9 -k` on all CSS/JS/SVG/HTML/JSON/XML/TXT files in staticfiles after `collectstatic`. Nginx `gzip_static on` serves pre-compressed files directly.
 - **Media Caching**: Nginx `/media/` location with `expires 7d` and `Cache-Control: public`.
 - **Browser Caching**: `BrowserCacheMiddleware` with `BROWSER_CACHE_ENABLED` env var (default: False). When enabled, static/media requests get `Cache-Control: public, max-age=86400`.
