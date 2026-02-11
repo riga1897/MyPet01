@@ -150,17 +150,19 @@ docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" certbot sh -c "
     rm -rf /etc/letsencrypt/live/$CERT_NAME
     rm -rf /etc/letsencrypt/archive/$CERT_NAME
     rm -rf /etc/letsencrypt/renewal/$CERT_NAME.conf
-"
+    rm -rf /etc/letsencrypt/live/README
 
-docker compose -f "$COMPOSE_FILE" run --rm certbot certonly \
-    --webroot \
-    -w /var/www/certbot \
-    $DOMAIN_ARGS \
-    --email "$EMAIL" \
-    --agree-tos \
-    --no-eff-email \
-    --force-renewal \
-    $STAGING_ARG
+    certbot certonly \
+        --webroot \
+        -w /var/www/certbot \
+        $DOMAIN_ARGS \
+        --email $EMAIL \
+        --agree-tos \
+        --no-eff-email \
+        --force-renewal \
+        --cert-name $CERT_NAME \
+        $STAGING_ARG
+"
 
 print_success "Сертификат получен!"
 
