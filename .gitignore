@@ -214,3 +214,5 @@ media/
 
 # Security logs (keep directory, ignore log files)
 logs/*.log
+
+.tmp/

@@ -11,7 +11,63 @@ GitHub Secrets используются для безопасного хране
 - Автоматизация — деплой без ручной настройки .env на VPS
 - Удобство — один `git push main` → полный деплой
 
-## Как добавить секреты
+## Автоматическая настройка (рекомендуется)
+
+Скрипт `setup-github.sh` автоматизирует полный цикл: настройка VPS + установка GitHub Secrets.
+
+### Требования
+
+- **Git Bash** (Windows) или bash (Linux/Mac)
+- **GitHub CLI** (`gh`) — установлен и авторизован
+- Root-доступ к VPS (по паролю — первоначальный)
+
+### Установка GitHub CLI
+
+```bash
+# Windows (PowerShell)
+winget install GitHub.cli
+
+# Mac
+brew install gh
+
+# Linux
+# https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+```
+
+### Авторизация
+
+```bash
+gh auth login
+# Выбрать: GitHub.com → HTTPS → Login with a web browser
+gh auth status  # Проверка
+```
+
+### Запуск (в Git Bash из директории проекта)
+
+```bash
+# Препрод
+./scripts/setup-github.sh preprod 217.147.15.220
+
+# Прод
+./scripts/setup-github.sh prod 91.204.75.25
+```
+
+Скрипт автоматически:
+1. Подключается к VPS как root (по паролю)
+2. Копирует и запускает `setup_vps.sh` на VPS
+3. Создаёт пользователей (`depuser`, `useradmin`), генерирует SSH ключи
+4. Меняет пароль root на новый случайный
+5. Отключает root SSH
+6. Извлекает ключ деплоя из вывода
+7. Устанавливает GitHub Secrets (`SSH_KEY`/`PREPROD_SSH_KEY`, `SERVER_IP`, и др.)
+8. Для препрода — устанавливает Variables (`CERTBOT_STAGING`, `LOAD_DEMO_DATA`, `CREATE_PR_ON_PREDEPLOY`)
+9. Выводит пароль root и ключ администратора для сохранения
+
+> **Важно:** После завершения скрипта сохраните пароль root и ключ администратора — они больше нигде не доступны!
+
+### Ручная настройка
+
+Если автоматическая настройка невозможна:
 
 1. Откройте репозиторий на GitHub
 2. Перейдите: **Settings** → **Secrets and variables** → **Actions**
