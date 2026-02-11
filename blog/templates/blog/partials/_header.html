@@ -1,0 +1,101 @@
+<header class="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur header-bg">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+            <a href="{% url 'blog:home' %}" class="flex items-center gap-2">
+                <div class="flex items-center gap-2 text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m-4.5 3a4.5 4.5 0 1 0 4.5 4.5M7.5 12H9m7.5 0a4.5 4.5 0 1 1-4.5 4.5m4.5-4.5H15m-3 4.5V15"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl">Гармония Души</h1>
+                    <p class="text-xs text-muted-foreground">Йога & Эфирные масла</p>
+                </div>
+            </a>
+            
+            <nav class="hidden md:flex items-center gap-6">
+                <a href="{% url 'blog:home' %}" class="transition-colors hover:text-primary">Главная</a>
+                <a href="{% url 'blog:home' %}#about" class="transition-colors hover:text-primary">О блоге</a>
+                
+                {% if user.is_authenticated %}
+                    {% if is_moderator %}
+                    <a href="{% url 'blog:content_list' %}" class="transition-colors hover:text-primary">Контент</a>
+                    <a href="{% url 'blog:tag_list' %}" class="transition-colors hover:text-primary">Теги</a>
+                    <a href="{% url 'blog:file_list' %}" class="transition-colors hover:text-primary">Файлы</a>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <a href="{% url 'users:moderator_list' %}" class="transition-colors hover:text-primary">Модераторы</a>
+                    {% endif %}
+                    <span class="text-muted-foreground text-sm">{{ user.username }}</span>
+                    <form method="post" action="{% url 'users:logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-primary hover:underline text-sm">Выйти</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'users:login' %}" class="text-primary hover:underline">Войти</a>
+                {% endif %}
+                
+                <button onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-muted transition-colors" title="Переключить тему">
+                    <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+                        <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+                    </svg>
+                    <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block dark:hidden">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                    </svg>
+                </button>
+            </nav>
+            
+            <div class="flex items-center gap-2 md:hidden">
+                <button onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-muted transition-colors" title="Переключить тему">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+                        <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block dark:hidden">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                    </svg>
+                </button>
+                
+                <button onclick="toggleMobileMenu()" class="p-2 rounded-lg hover:bg-muted transition-colors" id="mobile-menu-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="menu-open-icon">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="menu-close-icon" class="hidden">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-background">
+        <nav class="container mx-auto px-4 py-4 flex flex-col gap-3">
+            <a href="{% url 'blog:home' %}" class="py-2 transition-colors hover:text-primary">Главная</a>
+            <a href="{% url 'blog:home' %}#about" class="py-2 transition-colors hover:text-primary">О блоге</a>
+            
+            {% if user.is_authenticated %}
+                {% if is_moderator %}
+                <a href="{% url 'blog:content_list' %}" class="py-2 transition-colors hover:text-primary">Контент</a>
+                <a href="{% url 'blog:tag_list' %}" class="py-2 transition-colors hover:text-primary">Теги</a>
+                <a href="{% url 'blog:file_list' %}" class="py-2 transition-colors hover:text-primary">Файлы</a>
+                {% endif %}
+                {% if user.is_superuser %}
+                <a href="{% url 'users:moderator_list' %}" class="py-2 transition-colors hover:text-primary">Модераторы</a>
+                {% endif %}
+                <div class="flex items-center justify-between py-2 border-t border-border mt-2 pt-4">
+                    <span class="text-muted-foreground">{{ user.username }}</span>
+                    <form method="post" action="{% url 'users:logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-primary hover:underline">Выйти</button>
+                    </form>
+                </div>
+            {% else %}
+                <a href="{% url 'users:login' %}" class="py-2 text-primary hover:underline border-t border-border mt-2 pt-4">Войти</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+

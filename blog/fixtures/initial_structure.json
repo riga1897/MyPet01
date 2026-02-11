@@ -1,0 +1,112 @@
+[
+{
+  "model": "blog.contenttype",
+  "pk": 1,
+  "fields": {
+    "created_at": "2026-01-22T19:44:06.433Z",
+    "updated_at": "2026-01-22T21:36:54.304Z",
+    "name": "Видео",
+    "code": "video",
+    "upload_folder": "video"
+  }
+},
+{
+  "model": "blog.contenttype",
+  "pk": 2,
+  "fields": {
+    "created_at": "2026-01-22T19:44:06.435Z",
+    "updated_at": "2026-01-22T21:36:45.294Z",
+    "name": "Фото",
+    "code": "photo",
+    "upload_folder": "photo"
+  }
+},
+{
+  "model": "blog.category",
+  "pk": 1,
+  "fields": {
+    "created_at": "2026-01-22T07:33:22.817Z",
+    "updated_at": "2026-01-22T07:33:22.817Z",
+    "name": "Йога",
+    "code": "yoga"
+  }
+},
+{
+  "model": "blog.category",
+  "pk": 2,
+  "fields": {
+    "created_at": "2026-01-22T07:33:22.818Z",
+    "updated_at": "2026-01-22T07:33:22.818Z",
+    "name": "Эфирные масла",
+    "code": "oils"
+  }
+},
+{
+  "model": "blog.taggroup",
+  "pk": 1,
+  "fields": {
+    "created_at": "2026-01-22T07:10:18.712Z",
+    "updated_at": "2026-01-22T07:47:40.657Z",
+    "name": "Месяц практики",
+    "categories": [
+      1
+    ]
+  }
+},
+{
+  "model": "blog.taggroup",
+  "pk": 2,
+  "fields": {
+    "created_at": "2026-01-22T07:24:06.124Z",
+    "updated_at": "2026-01-22T07:47:50.737Z",
+    "name": "Настроение",
+    "categories": [
+      2
+    ]
+  }
+},
+{
+  "model": "blog.tag",
+  "pk": 3,
+  "fields": {
+    "created_at": "2026-01-22T07:45:19.093Z",
+    "updated_at": "2026-01-22T07:45:19.093Z",
+    "name": "Первый месяц",
+    "group": 1,
+    "order": 0
+  }
+},
+{
+  "model": "blog.tag",
+  "pk": 4,
+  "fields": {
+    "created_at": "2026-01-22T07:45:27.614Z",
+    "updated_at": "2026-01-22T07:45:27.614Z",
+    "name": "Веселое",
+    "group": 2,
+    "order": 1
+  }
+},
+{
+  "model": "blog.tag",
+  "pk": 5,
+  "fields": {
+    "created_at": "2026-01-22T08:32:54.883Z",
+    "updated_at": "2026-01-22T08:32:54.883Z",
+    "name": "Второй месяц",
+    "group": 1,
+    "order": 1
+  }
+},
+{
+  "model": "blog.tag",
+  "pk": 6,
+  "fields": {
+    "created_at": "2026-01-22T08:33:18.513Z",
+    "updated_at": "2026-01-22T08:33:18.513Z",
+    "name": "Грустное",
+    "group": 2,
+    "order": 0
+  }
+}
+]

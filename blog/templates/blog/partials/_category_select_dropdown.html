@@ -1,0 +1,186 @@
+{% comment %}
+Category select dropdown with multi-select and "Select All" for form.
+Requires:
+  - categories: QuerySet of Category
+  - selected_category_ids: List of selected category IDs (optional)
+Usage: {% include 'blog/partials/_category_select_dropdown.html' with categories=categories selected_category_ids=selected_category_ids %}
+{% endcomment %}
+
+{% if categories %}
+<div id="category-select-container" class="category-select-dropdown relative inline-block">
+    <button type="button" 
+            onclick="toggleCategoryDropdown(this)"
+            class="dropdown-toggle">
+        <span class="selected-category-name">Категории</span>
+        <span class="selected-count hidden text-xs bg-primary text-white rounded-full px-1.5">0</span>
+        <svg class="dropdown-arrow w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
+    
+    <div class="dropdown-menu hidden">
+        <label class="select-all-label flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer border-b border-border">
+            <input type="checkbox" 
+                   class="select-all-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                   id="category-select-all"
+                   onchange="handleSelectAllCategories(this)">
+            <span class="text-sm font-medium">Выбрать все</span>
+        </label>
+        
+        {% for category in categories %}
+        <label class="category-checkbox-label flex items-center gap-2 px-3 py-1.5 hover:bg-muted cursor-pointer">
+            <input type="checkbox" 
+                   name="categories"
+                   class="category-checkbox w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                   value="{{ category.id }}"
+                   data-category-code="{{ category.code }}"
+                   data-category-name="{{ category.name }}"
+                   {% if category.id in selected_category_ids %}checked{% endif %}
+                   onchange="handleCategoryCheckboxChange(this)">
+            <span class="text-sm">{{ category.name }}</span>
+        </label>
+        {% endfor %}
+        
+        <div class="border-t border-border mt-1 pt-1">
+            <button type="button" 
+                    onclick="clearCategorySelection()" 
+                    class="w-full text-left px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted transition-colors">
+                Сбросить
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+if (typeof window._categorySelectInitialized === 'undefined') {
+    window._categorySelectInitialized = true;
+
+    function toggleCategoryDropdown(button) {
+        const dropdown = button.closest('.category-select-dropdown');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        const arrow = dropdown.querySelector('.dropdown-arrow');
+        const isOpen = !menu.classList.contains('hidden');
+        
+        document.querySelectorAll('.category-select-dropdown .dropdown-menu, .content-type-select-dropdown .dropdown-menu, .tag-group-select .dropdown-menu').forEach(m => {
+            m.classList.add('hidden');
+            const arrowEl = m.closest('.category-select-dropdown, .content-type-select-dropdown, .tag-group-select')?.querySelector('.dropdown-arrow');
+            if (arrowEl) arrowEl.classList.remove('rotate-180');
+        });
+        
+        if (!isOpen) {
+            menu.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        }
+    }
+    window.toggleCategoryDropdown = toggleCategoryDropdown;
+
+    function handleSelectAllCategories(checkbox) {
+        const dropdown = checkbox.closest('.category-select-dropdown');
+        const categoryCheckboxes = dropdown.querySelectorAll('.category-checkbox');
+        
+        categoryCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        
+        updateCategorySelectedCount(dropdown);
+        notifyCategoryChange();
+    }
+    window.handleSelectAllCategories = handleSelectAllCategories;
+
+    function handleCategoryCheckboxChange(checkbox) {
+        const dropdown = checkbox.closest('.category-select-dropdown');
+        updateSelectAllCategoryState(dropdown);
+        updateCategorySelectedCount(dropdown);
+        notifyCategoryChange();
+    }
+    window.handleCategoryCheckboxChange = handleCategoryCheckboxChange;
+
+    function updateSelectAllCategoryState(dropdown) {
+        const categoryCheckboxes = dropdown.querySelectorAll('.category-checkbox');
+        const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
+        
+        if (categoryCheckboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            return;
+        }
+        
+        const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+    window.updateSelectAllCategoryState = updateSelectAllCategoryState;
+
+    function updateCategorySelectedCount(dropdown) {
+        const checkedBoxes = dropdown.querySelectorAll('.category-checkbox:checked');
+        const countBadge = dropdown.querySelector('.selected-count');
+        const count = checkedBoxes.length;
+        
+        if (count > 0) {
+            countBadge.textContent = count;
+            countBadge.classList.remove('hidden');
+        } else {
+            countBadge.classList.add('hidden');
+        }
+    }
+    window.updateCategorySelectedCount = updateCategorySelectedCount;
+
+    function notifyCategoryChange() {
+        const checkedBoxes = document.querySelectorAll('.category-checkbox:checked');
+        const codes = Array.from(checkedBoxes).map(cb => cb.dataset.categoryCode);
+        
+        if (typeof updateTagDropdownsVisibility === 'function') {
+            updateTagDropdownsVisibility(codes);
+        }
+        
+        if (typeof onCategoryChanged === 'function') {
+            onCategoryChanged(codes, '');
+        }
+        
+        if (typeof onContentTypeOrCategoryChanged === 'function') {
+            onContentTypeOrCategoryChanged();
+        }
+    }
+
+    function clearCategorySelection() {
+        const dropdown = document.querySelector('.category-select-dropdown');
+        if (!dropdown) return;
+        
+        const allCheckboxes = dropdown.querySelectorAll('.category-checkbox');
+        const selectAllCheckbox = dropdown.querySelector('.select-all-checkbox');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        const arrow = dropdown.querySelector('.dropdown-arrow');
+        
+        allCheckboxes.forEach(cb => {
+            cb.checked = false;
+        });
+        
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        
+        updateCategorySelectedCount(dropdown);
+        
+        menu.classList.add('hidden');
+        arrow.classList.remove('rotate-180');
+        
+        notifyCategoryChange();
+    }
+    window.clearCategorySelection = clearCategorySelection;
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.category-select-dropdown')) {
+            document.querySelectorAll('.category-select-dropdown .dropdown-menu').forEach(menu => {
+                menu.classList.add('hidden');
+                const arrow = menu.closest('.category-select-dropdown')?.querySelector('.dropdown-arrow');
+                if (arrow) arrow.classList.remove('rotate-180');
+            });
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdown = document.querySelector('.category-select-dropdown');
+        if (dropdown) {
+            updateSelectAllCategoryState(dropdown);
+            updateCategorySelectedCount(dropdown);
+        }
+    });
+}
+</script>
+{% endif %}

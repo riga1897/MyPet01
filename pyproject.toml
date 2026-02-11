@@ -1,0 +1,133 @@
+[tool.poetry]
+name = "mypet01"
+version = "0.1.0"
+description = "Site for family"
+authors = ["riga1897 <riga1897@yandex.ru>"]
+readme = "README.md"
+packages = [{include = "mypet_project"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = ">=5.1"
+djangorestframework = "*"
+psycopg2-binary = "*"
+python-dotenv = "*"
+pytest-cov = "^7.0.0"
+mypy = "^1.19.1"
+django-stubs = "^5.2.9"
+djangorestframework-stubs = "^3.16.7"
+pydantic-settings = "^2.12.0"
+dj-database-url = "^3.1.0"
+pillow = "^12.1.0"
+gunicorn = "^23.0.0"
+django-csp = "^4.0"
+django-ratelimit = "^4.1.0"
+bleach = "^6.3.0"
+redis = "^5.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-django = "*"
+ruff = "*"
+pytest-playwright = "^0.7.2"
+locust = "^2.43.1"
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+check_untyped_defs = true
+
+exclude = [
+    "^tests/",
+    "^migrations/",
+    "^attached_assets/",
+    "^vehicle/",
+    "^scripts/",
+    "^\\.pythonlibs/",
+    "^\\.local/",
+    "\\.venv",
+    "\\.idea"
+]
+
+
+[tool.django-stubs]
+django_settings_module = "mypet_project.settings"
+strict_settings = false
+[tool.pyright]
+include = ["."]
+exclude = ["**/node_modules", "**/__pycache__", ".venv"]
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "mypet_project.settings"
+python_files = ["test_*.py", "*_tests.py"]
+testpaths = ["tests", "mypet_project/tests", "core/tests", "blog/tests", "users/tests"]
+addopts = "--cov=mypet_project --cov=blog --cov=core --cov=users --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = [
+    "*/migrations/*",
+    "*/__init__.py",
+    "*/tests/*",
+    "tests/*",
+    "mypet_project/wsgi.py",
+    "mypet_project/asgi.py",
+    "manage.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+line-length = 119
+preview = true
+
+exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "*.egg-info",
+    "migrations",
+    "attached_assets",
+    "vehicle",
+    "scripts",
+    ".local",
+    ".idea",
+    ".pythonlibs",
+    "build",
+    "dist",
+]
+
+force-exclude = true
+
+[tool.ruff.lint]
+select = [
+    "B",    # flake8-bugbear
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "C90",  # mccabe
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+]
+
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"config/settings_test.py" = ["F403"]

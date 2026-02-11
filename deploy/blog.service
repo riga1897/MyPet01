@@ -1,0 +1,32 @@
+[Unit]
+Description=Blog Django Application
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/blog
+Environment="PATH=/var/www/blog/.venv/bin"
+EnvironmentFile=/var/www/blog/.env
+ExecStart=/var/www/blog/.venv/bin/gunicorn \
+    --config /var/www/blog/deploy/gunicorn.conf.py \
+    mypet_project.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=3
+KillMode=mixed
+TimeoutStopSec=5
+
+StandardOutput=append:/var/log/blog/gunicorn-stdout.log
+StandardError=append:/var/log/blog/gunicorn-stderr.log
+
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/blog/media /var/log/blog /tmp/blog-uploads
+
+[Install]
+WantedBy=multi-user.target

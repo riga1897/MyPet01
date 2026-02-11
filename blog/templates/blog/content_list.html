@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Управление контентом — Гармония Души{% endblock %}
+
+{% block content %}
+{% include "blog/partials/_header.html" %}
+
+<div class="min-h-screen p-4 pt-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h1 class="text-2xl font-semibold text-foreground">Управление контентом</h1>
+            <a href="{% url 'blog:content_create' %}" class="btn-primary-sm">
+                + Добавить контент
+            </a>
+        </div>
+        
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert-success">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="bg-card rounded-2xl shadow-lg p-4 mb-4">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-sm text-muted-foreground">Категория:</span>
+                        {% include 'blog/partials/_category_filter_dropdown.html' with categories=categories %}
+                    </div>
+                    
+                    <div class="relative w-full sm:w-80">
+                        <input type="text" id="contentSearchInput" placeholder="Поиск..." 
+                               class="w-full px-4 py-2 pl-10 rounded-full border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+                               oninput="searchContent(this.value)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                {% include 'blog/partials/_tag_filter_dropdowns.html' with tag_groups=tag_groups %}
+            </div>
+        </div>
+        
+        <div class="bg-card rounded-2xl shadow-lg overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-muted">
+                    <tr>
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Заголовок</th>
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Тип</th>
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Категория</th>
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Теги</th>
+                        <th class="text-left px-6 py-3 text-sm font-medium text-foreground">Обновлен</th>
+                        <th class="text-right px-6 py-3 text-sm font-medium text-foreground">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="content-table-body" class="divide-y divide-border">
+                    {% for content in contents %}
+                    <tr class="content-row hover:bg-muted/30" 
+                        data-category="{% for cat in content.categories.all %}{{ cat.code }},{% endfor %}"
+                        data-title="{{ content.title|lower }}"
+                        data-description="{{ content.description|lower }}"
+                        data-tags="{% for tag in content.tags.all %}{{ tag.id }},{% endfor %}">
+                        <td class="px-6 py-4">
+                            <a href="{% url 'blog:content_edit' content.pk %}" class="font-medium text-primary underline hover:text-primary/80 transition-colors">{{ content.title }}</a>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if content.content_type %}
+                                {% if content.content_type.code == 'video' %}
+                                <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{{ content.content_type.name }}</span>
+                                {% elif content.content_type.code == 'photo' %}
+                                <span class="text-xs bg-secondary/30 text-secondary-foreground dark:text-white px-2 py-1 rounded">{{ content.content_type.name }}</span>
+                                {% else %}
+                                <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded">{{ content.content_type.name }}</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-xs text-muted-foreground">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-muted-foreground">{% for cat in content.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1">
+                                {% for tag in content.tags.all %}
+                                <span class="text-xs bg-accent/20 text-foreground px-2 py-1 rounded" title="{{ tag.group.name }}">{{ tag.name }}</span>
+                                {% empty %}
+                                <span class="text-xs text-muted-foreground">—</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-muted-foreground">
+                            {{ content.updated_at|date:"d.m.Y" }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="{% url 'blog:content_delete' content.pk %}" 
+                               class="text-red-600 hover:text-red-800 text-sm">Удалить</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-muted-foreground">
+                            Контента пока нет. <a href="{% url 'blog:content_create' %}" class="text-primary hover:underline">Добавить первый</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentContentSearch = '';
+
+function searchContent(query) {
+    currentContentSearch = query.toLowerCase().trim();
+    applyFilters();
+}
+
+function applyFilters() {
+    const rows = document.querySelectorAll('.content-row');
+    const activeTagIds = typeof getSelectedTagIds === 'function' ? getSelectedTagIds() : [];
+    
+    rows.forEach(row => {
+        const category = row.dataset.category;
+        const title = row.dataset.title || '';
+        const description = row.dataset.description || '';
+        const rowTags = row.dataset.tags ? row.dataset.tags.split(',').filter(t => t) : [];
+        
+        const matchesCategory = matchesCategoryFilter(category);
+        const matchesSearch = currentContentSearch === '' || 
+                             title.includes(currentContentSearch) || 
+                             description.includes(currentContentSearch);
+        const matchesTags = activeTagIds.length === 0 || 
+                           activeTagIds.some(tagId => rowTags.includes(tagId));
+        
+        if (matchesCategory && matchesSearch && matchesTags) {
+            row.classList.remove('hidden');
+        } else {
+            row.classList.add('hidden');
+        }
+    });
+}
+
+function clearContentFilters() {
+    currentContentSearch = '';
+    
+    document.querySelectorAll('.category-filter-checkbox').forEach(cb => {
+        cb.checked = true;
+    });
+    document.getElementById('category-filter-select-all').checked = true;
+    initCategoryFilters();
+    updateCategoryFilterCount();
+    
+    document.getElementById('contentSearchInput').value = '';
+    
+    if (typeof clearAllTagFilters === 'function') {
+        clearAllTagFilters();
+    }
+    
+    applyFilters();
+}
+</script>
+{% include 'blog/partials/_category_filter_js.html' %}
+{% endblock %}
