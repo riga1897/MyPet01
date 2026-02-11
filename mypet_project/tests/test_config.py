@@ -3,22 +3,6 @@ from unittest.mock import patch
 
 from mypet_project.config import Settings
 
-ENV_VARS_TO_CLEAR = [
-    'X_FRAME_OPTIONS', 'DEBUG', 'SECRET_KEY', 'ALLOWED_HOSTS',
-    'DATABASE_URL', 'POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_HOST',
-    'POSTGRES_PORT', 'POSTGRES_DB', 'CSRF_TRUSTED_ORIGINS',
-    'CSRF_COOKIE_HTTPONLY', 'CSRF_COOKIE_SAMESITE', 'USE_HTTPS',
-    'SECURE_SSL_REDIRECT', 'SECURE_HSTS_SECONDS',
-    'SECURE_HSTS_INCLUDE_SUBDOMAINS', 'SECURE_HSTS_PRELOAD',
-    'SESSION_COOKIE_SECURE', 'CSRF_COOKIE_SECURE',
-    'SECURE_BROWSER_XSS_FILTER', 'SECURE_CONTENT_TYPE_NOSNIFF',
-    'ADMIN_SHOW_FACETS', 'CACHE_BACKEND', 'CACHE_LOCATION', 'CACHE_TIMEOUT',
-    'BROWSER_CACHE_ENABLED', 'BROWSER_CACHE_MAX_AGE',
-    'LANGUAGE_CODE', 'TIME_ZONE', 'USE_I18N', 'USE_TZ',
-    'STATIC_URL', 'MEDIA_URL', 'LOGIN_URL', 'LOGIN_REDIRECT_URL',
-    'LOGOUT_REDIRECT_URL',
-]
-
 
 class TestSettings:
 
@@ -61,8 +45,9 @@ class TestSettings:
             'https://a.com', 'https://b.com'
         ]
 
+    @patch.dict(os.environ, {}, clear=True)
     def test_production_security_defaults(self) -> None:
-        settings = Settings()
+        settings = Settings(_env_file=None)
         assert settings.is_secure_ssl_redirect is False
         assert settings.get_secure_hsts_seconds == 0
         assert settings.is_secure_hsts_include_subdomains is False
