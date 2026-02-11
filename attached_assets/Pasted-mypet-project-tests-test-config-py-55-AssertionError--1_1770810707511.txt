@@ -1,0 +1,41 @@
+mypet_project/tests/test_config.py:55: AssertionError
+====================================================================================================== tests coverage ======================================================================================================
+_____________________________________________________________________________________ coverage: platform linux, python 3.12.12-final-0 _____________________________________________________________________________________
+
+Name                                                         Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------
+blog/admin.py                                                   72      0   100%
+blog/apps.py                                                     6      0   100%
+blog/cache.py                                                   28      0   100%
+blog/forms.py                                                   58      0   100%
+blog/management/commands/create_superuser_if_not_exists.py      23      0   100%
+blog/management/commands/setup_demo_content.py                  42      0   100%
+blog/management/commands/setup_initial_structure.py             17      0   100%
+blog/models.py                                                 177      0   100%
+blog/services.py                                                80      0   100%
+blog/signals.py                                                 32      0   100%
+blog/sitemaps.py                                                21      0   100%
+blog/templatetags/blog_filters.py                                6      0   100%
+blog/urls.py                                                     4      0   100%
+blog/utils.py                                                   26      0   100%
+blog/views.py                                                  506      0   100%
+core/apps.py                                                     4      0   100%
+core/context_processors.py                                       5      0   100%
+core/middleware.py                                              23      0   100%
+core/mixins.py                                                  11      0   100%
+core/models.py                                                   6      0   100%
+core/security.py                                                79      0   100%
+core/utils/text.py                                              36      0   100%
+mypet_project/config.py                                         75      0   100%
+mypet_project/settings.py                                       44      0   100%
+mypet_project/urls.py                                           10      0   100%
+users/admin.py                                                   0      0   100%
+users/apps.py                                                    7      0   100%
+users/models.py                                                 15      0   100%
+users/signals.py                                                22      0   100%
+users/urls.py                                                    5      0   100%
+users/views.py                                                  47      0   100%
+------------------------------------------------------------------------------------------
+TOTAL                                                         1487      0   100%
+================================================================================================= short test summary info ==================================================================================================
+FAILED mypet_project/tests/test_config.py::TestSettings::test_production_security_defaults - AssertionError: assert 'ALLOWALL' == 'DENY'
