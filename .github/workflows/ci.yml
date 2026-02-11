@@ -251,7 +251,7 @@ jobs:
             else
               echo 'Real SSL certificate not found. Running init-letsencrypt...'
               chmod +x init-letsencrypt.sh
-              STAGING=${{ vars.CERTBOT_STAGING || '0' }} ./init-letsencrypt.sh --auto
+              STAGING=0 ./init-letsencrypt.sh --auto
             fi
           EOFSSL
 
