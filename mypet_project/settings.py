@@ -78,6 +78,7 @@ USE_I18N = env_settings.use_i18n
 USE_TZ = env_settings.use_tz
 
 # Production security settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = env_settings.is_secure_ssl_redirect
 SECURE_HSTS_SECONDS = env_settings.get_secure_hsts_seconds
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_settings.is_secure_hsts_include_subdomains
