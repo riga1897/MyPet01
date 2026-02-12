@@ -89,6 +89,12 @@ MyPet01/
 │   ├── integration/
 │   └── load/
 ├── docs/                   # Документация проекта
+│   ├── DEPLOYMENT_GUIDE.md # Деплой на VPS (CI/CD, Docker, ручной)
+│   ├── DEPLOYMENT_STRATEGY.md # Стратегия и CI/CD pipeline
+│   ├── VPS_AND_SECRETS.md  # Настройка VPS и GitHub Secrets
+│   ├── LOCAL_DEVELOPMENT.md # Локальная разработка с Docker
+│   ├── TESTING.md          # Тестирование
+│   └── planning/           # Планы развития
 ├── deploy/                 # Скрипты деплоя
 ├── scripts/                # Автоматизация настройки VPS
 ├── haproxy/                # Конфигурации HAProxy (prod, preprod)
@@ -248,15 +254,12 @@ feature/* -> develop -> release/* -> main
 
 | Документ | Описание |
 |---|---|
-| [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md) | Стратегия деплоя |
-| [docs/CI_CD.md](docs/CI_CD.md) | CI/CD пайплайн |
-| [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md) | GitHub Secrets и Variables |
-| [docs/DEPLOY_CHECKLIST.md](docs/DEPLOY_CHECKLIST.md) | Чек-лист деплоя |
-| [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md) | Настройка Docker |
-| [docs/DEPUSER_SETUP.md](docs/DEPUSER_SETUP.md) | Настройка deploy-пользователя |
-| [docs/QUICK_START_TESTING.md](docs/QUICK_START_TESTING.md) | Быстрый старт тестирования |
-| [docs/STAGING_TESTING.md](docs/STAGING_TESTING.md) | Тестирование на staging |
-| [docs/S3_MIGRATION_PLAN.md](docs/S3_MIGRATION_PLAN.md) | План миграции на S3 |
+| [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) | Деплой на VPS (CI/CD, Docker, ручной) |
+| [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md) | Стратегия развертывания и CI/CD pipeline |
+| [docs/VPS_AND_SECRETS.md](docs/VPS_AND_SECRETS.md) | Настройка VPS, depuser, GitHub Secrets |
+| [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) | Локальная разработка с Docker |
+| [docs/TESTING.md](docs/TESTING.md) | Тестирование, линтеры, покрытие |
+| [docs/planning/S3_MIGRATION_PLAN.md](docs/planning/S3_MIGRATION_PLAN.md) | План миграции на S3 |
 
 ---
 

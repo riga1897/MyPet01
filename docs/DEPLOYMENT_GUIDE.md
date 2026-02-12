@@ -1,9 +1,12 @@
-# Деплой Blog на VPS
+# Деплой MyPet01 на VPS
 
 Три варианта деплоя:
 - **CI/CD (рекомендуется)** — автоматический деплой через GitHub Actions
 - **Docker (ручной)** — быстрый и простой
 - **Ручная установка** — для тонкой настройки
+
+> **Подготовка VPS и секретов:** [VPS_AND_SECRETS.md](VPS_AND_SECRETS.md)
+> **Стратегия и CI/CD архитектура:** [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md)
 
 ---
 
@@ -11,63 +14,23 @@
 
 Автоматический деплой при `git push` через GitHub Actions.
 
-## Gitflow стратегия
-
-```
-feature/* → develop → release/* → main
-                          ↓           ↓
-                     preprod VPS   prod VPS
-```
-
 ## Настройка (один раз)
 
-### 1. GitHub Secrets
+1. Подготовьте VPS и GitHub Secrets — [VPS_AND_SECRETS.md](VPS_AND_SECRETS.md)
+2. Убедитесь, что все секреты заполнены — [чек-лист](VPS_AND_SECRETS.md#чек-лист)
+3. Изучите Gitflow и pipeline — [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md)
 
-В репозитории: **Settings** → **Secrets and variables** → **Actions**
-
-**Общие:**
-- `GHCR_TOKEN` — Personal Access Token с `read:packages` (GitHub → Settings → Developer settings → Personal access tokens)
-
-**Production:**
-- `SSH_KEY` — приватный SSH ключ
-- `SSH_USER` — пользователь (например, `root`)
-- `SERVER_IP` — IP production сервера
-- `DEPLOY_DIR` — путь деплоя (`/opt/blog`)
-
-**Pre-Production:**
-- `PREPROD_SSH_KEY`
-- `PREPROD_SSH_USER`
-- `PREPROD_SERVER_IP`
-- `PREPROD_DEPLOY_DIR` (`/opt/blog-preprod`)
-
-### 2. SSH ключ для деплоя
-
-```bash
-ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_deploy
-
-cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
-
-cat ~/.ssh/github_deploy
-```
-
-Скопируйте приватный ключ в GitHub Secrets → `SSH_KEY`
-
-## Использование
-
-### Деплой на pre-production
+## Деплой на pre-production
 
 ```bash
 git checkout -b release/v1.0 develop
 git push origin release/v1.0
 ```
 
-CI/CD автоматически:
-1. Запускает тесты
-2. Собирает Docker образ
-3. Деплоит на препрод
-4. Создаёт draft PR в main
+CI/CD автоматически прогонит тесты, соберёт образ, задеплоит на препрод и создаст draft PR.
+Подробности pipeline: [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md#pre-production-pipeline-release)
 
-### Деплой на production
+## Деплой на production
 
 ```bash
 git checkout main
@@ -75,14 +38,12 @@ git merge release/v1.0
 git push origin main
 ```
 
-## Подробная документация
-
-- [docs/CI_CD.md](docs/CI_CD.md) — архитектура pipeline
-- [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md) — настройка секретов
+CI/CD задеплоит на production VPS с реальным SSL сертификатом.
+Подробности: [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md#production-pipeline-main)
 
 ---
 
-# Вариант 1: Docker (рекомендуется)
+# Вариант 1: Docker (ручной)
 
 ## Требования
 
@@ -93,16 +54,10 @@ git push origin main
 ## 1. Установка Docker
 
 ```bash
-# Обновление системы
 sudo apt update && sudo apt upgrade -y
-
-# Установка Docker
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
-
-# Перелогиниться для применения группы
 exit
-# Войти снова
 ```
 
 ## 2. Клонирование проекта
@@ -116,7 +71,7 @@ git clone https://github.com/riga1897/MyPet01.git .
 
 ```bash
 cp deploy/.env.production.example .env
-nano .env  # Заполнить реальными значениями
+nano .env
 
 # Обязательно установить:
 # - SECRET_KEY (сгенерировать: openssl rand -hex 32)
@@ -127,17 +82,15 @@ nano .env  # Заполнить реальными значениями
 ## 4. SSL сертификаты
 
 ```bash
-# Создать директории для сертификатов
 mkdir -p nginx/ssl nginx/certbot
 
-# Вариант A: Let's Encrypt (бесплатно) — включая VPN домен!
+# Вариант A: Let's Encrypt (бесплатно)
 sudo apt install certbot
 sudo certbot certonly --standalone \
     -d www.mine-craft.su \
     -d site.mine-craft.su \
     -d vpn.mine-craft.su
 
-# Копировать сертификаты (используются и Nginx, и SoftEther VPN)
 sudo cp /etc/letsencrypt/live/mine-craft.su/fullchain.pem nginx/ssl/
 sudo cp /etc/letsencrypt/live/mine-craft.su/privkey.pem nginx/ssl/
 sudo chmod 644 nginx/ssl/fullchain.pem
@@ -155,23 +108,16 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 После первого запуска контейнеров:
 
 ```bash
-# Подключиться к VPN серверу
 docker compose -f docker-compose.prod.yml exec softether vpncmd localhost /server
-
-# Установить сертификат Let's Encrypt
 ServerCertSet /LOADCERT:/etc/ssl/vpn/fullchain.pem /LOADKEY:/etc/ssl/vpn/privkey.pem
-
-# Проверить установленный сертификат
 ServerCertGet
 ```
 
 ### Автообновление сертификатов
 
 ```bash
-# Сделать скрипт исполняемым
 chmod +x deploy/renew-certs.sh
 
-# Добавить в crontab (проверка дважды в день)
 sudo crontab -e
 # Добавить строку:
 0 3,15 * * * /opt/blog/deploy/renew-certs.sh >> /var/log/certbot-renew.log 2>&1
@@ -185,16 +131,9 @@ sudo crontab -e
 ## 5. Запуск
 
 ```bash
-# Сборка и запуск
 docker compose -f docker-compose.prod.yml up -d --build
-
-# Применение миграций
 docker compose -f docker-compose.prod.yml exec web python manage.py migrate
-
-# Создание суперпользователя
 docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
-
-# Проверка статуса
 docker compose -f docker-compose.prod.yml ps
 ```
 
@@ -225,15 +164,15 @@ docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml down -v
 ```
 
-## 8. Настройка SoftEther VPN
+---
 
-Архитектура использует HAProxy для SNI-роутинга трафика на 443 порту:
+# VPN и сетевая архитектура
+
+## Архитектура SNI-роутинга
+
+HAProxy работает в режиме `network_mode: host` для SNI-маршрутизации:
 - `www.mine-craft.su`, `site.mine-craft.su` → Nginx → Django
 - `vpn.mine-craft.su` → SoftEther VPN
-
-### Сетевая архитектура
-
-HAProxy работает в режиме `network_mode: host` — это позволяет ему видеть VPN сеть SoftEther и обращаться к VPN клиентам напрямую.
 
 ```
 Internet → HAProxy (host network)
@@ -253,32 +192,22 @@ Internet → HAProxy (host network)
   - SoftEther: 1194/udp (OpenVPN)
 ```
 
-### Первоначальная настройка VPN
+## Первоначальная настройка VPN
 
 ```bash
-# Подключение к vpncmd для настройки
 docker compose -f docker-compose.prod.yml exec softether vpncmd localhost /server
 
 # Внутри vpncmd:
-# 1. Установить пароль администратора
 ServerPasswordSet
-
-# 2. Создать Virtual Hub
 HubCreate VPN
 Hub VPN
-
-# 3. Создать пользователя
 UserCreate myuser /GROUP:none /REALNAME:none /NOTE:none
 UserPasswordSet myuser
-
-# 4. Включить SecureNAT (для доступа к интернету через VPN)
 SecureNatEnable
-
-# 5. Выход
 exit
 ```
 
-### Порты VPN
+## Порты VPN
 
 | Протокол | Порт | Описание |
 |----------|------|----------|
@@ -288,31 +217,27 @@ exit
 | L2TP/IPsec | 500, 4500, 1701/udp | Напрямую |
 | OpenVPN | 1194/udp | Напрямую |
 
-### Minecraft Failover
+## Minecraft Failover
 
-HAProxy проверяет доступность хоста `newnout01` (через VPN) и автоматически переключается на резервный сервер `mainserv01.netcraze.pro` если основной недоступен.
+HAProxy проверяет доступность хоста `newnout01` (через VPN) и автоматически переключается на резервный сервер `mainserv01.netcraze.pro`.
 
 | Порт | Назначение | Основной | Резервный |
 |------|------------|----------|-----------|
 | 25565/tcp | Minecraft игра | newnout01:25565 | mainserv01.netcraze.pro:25565 |
 | 25575/tcp | RCON | newnout01:25575 | mainserv01.netcraze.pro:25575 |
 
-Параметры проверки:
-- Интервал: 5 секунд
-- Порог недоступности: 3 неудачные проверки
-- Порог восстановления: 2 успешные проверки
+Параметры проверки: интервал 5 сек, порог недоступности 3, порог восстановления 2.
 
-### Клиенты
+## VPN клиенты
 
 - **Windows**: Встроенный SSTP клиент или SoftEther Client
 - **macOS/iOS**: L2TP/IPsec
 - **Android**: SoftEther VPN Client или OpenVPN
 - **Linux**: SoftEther Client или OpenVPN
 
-### Мониторинг HAProxy
+## Мониторинг HAProxy
 
 ```bash
-# Статистика HAProxy доступна на :8404/stats
 curl http://localhost:8404/stats
 ```
 
@@ -323,234 +248,242 @@ curl http://localhost:8404/stats
 ## Требования
 
 - Ubuntu 22.04+ / Debian 11+
-- Python 3.12
-- PostgreSQL 15+
-- Redis 7+
-- Nginx
-- Certbot (для SSL)
-
----
+- Python 3.12, PostgreSQL 15+, Redis 7+, Nginx, Certbot
 
 ## 1. Подготовка сервера
 
 ```bash
-# Обновление системы
 sudo apt update && sudo apt upgrade -y
-
-# Установка зависимостей
 sudo apt install -y python3.12 python3.12-venv python3-pip \
     postgresql postgresql-contrib redis-server nginx certbot \
     python3-certbot-nginx git curl
-
-# Создание пользователя и директорий
 sudo mkdir -p /var/www/blog /var/log/blog /tmp/blog-uploads
 sudo chown -R www-data:www-data /var/www/blog /var/log/blog /tmp/blog-uploads
 ```
 
----
-
 ## 2. База данных PostgreSQL
 
 ```bash
-# Вход под пользователем postgres
 sudo -u postgres psql
 
-# Создание базы и пользователя
 CREATE USER blog_user WITH PASSWORD 'your_secure_password';
 CREATE DATABASE blog_db OWNER blog_user;
 GRANT ALL PRIVILEGES ON DATABASE blog_db TO blog_user;
-
-# Включение расширений
 \c blog_db
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 \q
 ```
 
----
-
 ## 3. Клонирование и настройка проекта
 
 ```bash
 cd /var/www/blog
-
-# Клонирование репозитория
 sudo -u www-data git clone https://github.com/riga1897/MyPet01.git .
-
-# Создание виртуального окружения
 sudo -u www-data python3.12 -m venv .venv
 source .venv/bin/activate
-
-# Установка Poetry и зависимостей
 pip install poetry
 poetry install --only main
-
-# Копирование и настройка .env
 cp deploy/.env.production.example .env
-nano .env  # Заполнить реальными значениями
+nano .env
 ```
-
----
 
 ## 4. Инициализация Django
 
 ```bash
 source .venv/bin/activate
-
-# Применение миграций
 python manage.py migrate
-
-# Сбор статики
 python manage.py collectstatic --noinput
-
-# Создание суперпользователя
 python manage.py createsuperuser
 ```
-
----
 
 ## 5. Настройка Systemd
 
 ```bash
-# Копирование сервиса
 sudo cp deploy/blog.service /etc/systemd/system/
-
-# Перезагрузка systemd
 sudo systemctl daemon-reload
-
-# Включение и запуск
 sudo systemctl enable blog
 sudo systemctl start blog
-
-# Проверка статуса
 sudo systemctl status blog
 ```
-
----
 
 ## 6. Настройка Nginx
 
 ```bash
-# Копирование конфигурации
 sudo cp deploy/nginx.conf /etc/nginx/sites-available/blog
 sudo ln -s /etc/nginx/sites-available/blog /etc/nginx/sites-enabled/
-
-# Удаление дефолтного сайта
 sudo rm /etc/nginx/sites-enabled/default
-
-# Проверка конфигурации
 sudo nginx -t
-
-# Перезапуск nginx
 sudo systemctl reload nginx
 ```
-
----
 
 ## 7. SSL сертификат (Let's Encrypt)
 
 ```bash
-# Создание директории для certbot
 sudo mkdir -p /var/www/certbot
-
-# Получение сертификата
 sudo certbot certonly --webroot -w /var/www/certbot \
     -d www.mine-craft.su -d site.mine-craft.su
-
-# Автопродление (добавляется автоматически)
 sudo systemctl enable certbot.timer
 ```
-
----
 
 ## 8. Настройка Redis
 
 ```bash
-# Редактирование конфигурации (опционально)
 sudo nano /etc/redis/redis.conf
-
-# Перезапуск
 sudo systemctl restart redis
-
-# Проверка
-redis-cli ping  # Должен ответить PONG
+redis-cli ping
 ```
-
----
 
 ## 9. Проверка деплоя
 
 ```bash
-# Проверка сервисов
 sudo systemctl status blog nginx redis postgresql
-
-# Логи приложения
 sudo tail -f /var/log/blog/gunicorn-*.log
-
-# Логи nginx
 sudo tail -f /var/log/nginx/blog-*.log
-
-# Тест сайта
 curl -I https://www.mine-craft.su
 ```
-
----
 
 ## 10. Обновление приложения
 
 ```bash
 cd /var/www/blog
 sudo -u www-data git pull origin main
-
 source .venv/bin/activate
 poetry install --only main
 python manage.py migrate
 python manage.py collectstatic --noinput
-
 sudo systemctl restart blog
 ```
 
 ---
 
-## Полезные команды
+# SSL при CI/CD деплое
+
+SSL сертификаты настраиваются автоматически при деплое:
+- **Препрод:** Зависит от `CERTBOT_STAGING` (`1` = тестовый, `0` = реальный)
+- **Production:** Всегда реальный сертификат (захардкожен `STAGING=0`)
+
+При первом деплое:
+1. Nginx стартует с самоподписанным (dummy) сертификатом
+2. CI/CD запускает `init-letsencrypt.sh` для получения сертификата
+3. Certbot автоматически обновляет сертификат каждые 12 часов (если нужно)
+
+### Ручная настройка SSL (если нужно)
 
 ```bash
-# Перезапуск приложения
-sudo systemctl restart blog
+ssh depuser@<IP>
+cd /opt/blog-preprod
 
-# Просмотр логов в реальном времени
-sudo journalctl -u blog -f
+# Получить тестовый сертификат
+STAGING=1 bash init-letsencrypt.sh
 
-# Проверка портов
-sudo ss -tlnp | grep -E '80|443|8000'
+# Удалить тестовый и получить реальный
+docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
+    rm -rf /etc/letsencrypt/live /etc/letsencrypt/archive /etc/letsencrypt/renewal
+STAGING=0 bash init-letsencrypt.sh
+```
 
-# Очистка кэша Redis
-redis-cli FLUSHDB
+**Требования:**
+- Домены должны указывать на IP серверов (DNS A-записи):
+  - **Прод**: `www.mine-craft.su` → прод VPS, `mainsrv01.mine-craft.su` → прод VPS
+  - **Препрод**: `site.mine-craft.su` → препрод VPS, `vpn.mine-craft.su` → препрод VPS
+- Порт 80 должен быть открыт (для ACME-challenge через HAProxy)
+
+**Автообновление:** Certbot проверяет каждые 12 часов, обновление раз в ~60 дней. Nginx перезагружается раз в неделю для подхвата сертификатов.
+
+---
+
+# Чек-лист деплоя
+
+## Перед деплоем
+
+- [ ] Все тесты проходят: `poetry run pytest`
+- [ ] Линтеры чистые: `poetry run ruff check .` и `poetry run mypy .`
+- [ ] Docker образ собирается локально: `docker compose build`
+- [ ] GitHub Secrets заполнены — [VPS_AND_SECRETS.md](VPS_AND_SECRETS.md#чек-лист)
+- [ ] VPS доступен по SSH: `ssh depuser@<IP>`
+
+## После деплоя
+
+- [ ] Сайт открывается: `https://<DOMAIN>`
+- [ ] HTTP редиректит на HTTPS
+- [ ] Админка доступна: `https://<DOMAIN>/admin/`
+- [ ] Логин работает
+- [ ] Контент отображается (демо-данные загружены)
+- [ ] Медиафайлы доступны для авторизованных пользователей
+- [ ] Статика загружается (CSS, JS, изображения)
+- [ ] SSL сертификат валидный (замочек в браузере)
+
+## Полезные команды на VPS
+
+```bash
+ssh depuser@<IP>
+cd /opt/blog-preprod
+
+docker compose -f docker-compose.prod.yml logs -f web
+docker compose -f docker-compose.prod.yml logs -f nginx
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml restart web
+docker compose -f docker-compose.prod.yml exec web python manage.py shell
+docker compose -f docker-compose.prod.yml exec web python manage.py shell -c "from django.core.cache import cache; cache.clear(); print('OK')"
+docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content
 ```
 
 ---
 
-## Troubleshooting
+# Откат при проблемах
+
+```bash
+ssh depuser@<IP>
+cd /opt/blog-preprod
+
+# Посмотреть логи
+docker compose -f docker-compose.prod.yml logs --tail=100 web
+
+# Откатить к предыдущему образу
+docker compose -f docker-compose.prod.yml down
+nano .env  # Поменять IMAGE_TAG на предыдущий тег
+docker compose -f docker-compose.prod.yml up -d
+
+# Пересоздать .env с нуля
+rm .env
+SERVER_IP=<IP> ./generate-preprod-env.sh
+docker compose -f docker-compose.prod.yml restart
+```
+
+---
+
+# Настройка VPN (SoftEther) после деплоя
+
+VPN-сервер SoftEther стартует вместе с контейнерами, но требует ручной настройки:
+
+```bash
+docker cp vpn_server.config $(docker ps -q -f name=softether):/usr/vpnserver/vpn_server.config
+docker restart $(docker ps -q -f name=softether)
+```
+
+> **Важно:** Конфиг VPN содержит пароли и ключи. Не храните его в Git-репозитории.
+
+---
+
+# Troubleshooting
 
 ### Ошибка 502 Bad Gateway
+
 ```bash
-# Проверить, запущен ли gunicorn
 sudo systemctl status blog
-# Проверить логи
 sudo tail -50 /var/log/blog/gunicorn-error.log
 ```
 
 ### Статика не загружается
+
 ```bash
-# Пересобрать статику
 python manage.py collectstatic --clear --noinput
-# Проверить права
 sudo chown -R www-data:www-data /var/www/blog/staticfiles
 ```
 
 ### Проблемы с базой данных
+
 ```bash
-# Проверить подключение
 psql -U blog_user -d blog_db -h localhost
-# Проверить миграции
 python manage.py showmigrations
 ```

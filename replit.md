@@ -56,6 +56,14 @@ The project is built on Python 3.12 with Django and Django REST Framework, follo
 - **SSL/TLS Bootstrap**: Nginx uses a custom entrypoint to generate self-signed certificates on first deploy, replaced by Let's Encrypt via CI/CD.
 - **Deployment**: Supports deployment to pre-production and production VPS environments, with CI/CD handling infrastructure setup.
 
+**Documentation (docs/):**
+- `DEPLOYMENT_GUIDE.md` — Deploy to VPS (CI/CD, Docker manual, manual install, VPN, SSL, checklist)
+- `DEPLOYMENT_STRATEGY.md` — 4-env strategy, Gitflow, CI/CD pipeline architecture, zero-config VPS
+- `VPS_AND_SECRETS.md` — depuser setup, SSH keys, GitHub Secrets/Variables
+- `LOCAL_DEVELOPMENT.md` — Docker Desktop setup, staging testing checklists
+- `TESTING.md` — pytest, coverage, ruff, mypy, E2E, load testing
+- `planning/S3_MIGRATION_PLAN.md` — Future S3 storage migration plan
+
 ## External Dependencies
 - **Frameworks**: Django, Django REST Framework
 - **Database**: PostgreSQL (`psycopg2-binary`, `dj-database-url`)
