@@ -63,7 +63,9 @@ The project is built on Python 3.12 with Django and Django REST Framework, follo
 - **Scanner Path Blocking**: ACL list blocks common scanner paths (/SDK/webLanguage, /hudson, /wp-admin, /.env, /.git, etc.) with 403 + auto-ban via gpc0.
 - **BADREQ Auto-ban**: IPs with high HTTP error rate (>5 errors/10s, which includes 400 from malformed requests) get gpc0 incremented and are banned (403) for 30 minutes. Scanner path hits also trigger gpc0 ban.
 - **Auto-update**: `scripts/cron-geoip-update.sh` — run weekly via cron: `0 3 * * 0 /path/to/scripts/cron-geoip-update.sh`
+- **ICMP Blocking**: `net.ipv4.icmp_echo_ignore_all = 1` in `/etc/sysctl.conf` — server does not respond to ping. Configured by `scripts/setup_vps.sh`.
 - **Docker**: GeoIP data mounted as `./haproxy/geoip:/usr/local/etc/haproxy/geoip:ro` in haproxy container.
+- **SoftEther VPN Volumes**: `softether_data:/mnt` (config `vpn_server.config`), `softether_logs:/usr/local/bin/server_log` (logs). Config backup: `docker cp <container>:/mnt/vpn_server.config ./backup`.
 - **First deploy**: Run `bash scripts/update-geoip.sh` before starting HAProxy to generate the GeoIP data.
 
 ## External Dependencies
