@@ -98,15 +98,12 @@ class HomeView(ListView):  # type: ignore[type-arg]
         cached_ids = get_cached_content_ids()
         if cached_ids is not None:
             return list(
-                Content.objects.select_related('content_type')
-                .prefetch_related('categories', 'tags', 'tags__group')
+                Content.objects.with_relations()
                 .filter(id__in=cached_ids)
                 .order_by('-updated_at')
             )
         
-        queryset = Content.objects.select_related('content_type').prefetch_related(
-            'categories', 'tags', 'tags__group'
-        ).order_by('-updated_at')
+        queryset = Content.objects.with_relations().order_by('-updated_at')
         set_cached_content_ids(queryset, limit=6)
         return list(queryset[:6])
 
@@ -140,8 +137,7 @@ class SearchView(ListView):  # type: ignore[type-arg]
                 rank=SearchRank(search_vector, search_query),
             )
             .filter(search=search_query)
-            .select_related('content_type')
-            .prefetch_related('categories', 'tags', 'tags__group')
+            .with_relations()
             .order_by('-rank', '-created_at')
         )
 
@@ -153,8 +149,7 @@ class SearchView(ListView):  # type: ignore[type-arg]
                 desc_similarity=TrigramSimilarity('description', query),
             )
             .filter(title_similarity__gt=self.similarity_threshold)
-            .select_related('content_type')
-            .prefetch_related('categories', 'tags', 'tags__group')
+            .with_relations()
             .order_by('-title_similarity', '-created_at')
         )
 
@@ -207,9 +202,7 @@ class ContentListView(ModeratorRequiredMixin, ModeratorFilterContextMixin, ListV
     ordering = ['-updated_at']
 
     def get_queryset(self) -> Any:
-        return Content.objects.select_related('content_type').prefetch_related(
-            'categories', 'tags', 'tags__group'
-        ).order_by('-updated_at')
+        return Content.objects.with_relations().order_by('-updated_at')
 
 
 def validate_media_path(path: str, expected_prefix: str) -> bool:

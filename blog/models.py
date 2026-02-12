@@ -209,7 +209,19 @@ class ContentType(BaseModel):
         return result
 
 
+class ContentQuerySet(models.QuerySet['Content']):
+    """Custom QuerySet for Content with common query patterns."""
+
+    def with_relations(self) -> 'ContentQuerySet':
+        """Attach content_type, categories, tags and tag groups."""
+        return self.select_related('content_type').prefetch_related(
+            'categories', 'tags', 'tags__group',
+        )
+
+
 class Content(BaseModel):
+    objects = ContentQuerySet.as_manager()
+
     title = models.CharField(
         max_length=200,
         default='Без названия',
