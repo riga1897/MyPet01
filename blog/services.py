@@ -1,6 +1,7 @@
 """Video and image processing services for content management."""
 import hashlib
 import logging
+import os
 import subprocess
 import tempfile
 import time
@@ -142,7 +143,6 @@ def generate_hashed_filename(uploaded_file: Any) -> tuple[str, str]:
         Tuple of (hashed_filename, content_hash).
         Example: ('photo_a1b2c3d4.jpg', 'a1b2c3d4')
     """
-    import os as os_module
     md5_hash = hashlib.md5()
     
     uploaded_file.seek(0)
@@ -153,7 +153,7 @@ def generate_hashed_filename(uploaded_file: Any) -> tuple[str, str]:
     content_hash = md5_hash.hexdigest()[:8]
     original_name = uploaded_file.name or 'file'
     
-    name_part, ext = os_module.path.splitext(original_name)
+    name_part, ext = os.path.splitext(original_name)
     hashed_filename = f'{name_part}_{content_hash}{ext}'
     
     return hashed_filename, content_hash

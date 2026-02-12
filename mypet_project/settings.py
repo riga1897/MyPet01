@@ -68,7 +68,6 @@ DATABASES = {
 }
 
 CSRF_TRUSTED_ORIGINS = env_settings.csrf_trusted_origins_list
-CSRF_COOKIE_SECURE = env_settings.csrf_cookie_secure
 CSRF_COOKIE_HTTPONLY = env_settings.csrf_cookie_httponly
 CSRF_COOKIE_SAMESITE = env_settings.csrf_cookie_samesite
 
@@ -123,7 +122,6 @@ CONTENT_SECURITY_POLICY = {
         "script-src": [
             "'self'",
             "'unsafe-inline'",
-            "cdn.tailwindcss.com",
         ],
         "style-src": [
             "'self'",

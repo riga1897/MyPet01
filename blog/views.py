@@ -10,6 +10,7 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib import messages
+from django.db import models
 from django.contrib.postgres.search import (
     SearchQuery,
     SearchRank,
@@ -211,35 +212,34 @@ class ContentListView(ModeratorRequiredMixin, ModeratorFilterContextMixin, ListV
         ).order_by('-updated_at')
 
 
-def validate_existing_file(existing_file: str, content_type: ContentType | None) -> bool:
-    """Validate that existing_file is safe and exists in content_type folder."""
-    if not existing_file or not content_type:
+def validate_media_path(path: str, expected_prefix: str) -> bool:
+    """Validate that a media path is safe and exists under expected prefix.
+
+    Checks for path traversal, prefix match, and file existence.
+    """
+    if not path:
         return False
-    if '..' in existing_file or existing_file.startswith('/'):
+    if '..' in path or path.startswith('/'):
         return False
-    expected_prefix = content_type.upload_folder + '/'
-    if not existing_file.startswith(expected_prefix):
+    if not path.startswith(expected_prefix):
         return False
-    full_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, existing_file))
+    full_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, path))
     media_root = os.path.normpath(settings.MEDIA_ROOT)
     if not full_path.startswith(media_root + os.sep):  # pragma: no cover
         return False
     return os.path.exists(full_path) and os.path.isfile(full_path)
+
+
+def validate_existing_file(existing_file: str, content_type: ContentType | None) -> bool:
+    """Validate that existing_file is safe and exists in content_type folder."""
+    if not content_type:
+        return False
+    return validate_media_path(existing_file, content_type.upload_folder + '/')
 
 
 def validate_existing_thumbnail(existing_thumbnail: str) -> bool:
     """Validate that existing_thumbnail is safe and exists in thumbnails folder."""
-    if not existing_thumbnail:
-        return False
-    if '..' in existing_thumbnail or existing_thumbnail.startswith('/'):
-        return False
-    if not existing_thumbnail.startswith('thumbnails/'):
-        return False
-    full_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, existing_thumbnail))
-    media_root = os.path.normpath(settings.MEDIA_ROOT)
-    if not full_path.startswith(media_root + os.sep):  # pragma: no cover
-        return False
-    return os.path.exists(full_path) and os.path.isfile(full_path)
+    return validate_media_path(existing_thumbnail, 'thumbnails/')
 
 
 class FileHandlingMixin:
@@ -499,73 +499,52 @@ class TagReorderView(ModeratorRequiredMixin, View):
             return JsonResponse({'error': str(e)}, status=500)
 
 
-class CheckContentTypeCodeView(View):
-    """API endpoint to check if ContentType code is available."""
+class CheckUniqueFieldView(View):
+    """Generic API endpoint to check if a model field value is available."""
+
+    model: type[models.Model]
+    field_name: str = 'code'
+    param_name: str = 'code'
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        code = request.GET.get('code', '').strip()
+        value = request.GET.get(self.param_name, '').strip()
         exclude_id_str = request.GET.get('exclude_id')
         exclude_id: int | None = None
-        
+
         if exclude_id_str:
             with contextlib.suppress(ValueError, TypeError):
                 exclude_id = int(exclude_id_str)
-        
-        if not code:
+
+        if not value:
             return JsonResponse({'available': True})
-        
-        queryset = ContentType.objects.filter(code=code)
+
+        queryset = self.model.objects.filter(**{self.field_name: value})
         if exclude_id:
             queryset = queryset.exclude(pk=exclude_id)
-        
+
         available = not queryset.exists()
-        return JsonResponse({'available': available, 'code': code})
+        return JsonResponse({'available': available, self.param_name: value})
 
 
-class CheckContentTypeFolderView(View):
-    """API endpoint to check if ContentType upload_folder is available."""
-
-    def get(self, request: HttpRequest) -> HttpResponse:
-        folder = request.GET.get('folder', '').strip()
-        exclude_id_str = request.GET.get('exclude_id')
-        exclude_id: int | None = None
-        
-        if exclude_id_str:
-            with contextlib.suppress(ValueError, TypeError):
-                exclude_id = int(exclude_id_str)
-        
-        if not folder:
-            return JsonResponse({'available': True})
-        
-        queryset = ContentType.objects.filter(upload_folder=folder)
-        if exclude_id:
-            queryset = queryset.exclude(pk=exclude_id)
-        
-        available = not queryset.exists()
-        return JsonResponse({'available': available, 'folder': folder})
+class CheckContentTypeCodeView(CheckUniqueFieldView):
+    """Check if ContentType code is available."""
+    model = ContentType
+    field_name = 'code'
+    param_name = 'code'
 
 
-class CheckCategoryCodeView(View):
-    """API endpoint to check if Category code is available."""
+class CheckContentTypeFolderView(CheckUniqueFieldView):
+    """Check if ContentType upload_folder is available."""
+    model = ContentType
+    field_name = 'upload_folder'
+    param_name = 'folder'
 
-    def get(self, request: HttpRequest) -> HttpResponse:
-        code = request.GET.get('code', '').strip()
-        exclude_id_str = request.GET.get('exclude_id')
-        exclude_id: int | None = None
-        
-        if exclude_id_str:
-            with contextlib.suppress(ValueError, TypeError):
-                exclude_id = int(exclude_id_str)
-        
-        if not code:
-            return JsonResponse({'available': True})
-        
-        queryset = Category.objects.filter(code=code)
-        if exclude_id:
-            queryset = queryset.exclude(pk=exclude_id)
-        
-        available = not queryset.exists()
-        return JsonResponse({'available': available, 'code': code})
+
+class CheckCategoryCodeView(CheckUniqueFieldView):
+    """Check if Category code is available."""
+    model = Category
+    field_name = 'code'
+    param_name = 'code'
 
 
 class AvailableFilesView(View):
