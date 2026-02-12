@@ -66,14 +66,14 @@ echo "  Пользователь деплоя:        $DEPLOY_USER"
 echo "  Пользователь администратор: $ADMIN_USER"
 echo ""
 
-print_header "1/7 — Обновление системы"
+print_header "1/8 — Обновление системы"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 print_success "Система обновлена"
 
-print_header "2/7 — Создание администратора $ADMIN_USER"
+print_header "2/8 — Создание администратора $ADMIN_USER"
 
 if getent passwd "$ADMIN_USER" > /dev/null 2>&1; then
     print_success "Пользователь $ADMIN_USER уже существует"
@@ -148,7 +148,7 @@ if [ -f "$ADMIN_KEY_PATH" ]; then
     chmod 600 "$ADMIN_KEY_PATH.pub"
 fi
 
-print_header "3/7 — Создание пользователя $DEPLOY_USER"
+print_header "3/8 — Создание пользователя $DEPLOY_USER"
 
 if getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
     print_success "Пользователь $DEPLOY_USER уже существует"
@@ -210,7 +210,7 @@ if ! visudo -cf "$SUDOERS_FILE"; then
 fi
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "4/7 — SSH ключ для GitHub Actions"
+print_header "4/8 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
 if [ -z "$DEPLOY_HOME" ]; then
@@ -254,7 +254,7 @@ if [ -f "$KEY_PATH" ]; then
     chmod 600 "$KEY_PATH.pub"
 fi
 
-print_header "5/7 — Блокировка ICMP (ping)"
+print_header "5/8 — Блокировка ICMP (ping)"
 
 SYSCTL_CONF="/etc/sysctl.conf"
 if grep -q "net.ipv4.icmp_echo_ignore_all" "$SYSCTL_CONF"; then
@@ -265,7 +265,7 @@ fi
 sysctl -p > /dev/null 2>&1
 print_success "ICMP (ping) заблокирован — сервер не отвечает на ping"
 
-print_header "6/7 — Отключение root SSH"
+print_header "6/8 — Отключение root SSH"
 
 SSHD_CONFIG="/etc/ssh/sshd_config"
 if [ -f "$SSHD_CONFIG" ]; then
@@ -287,7 +287,7 @@ else
     print_warning "Файл $SSHD_CONFIG не найден. Настройте PermitRootLogin вручную."
 fi
 
-print_header "7/7 — Настройка GeoIP (обновление списка российских IP)"
+print_header "7/8 — Настройка GeoIP (обновление списка российских IP)"
 
 GEOIP_SCRIPT="${DEPLOY_DIR}/haproxy/update-geoip.sh"
 GEOIP_LOG="/var/log/update-geoip.log"
@@ -330,6 +330,34 @@ else
     print_warning "Скрипт ${GEOIP_SCRIPT} ещё не существует (появится после первого деплоя)"
     print_warning "Cron запустит обновление GeoIP автоматически после деплоя"
 fi
+
+print_header "8/8 — Настройка автобана (блокировка агрессивных IP)"
+
+AUTOBAN_SCRIPT="${DEPLOY_DIR}/haproxy/auto-ban.sh"
+AUTOBAN_LOG="/var/log/haproxy-autoban.log"
+AUTOBAN_CRON_SCHEDULE="*/15 * * * *"
+
+touch "$AUTOBAN_LOG"
+chown "$DEPLOY_USER:$DEPLOY_USER" "$AUTOBAN_LOG"
+
+AUTOBAN_CRON_CMD="${AUTOBAN_CRON_SCHEDULE} test -f ${AUTOBAN_SCRIPT} && ${AUTOBAN_SCRIPT} >> ${AUTOBAN_LOG} 2>&1"
+EXISTING_CRON=$(crontab -u "$DEPLOY_USER" -l 2>/dev/null || true)
+
+if echo "$EXISTING_CRON" | grep -qF "auto-ban.sh"; then
+    print_warning "Cron для auto-ban.sh уже настроен — обновляю"
+    NEW_CRON=$(echo "$EXISTING_CRON" | grep -vF "auto-ban.sh")
+    echo "${NEW_CRON}
+${AUTOBAN_CRON_CMD}" | crontab -u "$DEPLOY_USER" -
+else
+    echo "${EXISTING_CRON}
+${AUTOBAN_CRON_CMD}" | crontab -u "$DEPLOY_USER" -
+fi
+print_success "Cron настроен: автобан каждые 15 минут"
+print_success "Лог: ${AUTOBAN_LOG}"
+
+mkdir -p "${DEPLOY_DIR}/haproxy/blacklist"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}/haproxy/blacklist"
+print_success "Директория ${DEPLOY_DIR}/haproxy/blacklist создана"
 
 echo ""
 echo -e "${YELLOW}╔══════════════════════════════════════════════════════════╗${NC}"

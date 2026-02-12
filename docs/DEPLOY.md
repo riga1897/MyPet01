@@ -378,6 +378,95 @@ curl -I http://site.mine-craft.su/
 cat /var/log/update-geoip.log
 ```
 
+### Автобан агрессивных IP
+
+Скрипт `haproxy/auto-ban.sh` автоматически анализирует логи HAProxy и банит IP-адреса, которые получили слишком много блокировок (403).
+
+**Как работает:**
+1. Парсит логи HAProxy за последний час
+2. Считает количество 403-ответов на каждый IP
+3. IP с числом блокировок >= порога (по умолчанию 10) добавляется в `blocked_ips.lst`
+4. Ваши IP и IP серверов защищены от бана через whitelist (`haproxy/blacklist/whitelist_ips.lst`)
+5. HAProxy перезагружается для применения нового списка
+
+**Настраиваемые параметры (переменные окружения):**
+- `BAN_THRESHOLD` — порог блокировок для бана (по умолчанию: 10)
+- `LOG_WINDOW` — окно анализа логов (по умолчанию: 1h)
+
+#### Настройка на уже работающих VPS (без редеплоя)
+
+```bash
+# На каждом VPS от root:
+
+DEPLOY_DIR="/opt/blog-preprod"  # или /opt/blog для прода
+DEPLOY_USER="depuser"
+
+# 1. Лог-файл
+touch /var/log/haproxy-autoban.log
+chown ${DEPLOY_USER}:${DEPLOY_USER} /var/log/haproxy-autoban.log
+
+# 2. Директория blacklist
+mkdir -p ${DEPLOY_DIR}/haproxy/blacklist
+chown ${DEPLOY_USER}:${DEPLOY_USER} ${DEPLOY_DIR}/haproxy/blacklist
+
+# 3. Настройка cron (каждые 15 минут)
+CRON_CMD="*/15 * * * * test -f ${DEPLOY_DIR}/haproxy/auto-ban.sh && ${DEPLOY_DIR}/haproxy/auto-ban.sh >> /var/log/haproxy-autoban.log 2>&1"
+(crontab -u ${DEPLOY_USER} -l 2>/dev/null | grep -vF "auto-ban.sh"; echo "$CRON_CMD") | crontab -u ${DEPLOY_USER} -
+
+# 4. Проверка cron
+crontab -u ${DEPLOY_USER} -l
+```
+
+#### Управление whitelist и blacklist
+
+```bash
+# Посмотреть whitelist (IP, которые никогда не будут забанены)
+cat ${DEPLOY_DIR}/haproxy/blacklist/whitelist_ips.lst
+
+# Добавить свой IP в whitelist
+echo "1.2.3.4" >> ${DEPLOY_DIR}/haproxy/blacklist/whitelist_ips.lst
+
+# Посмотреть текущий blacklist
+cat ${DEPLOY_DIR}/haproxy/blacklist/blocked_ips.lst
+
+# Разбанить IP (удалить из blacklist и перезагрузить HAProxy)
+sed -i '/1.2.3.4/d' ${DEPLOY_DIR}/haproxy/blacklist/blocked_ips.lst
+docker compose -f docker-compose.prod.yml kill -s HUP haproxy
+
+# Ручной запуск автобана (с пониженным порогом)
+BAN_THRESHOLD=5 bash ${DEPLOY_DIR}/haproxy/auto-ban.sh
+
+# Посмотреть лог автобана
+cat /var/log/haproxy-autoban.log
+```
+
+### Просмотр и анализ логов HAProxy
+
+```bash
+# Последние 1000 строк логов
+docker compose -f docker-compose.prod.yml logs --tail=1000 haproxy
+
+# Все логи в файл
+docker compose -f docker-compose.prod.yml logs haproxy > /tmp/haproxy_full.log
+
+# Логи за последний час
+docker compose -f docker-compose.prod.yml logs --since=1h haproxy
+
+# Следить в реальном времени
+docker compose -f docker-compose.prod.yml logs -f haproxy
+
+# Топ-20 IP по количеству запросов
+docker compose -f docker-compose.prod.yml logs --no-log-prefix haproxy | \
+  grep -oP '^\d+\.\d+\.\d+\.\d+' | sort | uniq -c | sort -rn | head -20
+
+# Только заблокированные запросы (403)
+docker compose -f docker-compose.prod.yml logs --no-log-prefix haproxy | grep ' 403 '
+
+# Сканерные пути (что пробовали взломать)
+docker compose -f docker-compose.prod.yml logs --no-log-prefix haproxy | \
+  grep ' 403 ' | grep -oP '"(?:GET|POST|HEAD)\s+\K\S+' | sort | uniq -c | sort -rn | head -30
+```
+
 ---
 
 # Вариант 2: Ручная установка
