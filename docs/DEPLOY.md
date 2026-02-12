@@ -77,8 +77,8 @@ git push origin main
 
 ## Подробная документация
 
-- [docs/CI_CD.md](docs/CI_CD.md) — архитектура pipeline
-- [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md) — настройка секретов
+- [CI_CD.md](./CI_CD.md) — архитектура pipeline
+- [GITHUB_SECRETS.md](./GITHUB_SECRETS.md) — настройка секретов
 
 ---
 

@@ -252,6 +252,7 @@ feature/* -> develop -> release/* -> main
 | [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md) | Стратегия деплоя |
 | [docs/CI_CD.md](docs/CI_CD.md) | CI/CD пайплайн |
 | [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md) | GitHub Secrets и Variables |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Деплой на VPS (Docker / ручная установка) |
 | [docs/DEPLOY_CHECKLIST.md](docs/DEPLOY_CHECKLIST.md) | Чек-лист деплоя |
 | [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md) | Настройка Docker |
 | [docs/DEPUSER_SETUP.md](docs/DEPUSER_SETUP.md) | Настройка deploy-пользователя |
