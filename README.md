@@ -89,9 +89,11 @@ MyPet01/
 │   ├── integration/
 │   └── load/
 ├── docs/                   # Документация проекта
-│   ├── deployment/         # Деплой, секреты, чек-листы
-│   ├── testing/            # Тестирование
-│   ├── infrastructure/     # Docker, CI/CD
+│   ├── DEPLOYMENT_GUIDE.md # Деплой на VPS (CI/CD, Docker, ручной)
+│   ├── DEPLOYMENT_STRATEGY.md # Стратегия и CI/CD pipeline
+│   ├── VPS_AND_SECRETS.md  # Настройка VPS и GitHub Secrets
+│   ├── LOCAL_DEVELOPMENT.md # Локальная разработка с Docker
+│   ├── TESTING.md          # Тестирование
 │   └── planning/           # Планы развития
 ├── deploy/                 # Скрипты деплоя
 ├── scripts/                # Автоматизация настройки VPS
@@ -244,36 +246,19 @@ feature/* -> develop -> release/* -> main
                       preprod VPS   prod VPS
 ```
 
-Подробная документация: [docs/deployment/DEPLOYMENT_STRATEGY.md](docs/deployment/DEPLOYMENT_STRATEGY.md)
+Подробная документация: [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md)
 
 ---
 
 ## Документация
 
-### Деплой
 | Документ | Описание |
 |---|---|
-| [docs/deployment/DEPLOY.md](docs/deployment/DEPLOY.md) | Деплой на VPS |
-| [docs/deployment/DEPLOYMENT_STRATEGY.md](docs/deployment/DEPLOYMENT_STRATEGY.md) | Стратегия деплоя |
-| [docs/deployment/DEPLOY_CHECKLIST.md](docs/deployment/DEPLOY_CHECKLIST.md) | Чек-лист деплоя |
-| [docs/deployment/DEPUSER_SETUP.md](docs/deployment/DEPUSER_SETUP.md) | Настройка deploy-пользователя |
-| [docs/deployment/GITHUB_SECRETS.md](docs/deployment/GITHUB_SECRETS.md) | GitHub Secrets и Variables |
-
-### Инфраструктура
-| Документ | Описание |
-|---|---|
-| [docs/infrastructure/CI_CD.md](docs/infrastructure/CI_CD.md) | CI/CD пайплайн |
-| [docs/infrastructure/DOCKER_SETUP.md](docs/infrastructure/DOCKER_SETUP.md) | Настройка Docker |
-
-### Тестирование
-| Документ | Описание |
-|---|---|
-| [docs/testing/QUICK_START_TESTING.md](docs/testing/QUICK_START_TESTING.md) | Быстрый старт тестирования |
-| [docs/testing/STAGING_TESTING.md](docs/testing/STAGING_TESTING.md) | Тестирование на staging |
-
-### Планы
-| Документ | Описание |
-|---|---|
+| [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) | Деплой на VPS (CI/CD, Docker, ручной) |
+| [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md) | Стратегия развертывания и CI/CD pipeline |
+| [docs/VPS_AND_SECRETS.md](docs/VPS_AND_SECRETS.md) | Настройка VPS, depuser, GitHub Secrets |
+| [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) | Локальная разработка с Docker |
+| [docs/TESTING.md](docs/TESTING.md) | Тестирование, линтеры, покрытие |
 | [docs/planning/S3_MIGRATION_PLAN.md](docs/planning/S3_MIGRATION_PLAN.md) | План миграции на S3 |
 
 ---
