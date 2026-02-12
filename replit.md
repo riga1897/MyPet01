@@ -144,26 +144,33 @@ poetry run mypy .
 
 ## CI/CD Pipeline
 
-Проект использует GitHub Actions для автоматизации:
+Проект использует **единый** GitHub Actions workflow для автоматизации:
 
-**Workflows:**
-- `.github/workflows/ci-cd.yml` — Pre-production (release/* → preprod VPS)
-- `.github/workflows/ci.yml` — Production (main → prod VPS)
+**Workflow:** `.github/workflows/ci-cd.yml` — обслуживает оба окружения (preprod + production).
 
-**ci-cd.yml Jobs (Pre-Production):**
-1. **Test** — pytest + PostgreSQL + Redis (coverage 100%)
-2. **Lint** — ruff, mypy
-3. **Build** — Docker → GitHub Container Registry
-4. **Deploy Pre-Prod** — инфраструктура VPS, SSL, миграции, демо-данные
+**Логика ветвления:**
+- `release/*` → Препрод: Test → Lint → Build → Deploy (preprod VPS)
+- `main` → Прод: Build → Deploy (prod VPS) — тесты не нужны, т.к. прошли на препроде
 
-**ci.yml Jobs (Production):**
-1. **Build** — Docker → GitHub Container Registry
-2. **Deploy Production** — инфраструктура VPS, SSL (реальный сертификат), миграции
+**Jobs:**
+1. **Test** — pytest + PostgreSQL + Redis (coverage 100%) — только `release/*`
+2. **Lint** — ruff, mypy — только `release/*`
+3. **Build** — Docker → GitHub Container Registry — оба окружения
+4. **Deploy** — единый job с определением окружения по ветке (VPS infra, SSL, миграции)
+
+**Определение окружения:**
+- Ветка `release/*` → секреты `PREPROD_*`, тег `preprod-latest`, демо-данные, draft PR
+- Ветка `main` → секреты `SSH_*`, тег `latest`, `STAGING=0`
 
 **GitHub Variables:**
 - `LOAD_DEMO_DATA` — загрузка демо-данных (только препрод)
 - `CERTBOT_STAGING` — тестовый SSL (только препрод, в проде захардкожен `STAGING=0`)
 - `CREATE_PR_ON_PREDEPLOY` — создание draft PR
+
+**SSL Bootstrap:**
+- Nginx стартует с временным self-signed сертификатом (симлинки из `/etc/nginx/ssl-temp/`)
+- CI/CD автоматически проверяет наличие реального сертификата и запускает `init-letsencrypt.sh` при необходимости
+- Проверка: `[ ! -L fullchain.pem ] && grep -qv 'O=Temporary'` (не симлинк + не временный)
 
 **docker-entrypoint.sh:**
 - Миграции → collectstatic → initial_structure → setup_demo_content (если `LOAD_DEMO_DATA=true`) → createsuperuser → Gunicorn

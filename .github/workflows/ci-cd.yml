@@ -2,7 +2,7 @@ name: MyPet01 CI/CD Pipeline
 
 on:
   push:
-    branches: ['release/*']
+    branches: ['release/*', 'main']
   pull_request:
     branches: ['release/*']
 
@@ -181,7 +181,13 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     needs: [test, lint]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      (
+        (startsWith(github.ref, 'refs/heads/release/') && needs.test.result == 'success' && needs.lint.result == 'success') ||
+        (github.ref == 'refs/heads/main' && needs.test.result == 'skipped' && needs.lint.result == 'skipped')
+      )
     permissions:
       contents: read
       packages: write
@@ -213,6 +219,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=ref,event=branch
             type=raw,value=preprod-latest,enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -230,23 +237,53 @@ jobs:
           echo "Image built and pushed: ${{ env.REGISTRY }}/${{ env.REPO_LOWERCASE }}"
           echo "Tags: ${{ steps.meta.outputs.tags }}"
 
-  deploy-preprod:
+  deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')
 
     permissions:
       contents: write
       pull-requests: write
-
-    env:
-      IMAGE_TAG: preprod-latest
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Determine deploy environment
+        id: env
+        run: |
+          if [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
+            echo "name=preprod" >> $GITHUB_OUTPUT
+            echo "image_tag=preprod-latest" >> $GITHUB_OUTPUT
+            echo "sleep_time=30" >> $GITHUB_OUTPUT
+            echo "env_generator=generate-preprod-env.sh" >> $GITHUB_OUTPUT
+            echo "certbot_staging=${{ vars.CERTBOT_STAGING || '0' }}" >> $GITHUB_OUTPUT
+            echo "load_demo_data=${{ vars.LOAD_DEMO_DATA || 'false' }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=production" >> $GITHUB_OUTPUT
+            echo "image_tag=latest" >> $GITHUB_OUTPUT
+            echo "sleep_time=45" >> $GITHUB_OUTPUT
+            echo "env_generator=generate-production-env.sh" >> $GITHUB_OUTPUT
+            echo "certbot_staging=0" >> $GITHUB_OUTPUT
+            echo "load_demo_data=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify required secrets
+        run: |
+          if [[ "${{ steps.env.outputs.name }}" == "preprod" ]]; then
+            if [[ -z "${{ secrets.PREPROD_SSH_KEY }}" || -z "${{ secrets.PREPROD_SERVER_IP }}" || -z "${{ secrets.PREPROD_DEPLOY_DIR }}" ]]; then
+              echo "::error::Missing PREPROD_* secrets for preprod deployment"
+              exit 1
+            fi
+          else
+            if [[ -z "${{ secrets.SSH_KEY }}" || -z "${{ secrets.SERVER_IP }}" || -z "${{ secrets.DEPLOY_DIR }}" ]]; then
+              echo "::error::Missing SSH_KEY/SERVER_IP/DEPLOY_DIR secrets for production deployment"
+              exit 1
+            fi
+          fi
+          echo "Required secrets verified for ${{ steps.env.outputs.name }}"
 
       - name: Prepare repository name (lowercase)
         run: |
@@ -255,24 +292,25 @@ jobs:
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
-          ssh-private-key: ${{ secrets.PREPROD_SSH_KEY }}
+          ssh-private-key: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_SSH_KEY || secrets.SSH_KEY }}
 
       - name: Setup VPS infrastructure (if needed)
+        env:
+          SSH_TARGET: ${{ steps.env.outputs.name == 'preprod' && format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) || format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}
+          DEPLOY_DIR: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_DEPLOY_DIR || secrets.DEPLOY_DIR }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFDEPS'
+          ssh -o StrictHostKeyChecking=no $SSH_TARGET << EOFDEPS
             set -e
 
             echo '=== Checking VPS infrastructure ==='
 
-            # --- Deploy directory ---
-            if [ ! -d "${{ secrets.PREPROD_DEPLOY_DIR }}" ]; then
+            if [ ! -d "$DEPLOY_DIR" ]; then
               echo 'Creating deploy directory...'
-              sudo mkdir -p ${{ secrets.PREPROD_DEPLOY_DIR }}
-              sudo chown -R $USER:$USER ${{ secrets.PREPROD_DEPLOY_DIR }}
+              sudo mkdir -p $DEPLOY_DIR
+              sudo chown -R \$USER:\$USER $DEPLOY_DIR
               echo 'Deploy directory created'
             fi
 
-            # --- Firewall (UFW) ---
             if ! command -v ufw &> /dev/null; then
               echo 'Installing UFW...'
               sudo apt-get update
@@ -298,7 +336,6 @@ jobs:
               echo 'Firewall already active'
             fi
 
-            # --- Fail2ban ---
             if ! command -v fail2ban-client &> /dev/null; then
               echo 'Installing fail2ban...'
               sudo apt-get update
@@ -310,7 +347,6 @@ jobs:
               echo 'Fail2ban already installed'
             fi
 
-            # --- Docker ---
             if ! command -v docker &> /dev/null; then
               echo 'Installing Docker...'
               sudo apt-get update
@@ -320,8 +356,8 @@ jobs:
               sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
               echo \
-                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-                $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+                \$(. /etc/os-release && echo "\$VERSION_CODENAME") stable" | \
                 sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
               sudo apt-get update
@@ -329,7 +365,7 @@ jobs:
 
               sudo systemctl enable docker
               sudo systemctl start docker
-              sudo usermod -aG docker $USER
+              sudo usermod -aG docker \$USER
               echo 'Docker installed!'
             else
               echo 'Docker already installed'
@@ -341,7 +377,6 @@ jobs:
               sudo apt-get install -y docker-compose-plugin
             fi
 
-            # --- Allow unprivileged port binding (for HAProxy in network_mode: host) ---
             if ! grep -q 'net.ipv4.ip_unprivileged_port_start=0' /etc/sysctl.conf 2>/dev/null; then
               echo 'Configuring unprivileged port binding...'
               echo 'net.ipv4.ip_unprivileged_port_start=0' | sudo tee -a /etc/sysctl.conf
@@ -354,38 +389,45 @@ jobs:
             echo '=== VPS infrastructure ready ==='
           EOFDEPS
 
-      - name: Copy files to preprod server
+      - name: Copy files to server
+        env:
+          SSH_TARGET: ${{ steps.env.outputs.name == 'preprod' && format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) || format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}
+          DEPLOY_DIR: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_DEPLOY_DIR || secrets.DEPLOY_DIR }}
+          ENV_GENERATOR: ${{ steps.env.outputs.env_generator }}
         run: |
           scp -o StrictHostKeyChecking=no \
             docker-compose.prod.yml \
-            ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }}:${{ secrets.PREPROD_DEPLOY_DIR }}/
+            $SSH_TARGET:$DEPLOY_DIR/
 
           scp -o StrictHostKeyChecking=no \
             -r nginx haproxy \
-            ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }}:${{ secrets.PREPROD_DEPLOY_DIR }}/
+            $SSH_TARGET:$DEPLOY_DIR/
 
           scp -o StrictHostKeyChecking=no \
-            scripts/generate-preprod-env.sh \
+            scripts/$ENV_GENERATOR \
             scripts/init-letsencrypt.sh \
-            ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }}:${{ secrets.PREPROD_DEPLOY_DIR }}/
+            $SSH_TARGET:$DEPLOY_DIR/
 
-      - name: Generate .env and deploy on preprod
+      - name: Generate .env and deploy
         env:
-          PREPROD_SERVER_IP: ${{ secrets.PREPROD_SERVER_IP }}
+          SSH_TARGET: ${{ steps.env.outputs.name == 'preprod' && format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) || format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}
+          DEPLOY_DIR: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_DEPLOY_DIR || secrets.DEPLOY_DIR }}
+          SERVER_IP: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_SERVER_IP || secrets.SERVER_IP }}
+          IMAGE_TAG: ${{ steps.env.outputs.image_tag }}
+          ENV_GENERATOR: ${{ steps.env.outputs.env_generator }}
+          LOAD_DEMO_DATA: ${{ steps.env.outputs.load_demo_data }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << EOFDEPLOY
+          ssh -o StrictHostKeyChecking=no $SSH_TARGET << EOFDEPLOY
             set -e
-            cd ${{ secrets.PREPROD_DEPLOY_DIR }}
+            cd $DEPLOY_DIR
 
-            chmod +x generate-preprod-env.sh
-            SERVER_IP=${{ secrets.PREPROD_SERVER_IP }} LOAD_DEMO_DATA=${{ vars.LOAD_DEMO_DATA || 'false' }} ./generate-preprod-env.sh
+            chmod +x $ENV_GENERATOR
+            SERVER_IP=$SERVER_IP LOAD_DEMO_DATA=$LOAD_DEMO_DATA ./$ENV_GENERATOR
 
-            # Update Docker image config in .env (idempotent)
-            grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=preprod-latest/" .env || echo "IMAGE_TAG=preprod-latest" >> .env
+            grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$IMAGE_TAG/" .env || echo "IMAGE_TAG=$IMAGE_TAG" >> .env
             grep -q "^GITHUB_REPOSITORY=" .env && sed -i "s|^GITHUB_REPOSITORY=.*|GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}|" .env || echo "GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}" >> .env
 
-            # Login to GHCR (token passed securely via stdin)
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             docker compose -f docker-compose.prod.yml --env-file .env pull
@@ -395,13 +437,18 @@ jobs:
           EOFDEPLOY
 
       - name: Health check
+        env:
+          SSH_TARGET: ${{ steps.env.outputs.name == 'preprod' && format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) || format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}
+          DEPLOY_DIR: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_DEPLOY_DIR || secrets.DEPLOY_DIR }}
+          DEPLOY_ENV: ${{ steps.env.outputs.name }}
+          SLEEP_TIME: ${{ steps.env.outputs.sleep_time }}
         run: |
           echo "Waiting for services to start..."
-          sleep 30
+          sleep $SLEEP_TIME
 
           for i in {1..12}; do
-            if ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} "curl -sf http://localhost:8080/health/ || curl -sf http://localhost:8080/"; then
-              echo "Preprod is healthy!"
+            if ssh -o StrictHostKeyChecking=no $SSH_TARGET "curl -sf http://localhost:8080/health/ || curl -sf http://localhost:8080/"; then
+              echo "$DEPLOY_ENV is healthy!"
               exit 0
             fi
             echo "Attempt $i/12 failed, retrying in 5s..."
@@ -409,38 +456,47 @@ jobs:
           done
 
           echo "Health check failed!"
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} "cd ${{ secrets.PREPROD_DEPLOY_DIR }} && docker compose -f docker-compose.prod.yml logs --tail=50"
+          ssh -o StrictHostKeyChecking=no $SSH_TARGET "cd $DEPLOY_DIR && docker compose -f docker-compose.prod.yml logs --tail=50"
           exit 1
 
       - name: Setup SSL certificate (if needed)
+        env:
+          SSH_TARGET: ${{ steps.env.outputs.name == 'preprod' && format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) || format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}
+          DEPLOY_DIR: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_DEPLOY_DIR || secrets.DEPLOY_DIR }}
+          CERTBOT_STAGING: ${{ steps.env.outputs.certbot_staging }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFSSL'
+          ssh -o StrictHostKeyChecking=no $SSH_TARGET << EOFSSL
             set -e
-            cd ${{ secrets.PREPROD_DEPLOY_DIR }}
+            cd $DEPLOY_DIR
 
             CERT_DIR="/etc/letsencrypt/live/www.mine-craft.su"
-            CERT_EXISTS=$(docker compose -f docker-compose.prod.yml exec -T nginx sh -c "
-              if [ -f '$CERT_DIR/fullchain.pem' ] && openssl x509 -in '$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Dummy'; then
+            CERT_EXISTS=\$(docker compose -f docker-compose.prod.yml exec -T nginx sh -c "
+              if [ -f '\$CERT_DIR/fullchain.pem' ] && [ ! -L '\$CERT_DIR/fullchain.pem' ] && openssl x509 -in '\$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Temporary'; then
                 echo 'true'
               else
                 echo 'false'
               fi
             " 2>/dev/null | tail -1)
 
-            if [ "$CERT_EXISTS" = "true" ]; then
+            if [ "\$CERT_EXISTS" = "true" ]; then
               echo 'Real SSL certificate already installed. Skipping.'
             else
               echo 'Real SSL certificate not found. Running init-letsencrypt...'
               chmod +x init-letsencrypt.sh
-              STAGING=${{ vars.CERTBOT_STAGING || '0' }} ./init-letsencrypt.sh --auto
+              STAGING=$CERTBOT_STAGING ./init-letsencrypt.sh --auto
             fi
           EOFSSL
 
       - name: Run database migrations and setup
+        env:
+          SSH_TARGET: ${{ steps.env.outputs.name == 'preprod' && format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) || format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}
+          DEPLOY_DIR: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_DEPLOY_DIR || secrets.DEPLOY_DIR }}
+          DEPLOY_ENV: ${{ steps.env.outputs.name }}
+          LOAD_DEMO_DATA: ${{ steps.env.outputs.load_demo_data }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PREPROD_SSH_USER }}@${{ secrets.PREPROD_SERVER_IP }} << 'EOFSETUP'
+          ssh -o StrictHostKeyChecking=no $SSH_TARGET << EOFSETUP
             set -e
-            cd ${{ secrets.PREPROD_DEPLOY_DIR }}
+            cd $DEPLOY_DIR
 
             echo "Running database migrations..."
             docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
@@ -451,8 +507,10 @@ jobs:
             echo "Loading initial structure..."
             docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_initial_structure
 
-            echo "Loading demo content (preprod only)..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content
+            if [ "$DEPLOY_ENV" = "preprod" ] && [ "$LOAD_DEMO_DATA" = "true" ]; then
+              echo "Loading demo content (preprod only)..."
+              docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content
+            fi
 
             echo "Collecting static files..."
             docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
@@ -460,8 +518,8 @@ jobs:
             echo "Setup completed!"
           EOFSETUP
 
-      - name: Create draft PR to main
-        if: vars.CREATE_PR_ON_PREDEPLOY != 'false'
+      - name: Create draft PR to main (preprod only)
+        if: startsWith(github.ref, 'refs/heads/release/') && vars.CREATE_PR_ON_PREDEPLOY != 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
