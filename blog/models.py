@@ -11,6 +11,8 @@ from django.db import models
 from PIL import Image, UnidentifiedImageError
 
 from blog.services import (
+    THUMBNAIL_MAX_SIZE,
+    THUMBNAIL_QUALITY,
     generate_thumbnail_from_image,
     generate_thumbnail_from_video,
 )
@@ -18,10 +20,6 @@ from core.models import BaseModel
 from core.security import sanitize_text
 
 logger = logging.getLogger(__name__)
-
-THUMBNAIL_MAX_SIZE = (800, 600)
-
-THUMBNAIL_QUALITY = 85
 
 
 class Category(BaseModel):
