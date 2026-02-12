@@ -89,6 +89,12 @@ MyPet01/
 │   ├── integration/
 │   └── load/
 ├── docs/                   # Документация проекта
+│   ├── DEPLOYMENT_GUIDE.md # Деплой на VPS (CI/CD, Docker, ручной)
+│   ├── DEPLOYMENT_STRATEGY.md # Стратегия и CI/CD pipeline
+│   ├── VPS_AND_SECRETS.md  # Настройка VPS и GitHub Secrets
+│   ├── LOCAL_DEVELOPMENT.md # Локальная разработка с Docker
+│   ├── TESTING.md          # Тестирование
+│   └── planning/           # Планы развития
 ├── deploy/                 # Скрипты деплоя
 ├── scripts/                # Автоматизация настройки VPS
 ├── haproxy/                # Конфигурации HAProxy (prod, preprod)

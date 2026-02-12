@@ -48,6 +48,14 @@ The project is organized into `blog` (content management), `core` (shared utilit
 - **Production**: `docker-compose.prod.yml` orchestrates `haproxy`, `nginx`, `web` (Gunicorn), `db`, `redis`, `certbot`, and `softether` for a complete production environment.
 - **Multi-stage Dockerfile**: Optimizes image size by building Tailwind CSS in a `node` stage and then copying it into a `python` stage for the application.
 
+**Documentation (docs/):**
+- `DEPLOYMENT_GUIDE.md` — Deploy to VPS (CI/CD, Docker manual, manual install, VPN, SSL, checklist)
+- `DEPLOYMENT_STRATEGY.md` — 4-env strategy, Gitflow, CI/CD pipeline architecture, zero-config VPS
+- `VPS_AND_SECRETS.md` — depuser setup, SSH keys, GitHub Secrets/Variables
+- `LOCAL_DEVELOPMENT.md` — Docker Desktop setup, staging testing checklists
+- `TESTING.md` — pytest, coverage, ruff, mypy, E2E, load testing
+- `planning/S3_MIGRATION_PLAN.md` — Future S3 storage migration plan
+
 ## External Dependencies
 
 - **Frameworks**: Django 5.1+, Django REST Framework
