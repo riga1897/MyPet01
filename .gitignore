@@ -210,12 +210,14 @@ media/
 
 # Production secrets (never commit!)
 .env.production
-.github/workflows/ci.yml
 
 # Security logs (keep directory, ignore log files)
 logs/*.log
 
 .tmp/
+tmp/
+temp_docs/
+attached_assets/
 
 # Node.js (Tailwind CSS build)
 node_modules/

@@ -11,17 +11,16 @@ from django.db import models
 from PIL import Image, UnidentifiedImageError
 
 from blog.services import (
+    THUMBNAIL_MAX_SIZE,
+    THUMBNAIL_QUALITY,
     generate_thumbnail_from_image,
     generate_thumbnail_from_video,
 )
 from core.models import BaseModel
 from core.security import sanitize_text
+from core.utils.path import safe_media_path
 
 logger = logging.getLogger(__name__)
-
-THUMBNAIL_MAX_SIZE = (800, 600)
-
-THUMBNAIL_QUALITY = 85
 
 
 class Category(BaseModel):
@@ -202,16 +201,26 @@ class ContentType(BaseModel):
                 f"существует {self.get_related_content_count()} записей контента"
             )
         result = super().delete(*args, **kwargs)
-        if self.upload_folder and '..' not in self.upload_folder:
-            folder_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, self.upload_folder))
-            media_root = os.path.normpath(settings.MEDIA_ROOT)
-            is_valid_path = folder_path.startswith(media_root + os.sep) and folder_path != media_root
-            if is_valid_path and os.path.exists(folder_path) and os.path.isdir(folder_path):
+        if self.upload_folder:
+            folder_path = safe_media_path(self.upload_folder)
+            if folder_path and os.path.exists(folder_path) and os.path.isdir(folder_path):
                 shutil.rmtree(folder_path)
         return result
 
 
+class ContentQuerySet(models.QuerySet['Content']):
+    """Custom QuerySet for Content with common query patterns."""
+
+    def with_relations(self) -> 'ContentQuerySet':
+        """Attach content_type, categories, tags and tag groups."""
+        return self.select_related('content_type').prefetch_related(
+            'categories', 'tags', 'tags__group',
+        )
+
+
 class Content(BaseModel):
+    objects = ContentQuerySet.as_manager()
+
     title = models.CharField(
         max_length=200,
         default='Без названия',
