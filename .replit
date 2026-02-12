@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-modules = ["ruff-0.4.4", "python-3.12", "pyright-extended-2.0.13", "nodejs-20", "postgresql-16"]
-=======
-modules = ["python-3.12", "web", "bash", "nodejs-20"]
->>>>>>> b62d85a (Update security settings to allow embedding within Replit)
+modules = ["ruff-0.4.4", "python-3.12", "pyright-extended-2.0.13", "postgresql-16"]
 
 [[ports]]
 localPort = 5000
@@ -39,11 +35,7 @@ waitForPort = 5000
 [userenv]
 
 [userenv.shared]
-DEBUG = "True"
-ALLOWED_HOSTS = "*"
-X_FRAME_OPTIONS = "ALLOWALL"
-CSRF_TRUSTED_ORIGINS = "https://*.replit.dev,https://*.repl.co,https://*.pike.replit.dev,https://*.janeway.replit.dev"
 
 [nix]
 channel = "stable-25_05"
-packages = ["ffmpeg", "freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib", "gh"]
+packages = ["ffmpeg", "freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]
