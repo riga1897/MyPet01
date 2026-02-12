@@ -33,8 +33,10 @@ The project is built on Python 3.12 with Django and Django REST Framework, follo
 **Technical Implementations:**
 - **Full-Text Search**: PostgreSQL Full-Text Search with `SearchVector` for title and description fields, accessible via `/search/` with pagination.
 - **Content Management**: A `Content` model supports various `ContentType`s, multiple categories, and a dynamic tag system (`TagGroup`, `Tag`). Content types dictate upload folders, and forms support multi-select.
+- **Views Architecture**: `blog/views/` is a package split into modules: `public.py` (HomeView, SearchView), `moderator.py` (CRUD views), `api.py` (AJAX endpoints with `BaseAvailableView` base class), `files.py` (file management, ProtectedMediaView), `mixins.py` (shared mixins and helpers). Re-exported via `__init__.py` for backward compatibility.
+- **Path Security**: Centralized `safe_media_path()` in `core/utils/path.py` validates all media paths against traversal attacks (replaces 6+ inline duplications).
 - **User Management**: `users` app provides authentication, role-based access control (Guests, Moderators, Admins), and a moderator management interface.
-- **Security**: Configurable settings for development and production, including rate limiting (django-ratelimit), honeypot protection, input sanitization via `bleach`, security logging, and a strict Content Security Policy (CSP).
+- **Security**: `X_FRAME_OPTIONS='DENY'` by default (overridable via `.env`). Rate limiting (django-ratelimit), honeypot protection, input sanitization via `bleach`, security logging, and a strict Content Security Policy (CSP).
 - **Caching**: Implements server-side caching (local memory, DB, Redis, or Memcached) and browser caching. Server-side cache invalidation uses Django signals.
 - **File Management**: Handles image and video uploads with automatic thumbnail compression and unique MD5 hash names. Media files are served authenticated via Django's `FileResponse` through `ProtectedMediaView`.
 - **Configuration**: Environment variables are managed via `pydantic-settings` with `.env` file support.

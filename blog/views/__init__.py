@@ -1,0 +1,76 @@
+"""Blog views package — re-exports all views for backward compatibility."""
+
+from blog.views.api import (
+    AvailableFilesView,
+    AvailableThumbnailsView,
+    CheckCategoryCodeView,
+    CheckContentTypeCodeView,
+    CheckContentTypeFolderView,
+    CheckUniqueFieldView,
+)
+from blog.views.files import (
+    FileDeleteView,
+    FileListView,
+    FileUploadView,
+    ProtectedMediaView,
+)
+from blog.views.mixins import (
+    FileHandlingMixin,
+    ModeratorContextMixin,
+    ModeratorFilterContextMixin,
+    get_available_thumbnails,
+    get_filter_context,
+    validate_existing_file,
+    validate_existing_thumbnail,
+    validate_media_path,
+)
+from blog.views.moderator import (
+    ContentCreateView,
+    ContentDeleteView,
+    ContentListView,
+    ContentUpdateView,
+    TagCreateView,
+    TagDeleteView,
+    TagGroupCreateView,
+    TagGroupDeleteView,
+    TagGroupUpdateView,
+    TagListView,
+    TagReorderView,
+    TagUpdateView,
+)
+from blog.views.public import HomeView, SearchView
+
+__all__ = [
+    'AvailableFilesView',
+    'AvailableThumbnailsView',
+    'CheckCategoryCodeView',
+    'CheckContentTypeCodeView',
+    'CheckContentTypeFolderView',
+    'CheckUniqueFieldView',
+    'ContentCreateView',
+    'ContentDeleteView',
+    'ContentListView',
+    'ContentUpdateView',
+    'FileDeleteView',
+    'FileHandlingMixin',
+    'FileListView',
+    'FileUploadView',
+    'HomeView',
+    'ModeratorContextMixin',
+    'ModeratorFilterContextMixin',
+    'ProtectedMediaView',
+    'SearchView',
+    'TagCreateView',
+    'TagDeleteView',
+    'TagGroupCreateView',
+    'TagGroupDeleteView',
+    'TagGroupUpdateView',
+    'TagListView',
+    'TagReorderView',
+    'TagUpdateView',
+    'get_available_thumbnails',
+    'get_filter_context',
+    'validate_existing_file',
+    'validate_existing_thumbnail',
+    'validate_media_path',
+]

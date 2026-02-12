@@ -595,7 +595,7 @@ class TestTagReorderView:
         """Test reorder handles generic exceptions (lines 498-499)."""
         from unittest import mock
         client, _ = moderator_client
-        with mock.patch('blog.views.Tag.objects.filter') as mock_filter:
+        with mock.patch('blog.views.moderator.Tag.objects.filter') as mock_filter:
             mock_filter.side_effect = RuntimeError('Database error')
             response = client.post(
                 '/tags/reorder/',

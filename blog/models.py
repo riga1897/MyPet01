@@ -18,6 +18,7 @@ from blog.services import (
 )
 from core.models import BaseModel
 from core.security import sanitize_text
+from core.utils.path import safe_media_path
 
 logger = logging.getLogger(__name__)
 
@@ -200,11 +201,9 @@ class ContentType(BaseModel):
                 f"существует {self.get_related_content_count()} записей контента"
             )
         result = super().delete(*args, **kwargs)
-        if self.upload_folder and '..' not in self.upload_folder:
-            folder_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, self.upload_folder))
-            media_root = os.path.normpath(settings.MEDIA_ROOT)
-            is_valid_path = folder_path.startswith(media_root + os.sep) and folder_path != media_root
-            if is_valid_path and os.path.exists(folder_path) and os.path.isdir(folder_path):
+        if self.upload_folder:
+            folder_path = safe_media_path(self.upload_folder)
+            if folder_path and os.path.exists(folder_path) and os.path.isdir(folder_path):
                 shutil.rmtree(folder_path)
         return result
 
