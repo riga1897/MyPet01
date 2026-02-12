@@ -57,7 +57,7 @@ The project is built on Python 3.12 with Django and Django REST Framework, follo
 - **Deployment**: Supports deployment to pre-production and production VPS environments, with CI/CD handling infrastructure setup.
 
 ## HAProxy Security Hardening (2026-02-12)
-- **GeoIP Filtering**: Russian IP-only access for website (ft_ssl, ft_http) and Minecraft (ft_minecraft, ft_minecraft_rcon). VPN (vpn.mine-craft.su) allows traffic from any country. ACME challenges also unrestricted.
+- **GeoIP Filtering**: Russian IP-only access for website (ft_ssl, ft_http) and Minecraft (ft_minecraft, ft_minecraft_rcon). VPN allows traffic from any country — two SNI: `vpn.mine-craft.su` (preprod) and `mainsrv01.mine-craft.su` (prod). ACME challenges also unrestricted.
 - **Data Source**: RIPE NCC delegated stats (no MaxMind API key needed). Script: `scripts/update-geoip.sh` generates `haproxy/geoip/ru_networks.lst`.
 - **Rate Limiting**: stick-table based — 30 conn/10s and 20 concurrent for SSL; 50 req/10s for HTTP; 10 conn/10s for Minecraft; 5 conn/10s for RCON.
 - **Scanner Path Blocking**: ACL list blocks common scanner paths (/SDK/webLanguage, /hudson, /wp-admin, /.env, /.git, etc.) with 403 + auto-ban via gpc0.
