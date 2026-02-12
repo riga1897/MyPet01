@@ -44,7 +44,10 @@ class Settings(BaseSettings):
 
     secure_browser_xss_filter: bool = True
     secure_content_type_nosniff: bool = True
-    x_frame_options: str = 'ALLOWALL'
+    # SECURITY: дефолт MUST быть 'DENY'. НЕ менять в коде!
+    # Для iframe (Replit) переопределять ТОЛЬКО через .env:
+    # X_FRAME_OPTIONS=ALLOWALL
+    x_frame_options: str = 'DENY'
 
     admin_show_facets: bool = True
 

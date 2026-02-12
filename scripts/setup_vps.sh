@@ -43,14 +43,14 @@ echo "  Пользователь деплоя:        $DEPLOY_USER"
 echo "  Пользователь администратор: $ADMIN_USER"
 echo ""
 
-print_header "1/5 — Обновление системы"
+print_header "1/6 — Обновление системы"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 print_success "Система обновлена"
 
-print_header "2/5 — Создание администратора $ADMIN_USER"
+print_header "2/6 — Создание администратора $ADMIN_USER"
 
 if getent passwd "$ADMIN_USER" > /dev/null 2>&1; then
     print_success "Пользователь $ADMIN_USER уже существует"
@@ -125,7 +125,7 @@ if [ -f "$ADMIN_KEY_PATH" ]; then
     chmod 600 "$ADMIN_KEY_PATH.pub"
 fi
 
-print_header "3/5 — Создание пользователя $DEPLOY_USER"
+print_header "3/6 — Создание пользователя $DEPLOY_USER"
 
 if getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
     print_success "Пользователь $DEPLOY_USER уже существует"
@@ -187,7 +187,7 @@ if ! visudo -cf "$SUDOERS_FILE"; then
 fi
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "4/5 — SSH ключ для GitHub Actions"
+print_header "4/6 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
 if [ -z "$DEPLOY_HOME" ]; then
@@ -231,7 +231,18 @@ if [ -f "$KEY_PATH" ]; then
     chmod 600 "$KEY_PATH.pub"
 fi
 
-print_header "5/5 — Отключение root SSH"
+print_header "5/6 — Блокировка ICMP (ping)"
+
+SYSCTL_CONF="/etc/sysctl.conf"
+if grep -q "net.ipv4.icmp_echo_ignore_all" "$SYSCTL_CONF"; then
+    sed -i 's/^.*net.ipv4.icmp_echo_ignore_all.*/net.ipv4.icmp_echo_ignore_all = 1/' "$SYSCTL_CONF"
+else
+    echo "net.ipv4.icmp_echo_ignore_all = 1" >> "$SYSCTL_CONF"
+fi
+sysctl -p > /dev/null 2>&1
+print_success "ICMP (ping) заблокирован — сервер не отвечает на ping"
+
+print_header "6/6 — Отключение root SSH"
 
 SSHD_CONFIG="/etc/ssh/sshd_config"
 if [ -f "$SSHD_CONFIG" ]; then

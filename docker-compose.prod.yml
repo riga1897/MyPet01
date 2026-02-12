@@ -6,6 +6,8 @@ services:
       - NET_BIND_SERVICE
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./haproxy/geoip:/usr/local/etc/haproxy/geoip:ro
+      - ./haproxy/blacklist:/usr/local/etc/haproxy/blacklist:ro
     depends_on:
       - nginx
       - softether
@@ -75,8 +77,8 @@ services:
       - "1701:1701/udp"
       - "1194:1194/udp"
     volumes:
-      - softether_data:/var/lib/softether
-      - softether_logs:/var/log/softether
+      - softether_data:/mnt
+      - softether_logs:/usr/local/bin/server_log
       - ./nginx/ssl:/etc/ssl/vpn:ro
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped

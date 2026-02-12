@@ -1,3 +1,6 @@
+# GeoIP data (generated, not committed)
+haproxy/geoip/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
