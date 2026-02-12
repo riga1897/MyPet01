@@ -89,6 +89,10 @@ MyPet01/
 │   ├── integration/
 │   └── load/
 ├── docs/                   # Документация проекта
+│   ├── deployment/         # Деплой, секреты, чек-листы
+│   ├── testing/            # Тестирование
+│   ├── infrastructure/     # Docker, CI/CD
+│   └── planning/           # Планы развития
 ├── deploy/                 # Скрипты деплоя
 ├── scripts/                # Автоматизация настройки VPS
 ├── haproxy/                # Конфигурации HAProxy (prod, preprod)
@@ -240,23 +244,37 @@ feature/* -> develop -> release/* -> main
                       preprod VPS   prod VPS
 ```
 
-Подробная документация: [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md)
+Подробная документация: [docs/deployment/DEPLOYMENT_STRATEGY.md](docs/deployment/DEPLOYMENT_STRATEGY.md)
 
 ---
 
 ## Документация
 
+### Деплой
 | Документ | Описание |
 |---|---|
-| [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md) | Стратегия деплоя |
-| [docs/CI_CD.md](docs/CI_CD.md) | CI/CD пайплайн |
-| [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md) | GitHub Secrets и Variables |
-| [docs/DEPLOY_CHECKLIST.md](docs/DEPLOY_CHECKLIST.md) | Чек-лист деплоя |
-| [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md) | Настройка Docker |
-| [docs/DEPUSER_SETUP.md](docs/DEPUSER_SETUP.md) | Настройка deploy-пользователя |
-| [docs/QUICK_START_TESTING.md](docs/QUICK_START_TESTING.md) | Быстрый старт тестирования |
-| [docs/STAGING_TESTING.md](docs/STAGING_TESTING.md) | Тестирование на staging |
-| [docs/S3_MIGRATION_PLAN.md](docs/S3_MIGRATION_PLAN.md) | План миграции на S3 |
+| [docs/deployment/DEPLOY.md](docs/deployment/DEPLOY.md) | Деплой на VPS |
+| [docs/deployment/DEPLOYMENT_STRATEGY.md](docs/deployment/DEPLOYMENT_STRATEGY.md) | Стратегия деплоя |
+| [docs/deployment/DEPLOY_CHECKLIST.md](docs/deployment/DEPLOY_CHECKLIST.md) | Чек-лист деплоя |
+| [docs/deployment/DEPUSER_SETUP.md](docs/deployment/DEPUSER_SETUP.md) | Настройка deploy-пользователя |
+| [docs/deployment/GITHUB_SECRETS.md](docs/deployment/GITHUB_SECRETS.md) | GitHub Secrets и Variables |
+
+### Инфраструктура
+| Документ | Описание |
+|---|---|
+| [docs/infrastructure/CI_CD.md](docs/infrastructure/CI_CD.md) | CI/CD пайплайн |
+| [docs/infrastructure/DOCKER_SETUP.md](docs/infrastructure/DOCKER_SETUP.md) | Настройка Docker |
+
+### Тестирование
+| Документ | Описание |
+|---|---|
+| [docs/testing/QUICK_START_TESTING.md](docs/testing/QUICK_START_TESTING.md) | Быстрый старт тестирования |
+| [docs/testing/STAGING_TESTING.md](docs/testing/STAGING_TESTING.md) | Тестирование на staging |
+
+### Планы
+| Документ | Описание |
+|---|---|
+| [docs/planning/S3_MIGRATION_PLAN.md](docs/planning/S3_MIGRATION_PLAN.md) | План миграции на S3 |
 
 ---
 
