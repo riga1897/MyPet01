@@ -518,7 +518,7 @@ class CheckUniqueFieldView(View):
         if not value:
             return JsonResponse({'available': True})
 
-        queryset = self.model.objects.filter(**{self.field_name: value})
+        queryset = self.model._default_manager.filter(**{self.field_name: value})
         if exclude_id:
             queryset = queryset.exclude(pk=exclude_id)
 
