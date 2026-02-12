@@ -56,6 +56,16 @@ The project is built on Python 3.12 with Django and Django REST Framework, follo
 - **SSL/TLS Bootstrap**: Nginx uses a custom entrypoint to generate self-signed certificates on first deploy, replaced by Let's Encrypt via CI/CD.
 - **Deployment**: Supports deployment to pre-production and production VPS environments, with CI/CD handling infrastructure setup.
 
+## HAProxy Security Hardening (2026-02-12)
+- **GeoIP Filtering**: Russian IP-only access for website (ft_ssl, ft_http) and Minecraft (ft_minecraft, ft_minecraft_rcon). VPN (vpn.mine-craft.su) allows traffic from any country. ACME challenges also unrestricted.
+- **Data Source**: RIPE NCC delegated stats (no MaxMind API key needed). Script: `scripts/update-geoip.sh` generates `haproxy/geoip/ru_networks.lst`.
+- **Rate Limiting**: stick-table based — 30 conn/10s and 20 concurrent for SSL; 50 req/10s for HTTP; 10 conn/10s for Minecraft; 5 conn/10s for RCON.
+- **Scanner Path Blocking**: ACL list blocks common scanner paths (/SDK/webLanguage, /hudson, /wp-admin, /.env, /.git, etc.) with 403 + auto-ban via gpc0.
+- **BADREQ Auto-ban**: IPs with high HTTP error rate (>5 errors/10s, which includes 400 from malformed requests) get gpc0 incremented and are banned (403) for 30 minutes. Scanner path hits also trigger gpc0 ban.
+- **Auto-update**: `scripts/cron-geoip-update.sh` — run weekly via cron: `0 3 * * 0 /path/to/scripts/cron-geoip-update.sh`
+- **Docker**: GeoIP data mounted as `./haproxy/geoip:/usr/local/etc/haproxy/geoip:ro` in haproxy container.
+- **First deploy**: Run `bash scripts/update-geoip.sh` before starting HAProxy to generate the GeoIP data.
+
 ## External Dependencies
 - **Frameworks**: Django, Django REST Framework
 - **Database**: PostgreSQL (`psycopg2-binary`, `dj-database-url`)
