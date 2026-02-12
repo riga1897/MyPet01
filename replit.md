@@ -64,7 +64,8 @@ The project is built on Python 3.12 with Django and Django REST Framework, follo
 - **BADREQ Auto-ban**: IPs with high HTTP error rate (>5 errors/10s, which includes 400 from malformed requests) get gpc0 incremented and are banned (403) for 30 minutes. Scanner path hits also trigger gpc0 ban.
 - **Auto-update**: `scripts/cron-geoip-update.sh` — run weekly via cron: `0 3 * * 0 /path/to/scripts/cron-geoip-update.sh`
 - **ICMP Blocking**: `net.ipv4.icmp_echo_ignore_all = 1` in `/etc/sysctl.conf` — server does not respond to ping. Configured by `scripts/setup_vps.sh`.
-- **Docker**: GeoIP data mounted as `./haproxy/geoip:/usr/local/etc/haproxy/geoip:ro` in haproxy container.
+- **Manual IP Blacklist**: `haproxy/blacklist/blocked_ips.lst` — manually curated list of scanner and aggressive crawler IPs. Checked FIRST in all frontends (ft_ssl, ft_http, ft_minecraft, ft_minecraft_rcon) before rate limiting and geo-filtering. ACME challenges exempt in ft_http. To add IPs: edit the file, then reload HAProxy: `docker compose -f docker-compose.prod.yml kill -s HUP haproxy`.
+- **Docker**: GeoIP data mounted as `./haproxy/geoip:/usr/local/etc/haproxy/geoip:ro`, blacklist as `./haproxy/blacklist:/usr/local/etc/haproxy/blacklist:ro` in haproxy container.
 - **SoftEther VPN Volumes**: `softether_data:/mnt` (config `vpn_server.config`), `softether_logs:/usr/local/bin/server_log` (logs). Config backup: `docker cp <container>:/mnt/vpn_server.config ./backup`.
 - **First deploy**: Run `bash scripts/update-geoip.sh` before starting HAProxy to generate the GeoIP data.
 

@@ -7,6 +7,7 @@ services:
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
       - ./haproxy/geoip:/usr/local/etc/haproxy/geoip:ro
+      - ./haproxy/blacklist:/usr/local/etc/haproxy/blacklist:ro
     depends_on:
       - nginx
       - softether
