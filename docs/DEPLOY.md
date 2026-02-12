@@ -316,6 +316,68 @@ HAProxy проверяет доступность хоста `newnout01` (чер
 curl http://localhost:8404/stats
 ```
 
+### Настройка GeoIP (обновление списка российских IP)
+
+HAProxy использует файл `haproxy/geoip/ru_networks.lst` для GeoIP-фильтрации (допуск только российских IP к веб-сайту).
+
+Скрипт `haproxy/update-geoip.sh` скачивает актуальный список российских IP-сетей с RIPE NCC и перезапускает HAProxy.
+
+#### Настройка на уже работающих VPS (без редеплоя)
+
+Выполните на **каждом VPS** (препрод и прод) от root:
+
+```bash
+# === Препрод (217.147.15.220) ===
+ssh root@217.147.15.220
+
+DEPLOY_DIR="/opt/blog-preprod"
+DEPLOY_USER="depuser"
+
+# 1. Права на директорию geoip
+mkdir -p ${DEPLOY_DIR}/haproxy/geoip
+chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${DEPLOY_DIR}/haproxy/geoip
+
+# 2. Лог-файл
+touch /var/log/update-geoip.log
+chown ${DEPLOY_USER}:${DEPLOY_USER} /var/log/update-geoip.log
+
+# 3. Первый запуск (наполнение ru_networks.lst)
+sudo -u ${DEPLOY_USER} bash ${DEPLOY_DIR}/haproxy/update-geoip.sh
+
+# 4. Проверка
+wc -l ${DEPLOY_DIR}/haproxy/geoip/ru_networks.lst
+
+# 5. Настройка cron (раз в неделю, воскресенье 04:00)
+CRON_CMD="0 4 * * 0 ${DEPLOY_DIR}/haproxy/update-geoip.sh >> /var/log/update-geoip.log 2>&1"
+(crontab -u ${DEPLOY_USER} -l 2>/dev/null | grep -vF "update-geoip.sh"; echo "$CRON_CMD") | crontab -u ${DEPLOY_USER} -
+
+# 6. Проверка cron
+crontab -u ${DEPLOY_USER} -l
+```
+
+```bash
+# === Прод (91.204.75.25) ===
+ssh root@91.204.75.25
+
+DEPLOY_DIR="/opt/blog"
+DEPLOY_USER="depuser"
+
+# Те же команды 1-6, что и для препрода (выше)
+```
+
+#### Проверка работы
+
+```bash
+# Проверить что HAProxy запущен и не в цикле перезапуска
+docker compose -f docker-compose.prod.yml ps haproxy
+
+# Проверить HTTP → HTTPS редирект
+curl -I http://site.mine-craft.su/
+
+# Проверить логи обновления GeoIP
+cat /var/log/update-geoip.log
+```
+
 ---
 
 # Вариант 2: Ручная установка
