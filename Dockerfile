@@ -1,4 +1,15 @@
-# Use an official Python runtime as a parent image
+# Stage 1: Build Tailwind CSS
+FROM node:20-slim AS tailwind-builder
+WORKDIR /build
+COPY package.json package-lock.json* /build/
+RUN npm ci --no-audit
+COPY static/css/tailwind-input.css /build/static/css/tailwind-input.css
+COPY templates/ /build/templates/
+COPY blog/templates/ /build/blog/templates/
+COPY users/templates/ /build/users/templates/
+RUN npx @tailwindcss/cli -i static/css/tailwind-input.css -o static/css/tailwind.css --minify
+
+# Stage 2: Python application
 FROM python:3.12-slim
 
 # Set environment variables
@@ -27,6 +38,9 @@ RUN poetry config virtualenvs.create false \
 
 # Copy the rest of the application
 COPY . /app/
+
+# Copy built Tailwind CSS from builder stage
+COPY --from=tailwind-builder /build/static/css/tailwind.css /app/static/css/tailwind.css
 
 # Create logs directory for security logging
 RUN mkdir -p /app/logs
