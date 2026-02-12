@@ -1,12 +1,4 @@
-<<<<<<< HEAD
 modules = ["ruff-0.4.4", "python-3.12", "pyright-extended-2.0.13", "postgresql-16"]
-=======
-<<<<<<< HEAD
-modules = ["python-3.12", "web", "bash", "nodejs-20"]
-=======
-modules = ["ruff-0.4.4", "python-3.12", "pyright-extended-2.0.13", "nodejs-20", "postgresql-16"]
->>>>>>> 2c58c44 (Release 1.5)
->>>>>>> 3e8c907 (Pre-Recovery checkpoint)
 
 [[ports]]
 localPort = 5000
@@ -46,4 +38,4 @@ waitForPort = 5000
 
 [nix]
 channel = "stable-25_05"
-packages = ["ffmpeg", "freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib", "gh"]
+packages = ["ffmpeg", "freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]
