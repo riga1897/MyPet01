@@ -259,6 +259,7 @@ feature/* -> develop -> release/* -> main
 | [docs/STAGING_TESTING.md](docs/STAGING_TESTING.md) | Тестирование на staging |
 | [docs/S3_MIGRATION_PLAN.md](docs/S3_MIGRATION_PLAN.md) | План миграции на S3 |
 | [docs/HAPROXY_SECURITY.md](docs/HAPROXY_SECURITY.md) | Безопасность HAProxy |
+| [docs/PROJECT_REFERENCE.md](docs/PROJECT_REFERENCE.md) | Полная техническая документация проекта |
 
 ---
 

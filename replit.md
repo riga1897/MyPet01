@@ -1,7 +1,7 @@
 # MyPet01
 
 ## Overview
-MyPet01 is a family blog built with Django 5.1+ for publishing photo and video content about pets. The project aims for gradual development, scalability, maximum security, and 100% test coverage. Key capabilities include rich content publishing, advanced search, robust moderation tools, and secure media handling. The business vision is to create a secure, high-performance platform for family content sharing with future potential for community features and personalized experiences.
+MyPet01 is a family blog built with Django 5.1+ for publishing photo and video content about pets. The project aims for gradual development, scalability, maximum security, and 100% test coverage. It includes features for content management, user authentication with role-based access, and advanced security measures. The business vision is to provide a robust and secure platform for sharing family-oriented pet content, with potential for market expansion into a niche social media or content sharing platform.
 
 ## User Preferences
 - **Coding Workflow (TDD + QA)**:
@@ -20,27 +20,30 @@ MyPet01 is a family blog built with Django 5.1+ for publishing photo and video c
 
 ## System Architecture
 
-### UI/UX Decisions
-The front-end uses Tailwind CSS v4 for styling, built via a multi-stage Docker process. The base template (`base.html`) includes features like theme toggling, FOUC prevention, and is CSP-aware. Content is presented through customizable video/content cards. Navigation includes a burger menu, and filtering mechanisms utilize dropdowns for categories and tags.
+### Django Apps and Models
+The project is structured around several Django applications: `blog` for content, search, and file serving; `core` for base models, middleware, security, and utilities; and `users` for authentication, roles, and moderator management. Key models include `Content`, `ContentType`, `Category`, `TagGroup`, and `Tag`, all inheriting from a `BaseModel` for `created_at` and `updated_at` fields. A strong emphasis is placed on Object-Oriented Programming (OOP) with extensive use of inheritance from abstract classes.
 
-### Technical Implementations
-- **Django Apps**: `blog` (content, search, files), `core` (base models, middleware, security, utilities), `users` (authentication, roles, moderator management).
-- **Models**: A strict OOP hierarchy extends from `BaseModel` to `Category`, `TagGroup`, `Tag`, `ContentType`, and `Content`. `ContentQuerySet` provides optimized data retrieval.
-- **URL Structure**: Comprehensive URL patterns for public access, authenticated user features, and moderator/admin CRUD operations for content, tags, and files.
-- **Role-Based Access**: Granular permissions for Guest, Authenticated User, Moderator, and Admin roles.
-- **Full-Text Search**: Implemented via PostgreSQL `SearchVector` and `SearchRank`, with fallbacks for keyboard layout conversion (QWERTY<->ЙЦУКЕН) and Trigram similarity, plus rate limiting.
-- **Caching**: Server-side caching for content IDs and filter contexts using configurable backends (locmem, db, redis, memcached). Invalidation is handled by Django signals. Browser caching is also configurable.
-- **File Processing**: `ffmpeg` for video thumbnail generation, `Pillow` for image resizing and thumbnailing. Files are hashed for unique naming and securely stored.
-- **Configuration**: Uses `pydantic-settings` to manage environment variables from `.env` files, providing robust and validated settings.
-- **Middleware**: A carefully ordered middleware stack handles GZip compression, security (HTTPS, HSTS, CSP, CSRF, X-Frame-Options), session management, authentication, browser caching, honeypot detection, and security logging.
+### UI/UX and Feature Specifications
+The application provides a public interface for viewing content and searching, and a moderator interface for CRUD operations on content, tags, and file management. User roles include Guest, User (authenticated), Moderator, and Admin (superuser), with permissions scaled accordingly. The search functionality utilizes PostgreSQL's `SearchVector` and `SearchRank`, with fallbacks for keyboard layout conversion and Trigram similarity, and is rate-limited.
 
-### System Design Choices
-- **Security**: Multi-layered security includes Django application-level rate limiting, honeypot, input sanitization (`bleach`), path traversal protection, CSP, X-Frame-Options (default DENY), and HTTPS/HSTS enforcement. Production deployments leverage HAProxy for GeoIP filtering, advanced rate limiting, scanner path blocking, and manual IP blacklisting. Nginx provides additional SSL/TLS hardening and static/media serving.
-- **Docker Architecture**:
-    - **Local Development**: `docker-compose.yml` sets up `web` (Django dev server), `db` (PostgreSQL), and `redis`.
-    - **Production**: `docker-compose.prod.yml` orchestrates `haproxy` (network_mode: host), `nginx`, `web` (Gunicorn), `db`, `redis`, `certbot`, and `softether` (VPN server).
-    - **Multi-stage Dockerfile**: Optimizes image size by building Tailwind CSS in a `node` stage and then copying it to a `python` stage for the application.
-- **Deployment Strategy**: Automated deployments using GitHub Actions with a Dev -> Staging -> PreProd -> Prod pipeline following Gitflow principles. Initial VPS setup is automated via shell scripts.
+### Security and Middleware
+Security is a multi-layered approach involving Django application-level measures and proxy-level hardening.
+- **Django App Security**: Includes rate limiting for login, uploads, and API calls; honeypot for bot detection; input sanitization using `bleach`; security logging; path traversal protection; strict Content Security Policy (CSP); HTTPS/HSTS enforcement; and protected media serving for authenticated users.
+- **Middleware Stack**: A carefully ordered middleware stack handles GZip compression, security headers (CSP, HSTS, X-Frame-Options), session management, CSRF protection, authentication, and custom `BrowserCacheMiddleware`, `HoneypotMiddleware`, and `SecurityLoggingMiddleware`.
+
+### Caching
+A robust caching architecture is implemented using server-side caching for content IDs and filter contexts, with configurable cache backends (locmem, db, redis, memcached). Cache invalidation is managed via Django signals for relevant model changes. Browser caching is also configurable.
+
+### File Processing
+The system handles video and image thumbnail generation using ffmpeg and Pillow, respectively. Video thumbnails are extracted from the first frame, and both video and image thumbnails are resized and optimized. MD5 hashing is used for unique filenames, and unique thumbnail naming ensures no conflicts.
+
+### Configuration System
+Project settings are managed using `pydantic-settings` to read environment variables from a `.env` file, ensuring flexible and secure configuration for various environments (DEBUG, SECRET_KEY, DATABASE_URL, etc.).
+
+### Docker Architecture
+The project utilizes Docker and Docker Compose for both local development and production deployments.
+- **Local Development**: `docker-compose.yml` sets up a Django dev server, PostgreSQL, and Redis.
+- **Production Deployment**: `docker-compose.prod.yml` orchestrates HAProxy (for load balancing and security), Nginx (for SSL termination and static/media serving), Gunicorn (for the Django app), PostgreSQL, Redis, Certbot (for SSL certificate management), and SoftEther VPN. A multi-stage Dockerfile optimizes image size by separating Tailwind CSS build from the Python application.
 
 ## External Dependencies
 
@@ -51,11 +54,11 @@ The front-end uses Tailwind CSS v4 for styling, built via a multi-stage Docker p
 - **Image/Video Processing**: Pillow, ffmpeg (system dependency)
 - **Containerization**: Docker, Docker Compose
 - **Dependency Management**: Poetry
-- **Linting**: `ruff`, `mypy` (with `django-stubs`, `drf-stubs`)
+- **Linting**: `ruff`, `mypy` (`django-stubs`, `drf-stubs`)
 - **Testing**: pytest, pytest-django, pytest-cov, pytest-playwright, locust
 - **Frontend**: Tailwind CSS v4 (CLI build)
-- **Web Servers**: Gunicorn, Nginx
-- **Load Balancer**: HAProxy 2.9
+- **Web Server**: Gunicorn, Nginx
+- **Load Balancer/Proxy**: HAProxy 2.9
 - **VPN**: SoftEther VPN
-- **SSL Certificates**: Let's Encrypt (Certbot)
+- **SSL Certificate Management**: Let's Encrypt (Certbot)
 - **CI/CD**: GitHub Actions
