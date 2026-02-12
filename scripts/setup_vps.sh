@@ -311,25 +311,24 @@ fi
 print_success "Cron настроен: обновление GeoIP каждое воскресенье в 04:00"
 print_success "Лог: ${GEOIP_LOG}"
 
-if [ -d "${DEPLOY_DIR}" ]; then
-    mkdir -p "${DEPLOY_DIR}/haproxy/geoip"
-    chown -R "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}/haproxy/geoip"
+mkdir -p "${DEPLOY_DIR}/haproxy/geoip"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}/haproxy"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}/haproxy/geoip"
+print_success "Директория ${DEPLOY_DIR}/haproxy/geoip создана, владелец: ${DEPLOY_USER}"
 
-    if [ -f "${GEOIP_SCRIPT}" ]; then
-        print_warning "Запуск первичного обновления GeoIP..."
-        if sudo -u "$DEPLOY_USER" bash "${GEOIP_SCRIPT}"; then
-            NETWORK_COUNT=$(wc -l < "${DEPLOY_DIR}/haproxy/geoip/ru_networks.lst" 2>/dev/null || echo "0")
-            print_success "GeoIP обновлён: ${NETWORK_COUNT} сетей"
-        else
-            print_warning "Первичное обновление GeoIP не удалось"
-            print_warning "GeoIP обновится по cron после деплоя"
-        fi
+if [ -f "${GEOIP_SCRIPT}" ]; then
+    print_warning "Запуск первичного обновления GeoIP..."
+    if sudo -u "$DEPLOY_USER" bash "${GEOIP_SCRIPT}"; then
+        NETWORK_COUNT=$(wc -l < "${DEPLOY_DIR}/haproxy/geoip/ru_networks.lst" 2>/dev/null || echo "0")
+        print_success "GeoIP обновлён: ${NETWORK_COUNT} сетей"
     else
-        print_warning "Скрипт ${GEOIP_SCRIPT} не найден (появится после деплоя)"
+        print_warning "Первичное обновление GeoIP не удалось"
+        print_warning "GeoIP обновится по cron после деплоя"
     fi
 else
-    print_warning "Директория ${DEPLOY_DIR} ещё не создана (будет создана при первом деплое)"
-    print_warning "Cron настроен и запустит обновление GeoIP автоматически после деплоя"
+    print_warning "Скрипт ${GEOIP_SCRIPT} ещё не существует (появится после первого деплоя)"
+    print_warning "Cron запустит обновление GeoIP автоматически после деплоя"
 fi
 
 echo ""
