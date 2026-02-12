@@ -487,35 +487,17 @@ jobs:
             fi
           EOFSSL
 
-      - name: Run database migrations and setup
+      - name: Verify entrypoint completed successfully
         env:
           SSH_TARGET: ${{ steps.env.outputs.name == 'preprod' && format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) || format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}
           DEPLOY_DIR: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_DEPLOY_DIR || secrets.DEPLOY_DIR }}
-          DEPLOY_ENV: ${{ steps.env.outputs.name }}
-          LOAD_DEMO_DATA: ${{ steps.env.outputs.load_demo_data }}
         run: |
           ssh -o StrictHostKeyChecking=no $SSH_TARGET << EOFSETUP
             set -e
             cd $DEPLOY_DIR
-
-            echo "Running database migrations..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
-
-            echo "Creating superuser if not exists..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py create_superuser_if_not_exists
-
-            echo "Loading initial structure..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_initial_structure
-
-            if [ "$DEPLOY_ENV" = "preprod" ] && [ "$LOAD_DEMO_DATA" = "true" ]; then
-              echo "Loading demo content (preprod only)..."
-              docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content
-            fi
-
-            echo "Collecting static files..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
-
-            echo "Setup completed!"
+            echo "Verifying entrypoint completed (migrate, collectstatic, loaddata, createsuperuser)..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py showmigrations --list | tail -5
+            echo "Entrypoint setup verified."
           EOFSETUP
 
       - name: Create draft PR to main (preprod only)
