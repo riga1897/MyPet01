@@ -14,8 +14,8 @@
 ## Возможности
 
 - Управление контентом с типизацией, категориями и системой тегов (TagGroup / Tag)
-- Полнотекстовый поиск на базе PostgreSQL SearchVector
-- Защищённая отдача медиафайлов (FileResponse + @login_required)
+- Полнотекстовый поиск на базе PostgreSQL SearchVector с конвертацией раскладки (QWERTY↔ЙЦУКЕН) и нечётким поиском (Trigram)
+- Защищённая отдача медиафайлов через ProtectedMediaView (только для авторизованных пользователей)
 - Адаптивный дизайн с переключением светлой/тёмной темы (localStorage)
 - Мобильное меню (бургер)
 - Автоматическое сжатие миниатюр (Pillow, MD5-хеш в именах файлов)
@@ -60,7 +60,7 @@ MyPet01/
 │   └── wsgi.py
 ├── blog/                   # Основное приложение (контент)
 │   ├── models.py           # Content, ContentType, Category, TagGroup, Tag
-│   ├── views.py
+│   ├── views/              # Пакет views (public, moderator, api, files, mixins)
 │   ├── services.py
 │   ├── cache.py            # Серверное кеширование
 │   ├── signals.py          # Инвалидация кеша
@@ -162,6 +162,7 @@ Docker Compose поднимает три сервиса: веб-приложен
 | `CACHE_TIMEOUT` | Время жизни кеша (секунды) | `300` | Нет |
 | `BROWSER_CACHE_ENABLED` | Кеширование в браузере | `False` | Нет |
 | `BROWSER_CACHE_MAX_AGE` | max-age для Cache-Control | `86400` | Нет |
+| `X_FRAME_OPTIONS` | Защита от clickjacking | `DENY` | Нет |
 | `LOAD_DEMO_DATA` | Загрузка демо-данных при старте | `true` | Нет |
 | `LANGUAGE_CODE` | Язык интерфейса | `ru` | Нет |
 | `TIME_ZONE` | Часовой пояс | `UTC` | Нет |
@@ -257,21 +258,36 @@ feature/* -> develop -> release/* -> main
 | [docs/QUICK_START_TESTING.md](docs/QUICK_START_TESTING.md) | Быстрый старт тестирования |
 | [docs/STAGING_TESTING.md](docs/STAGING_TESTING.md) | Тестирование на staging |
 | [docs/S3_MIGRATION_PLAN.md](docs/S3_MIGRATION_PLAN.md) | План миграции на S3 |
+| [docs/HAPROXY_SECURITY.md](docs/HAPROXY_SECURITY.md) | Безопасность HAProxy |
 
 ---
 
 ## Безопасность
 
+### Уровень приложения (Django)
+
 - **CSP (Content Security Policy)** — строгая политика ограничения источников скриптов и стилей (django-csp)
-- **Rate Limiting** — ограничение попыток входа: 5 запросов/минуту на IP (django-ratelimit)
-- **Honeypot** — скрытое поле в форме авторизации для обнаружения ботов
+- **Rate Limiting** — ограничение попыток входа: 5/мин, загрузки: 20/мин, API: 60/мин, поиск: 30/мин (django-ratelimit)
+- **Honeypot** — скрытое поле `website_url` во всех POST-формах для обнаружения ботов (HoneypotMiddleware)
 - **Санитизация ввода** — очистка HTML/JS в пользовательском вводе (bleach)
-- **Защита медиафайлов** — доступ к файлам только для авторизованных пользователей (FileResponse + @login_required)
+- **Защита медиафайлов** — доступ к файлам только для авторизованных пользователей (ProtectedMediaView + FileResponse)
+- **Защита от path traversal** — централизованная валидация `safe_media_path()` в `core/utils/path.py`
 - **HTTPS** — автоматическое получение SSL-сертификатов через Let's Encrypt
-- **HSTS** — Strict Transport Security в продакшене
+- **HSTS** — Strict Transport Security в продакшене (Django: 31536000s, Nginx: 63072000s)
 - **Защита от XSS** — X-XSS-Protection, Content-Type nosniff
-- **Защита от Clickjacking** — X-Frame-Options: DENY
-- **Логирование** — все подозрительные запросы и события аутентификации записываются в `logs/security.log`
+- **Защита от Clickjacking** — X-Frame-Options: DENY (по умолчанию, переопределяется через `.env`)
+- **Логирование безопасности** — SecurityLoggingMiddleware обнаруживает подозрительные паттерны (`../`, `<script`, `javascript:`) → `logs/security.log`
+
+### Уровень инфраструктуры (HAProxy)
+
+- **GeoIP-фильтрация** — доступ только для российских IP (RIPE NCC данные, без MaxMind). VPN и ACME без ограничений
+- **Rate Limiting** — stick-table: SSL 30 conn/10s, HTTP 50 req/10s, Minecraft 10 conn/10s, RCON 5 conn/10s
+- **Блокировка сканеров** — 27 ACL-путей (`/wp-admin`, `/.env`, `/.git`, `/phpmyadmin` и др.) → 403 + автобан
+- **BADREQ автобан** — >5 HTTP-ошибок/10s → бан на 30 минут через gpc0
+- **Ручной IP-блеклист** — `haproxy/blacklist/blocked_ips.lst` — проверяется ПЕРВЫМ во всех фронтендах
+- **Блокировка ICMP** — сервер не отвечает на ping (`net.ipv4.icmp_echo_ignore_all = 1`)
+
+Подробная документация: [docs/HAPROXY_SECURITY.md](docs/HAPROXY_SECURITY.md)
 
 ---
 
