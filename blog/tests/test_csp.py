@@ -25,8 +25,8 @@ class TestCSPHeaders:
         csp = response.headers.get("Content-Security-Policy", "")
         assert "script-src" in csp
 
-    def test_csp_allows_tailwind_cdn(self, client: Client) -> None:
-        """Test that CSP allows Tailwind CDN for development."""
+    def test_csp_allows_self_styles(self, client: Client) -> None:
+        """Test that CSP allows self for styles (local Tailwind build)."""
         response = client.get("/")
         csp = response.headers.get("Content-Security-Policy", "")
-        assert "cdn.tailwindcss.com" in csp
+        assert "'self'" in csp
