@@ -26,6 +26,27 @@ print_error() {
     echo -e "${RED}[ERROR] $1${NC}"
 }
 
+ENV_TYPE="${1:-}"
+if [ -z "$ENV_TYPE" ]; then
+    echo "Использование: $0 <preprod|prod>"
+    echo "  preprod — настройка препрод VPS (deploy dir: /opt/blog-preprod)"
+    echo "  prod    — настройка production VPS (deploy dir: /opt/blog)"
+    exit 1
+fi
+
+case "$ENV_TYPE" in
+    preprod)
+        DEPLOY_DIR="/opt/blog-preprod"
+        ;;
+    prod)
+        DEPLOY_DIR="/opt/blog"
+        ;;
+    *)
+        print_error "Неизвестный тип окружения: $ENV_TYPE. Используйте 'preprod' или 'prod'"
+        exit 1
+        ;;
+esac
+
 DEPLOY_USER="${DEPLOY_USER:-depuser}"
 ADMIN_USER="${ADMIN_USER:-useradmin}"
 SSH_KEY_NAME="github_deploy"
@@ -36,21 +57,23 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-print_header "MyPet01 — Настройка VPS"
+print_header "MyPet01 — Настройка VPS ($ENV_TYPE)"
 
 echo "Параметры:"
+echo "  Окружение:                  $ENV_TYPE"
+echo "  Директория деплоя:          $DEPLOY_DIR"
 echo "  Пользователь деплоя:        $DEPLOY_USER"
 echo "  Пользователь администратор: $ADMIN_USER"
 echo ""
 
-print_header "1/5 — Обновление системы"
+print_header "1/8 — Обновление системы"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 print_success "Система обновлена"
 
-print_header "2/5 — Создание администратора $ADMIN_USER"
+print_header "2/8 — Создание администратора $ADMIN_USER"
 
 if getent passwd "$ADMIN_USER" > /dev/null 2>&1; then
     print_success "Пользователь $ADMIN_USER уже существует"
@@ -125,7 +148,7 @@ if [ -f "$ADMIN_KEY_PATH" ]; then
     chmod 600 "$ADMIN_KEY_PATH.pub"
 fi
 
-print_header "3/5 — Создание пользователя $DEPLOY_USER"
+print_header "3/8 — Создание пользователя $DEPLOY_USER"
 
 if getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
     print_success "Пользователь $DEPLOY_USER уже существует"
@@ -187,7 +210,7 @@ if ! visudo -cf "$SUDOERS_FILE"; then
 fi
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "4/5 — SSH ключ для GitHub Actions"
+print_header "4/8 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
 if [ -z "$DEPLOY_HOME" ]; then
@@ -231,7 +254,18 @@ if [ -f "$KEY_PATH" ]; then
     chmod 600 "$KEY_PATH.pub"
 fi
 
-print_header "5/5 — Отключение root SSH"
+print_header "5/8 — Блокировка ICMP (ping)"
+
+SYSCTL_CONF="/etc/sysctl.conf"
+if grep -q "net.ipv4.icmp_echo_ignore_all" "$SYSCTL_CONF"; then
+    sed -i 's/^.*net.ipv4.icmp_echo_ignore_all.*/net.ipv4.icmp_echo_ignore_all = 1/' "$SYSCTL_CONF"
+else
+    echo "net.ipv4.icmp_echo_ignore_all = 1" >> "$SYSCTL_CONF"
+fi
+sysctl -p > /dev/null 2>&1
+print_success "ICMP (ping) заблокирован — сервер не отвечает на ping"
+
+print_header "6/8 — Отключение root SSH"
 
 SSHD_CONFIG="/etc/ssh/sshd_config"
 if [ -f "$SSHD_CONFIG" ]; then
@@ -252,6 +286,78 @@ if [ -f "$SSHD_CONFIG" ]; then
 else
     print_warning "Файл $SSHD_CONFIG не найден. Настройте PermitRootLogin вручную."
 fi
+
+print_header "7/8 — Настройка GeoIP (обновление списка российских IP)"
+
+GEOIP_SCRIPT="${DEPLOY_DIR}/haproxy/update-geoip.sh"
+GEOIP_LOG="/var/log/update-geoip.log"
+CRON_SCHEDULE="0 4 * * 0"
+
+touch "$GEOIP_LOG"
+chown "$DEPLOY_USER:$DEPLOY_USER" "$GEOIP_LOG"
+
+CRON_CMD="${CRON_SCHEDULE} test -f ${GEOIP_SCRIPT} && ${GEOIP_SCRIPT} >> ${GEOIP_LOG} 2>&1"
+EXISTING_CRON=$(crontab -u "$DEPLOY_USER" -l 2>/dev/null || true)
+
+if echo "$EXISTING_CRON" | grep -qF "update-geoip.sh"; then
+    print_warning "Cron для update-geoip.sh уже настроен — обновляю"
+    NEW_CRON=$(echo "$EXISTING_CRON" | grep -vF "update-geoip.sh")
+    echo "${NEW_CRON}
+${CRON_CMD}" | crontab -u "$DEPLOY_USER" -
+else
+    echo "${EXISTING_CRON}
+${CRON_CMD}" | crontab -u "$DEPLOY_USER" -
+fi
+print_success "Cron настроен: обновление GeoIP каждое воскресенье в 04:00"
+print_success "Лог: ${GEOIP_LOG}"
+
+mkdir -p "${DEPLOY_DIR}/haproxy/geoip"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}/haproxy"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}/haproxy/geoip"
+print_success "Директория ${DEPLOY_DIR}/haproxy/geoip создана, владелец: ${DEPLOY_USER}"
+
+if [ -f "${GEOIP_SCRIPT}" ]; then
+    print_warning "Запуск первичного обновления GeoIP..."
+    if sudo -u "$DEPLOY_USER" bash "${GEOIP_SCRIPT}"; then
+        NETWORK_COUNT=$(wc -l < "${DEPLOY_DIR}/haproxy/geoip/ru_networks.lst" 2>/dev/null || echo "0")
+        print_success "GeoIP обновлён: ${NETWORK_COUNT} сетей"
+    else
+        print_warning "Первичное обновление GeoIP не удалось"
+        print_warning "GeoIP обновится по cron после деплоя"
+    fi
+else
+    print_warning "Скрипт ${GEOIP_SCRIPT} ещё не существует (появится после первого деплоя)"
+    print_warning "Cron запустит обновление GeoIP автоматически после деплоя"
+fi
+
+print_header "8/8 — Настройка автобана (блокировка агрессивных IP)"
+
+AUTOBAN_SCRIPT="${DEPLOY_DIR}/haproxy/auto-ban.sh"
+AUTOBAN_LOG="/var/log/haproxy-autoban.log"
+AUTOBAN_CRON_SCHEDULE="*/15 * * * *"
+
+touch "$AUTOBAN_LOG"
+chown "$DEPLOY_USER:$DEPLOY_USER" "$AUTOBAN_LOG"
+
+AUTOBAN_CRON_CMD="${AUTOBAN_CRON_SCHEDULE} test -f ${AUTOBAN_SCRIPT} && ${AUTOBAN_SCRIPT} >> ${AUTOBAN_LOG} 2>&1"
+EXISTING_CRON=$(crontab -u "$DEPLOY_USER" -l 2>/dev/null || true)
+
+if echo "$EXISTING_CRON" | grep -qF "auto-ban.sh"; then
+    print_warning "Cron для auto-ban.sh уже настроен — обновляю"
+    NEW_CRON=$(echo "$EXISTING_CRON" | grep -vF "auto-ban.sh")
+    echo "${NEW_CRON}
+${AUTOBAN_CRON_CMD}" | crontab -u "$DEPLOY_USER" -
+else
+    echo "${EXISTING_CRON}
+${AUTOBAN_CRON_CMD}" | crontab -u "$DEPLOY_USER" -
+fi
+print_success "Cron настроен: автобан каждые 15 минут"
+print_success "Лог: ${AUTOBAN_LOG}"
+
+mkdir -p "${DEPLOY_DIR}/haproxy/blacklist"
+chown "$DEPLOY_USER:$DEPLOY_USER" "${DEPLOY_DIR}/haproxy/blacklist"
+print_success "Директория ${DEPLOY_DIR}/haproxy/blacklist создана"
 
 echo ""
 echo -e "${YELLOW}╔══════════════════════════════════════════════════════════╗${NC}"
@@ -290,10 +396,17 @@ echo -e "  Root SSH:            ${RED}ОТКЛЮЧЁН${NC}"
 echo ""
 echo "Информация для GitHub Secrets:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "  PREPROD_SERVER_IP:   ${YELLOW}$SERVER_IP${NC}"
-echo -e "  PREPROD_SSH_USER:    ${YELLOW}$DEPLOY_USER${NC}"
-echo -e "  PREPROD_DEPLOY_DIR:  ${YELLOW}/opt/blog-preprod${NC}"
-echo -e "  PREPROD_SSH_KEY:     ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
+if [ "$ENV_TYPE" = "preprod" ]; then
+    echo -e "  PREPROD_SERVER_IP:   ${YELLOW}$SERVER_IP${NC}"
+    echo -e "  PREPROD_SSH_USER:    ${YELLOW}$DEPLOY_USER${NC}"
+    echo -e "  PREPROD_DEPLOY_DIR:  ${YELLOW}$DEPLOY_DIR${NC}"
+    echo -e "  PREPROD_SSH_KEY:     ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
+else
+    echo -e "  SERVER_IP:           ${YELLOW}$SERVER_IP${NC}"
+    echo -e "  SSH_USER:            ${YELLOW}$DEPLOY_USER${NC}"
+    echo -e "  DEPLOY_DIR:          ${YELLOW}$DEPLOY_DIR${NC}"
+    echo -e "  SSH_KEY:             ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
+fi
 echo ""
 echo -e "${BLUE}При первом деплое CI/CD автоматически установит:${NC}"
 echo -e "${BLUE}  - Docker CE и Docker Compose${NC}"

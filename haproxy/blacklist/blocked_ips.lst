@@ -1,0 +1,35 @@
+# =============================================================
+# HAProxy Manual IP Blacklist
+# =============================================================
+# IPs here are blocked BEFORE all other checks (geo, rate, etc.)
+# Format: one IP or CIDR per line
+# To add new IPs: append to this file and reload HAProxy:
+#   docker compose -f docker-compose.prod.yml kill -s HUP haproxy
+# =============================================================
+
+# --- Scanners (BADREQ, scanner paths, vulnerability probes) ---
+45.135.193.11
+87.120.191.67
+34.158.168.101
+176.65.132.94
+79.124.40.174
+89.42.231.200
+45.142.154.100
+
+# --- Aggressive crawlers (excessive request volume) ---
+44.220.185.251
+185.242.226.106
+185.242.226.107
+204.76.203.212
+204.76.203.206
+66.240.192.138
+
+# --- Other suspicious IPs from log analysis ---
+72.167.44.205
+18.218.118.203
+93.174.93.12
+91.224.92.115
+35.203.211.190
+34.60.107.64
+206.168.34.199
+198.235.24.230
