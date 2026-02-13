@@ -10,7 +10,6 @@ services:
       - ./haproxy/blacklist:/usr/local/etc/haproxy/blacklist:ro
     depends_on:
       - nginx
-      - softether
     restart: always
 
   web:
@@ -66,16 +65,9 @@ services:
 
   softether:
     image: softethervpn/vpnserver:stable
+    network_mode: host
     cap_add:
       - NET_ADMIN
-    ports:
-      - "127.0.0.1:4443:443"
-      - "992:992/tcp"
-      - "5555:5555/tcp"
-      - "500:500/udp"
-      - "4500:4500/udp"
-      - "1701:1701/udp"
-      - "1194:1194/udp"
     volumes:
       - softether_data:/mnt
       - softether_logs:/usr/local/bin/server_log
