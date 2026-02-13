@@ -10,7 +10,6 @@ services:
       - ./haproxy/blacklist:/usr/local/etc/haproxy/blacklist:ro
     depends_on:
       - nginx
-      - softether
     restart: always
 
   web:
@@ -68,20 +67,15 @@ services:
     image: softethervpn/vpnserver:stable
     cap_add:
       - NET_ADMIN
-    ports:
-      - "127.0.0.1:4443:443"
-      - "992:992/tcp"
-      - "5555:5555/tcp"
-      - "500:500/udp"
-      - "4500:4500/udp"
-      - "1701:1701/udp"
-      - "1194:1194/udp"
     volumes:
       - softether_data:/mnt
       - softether_logs:/usr/local/bin/server_log
       - ./nginx/ssl:/etc/ssl/vpn:ro
       - /etc/localtime:/etc/localtime:ro
     restart: always
+    networks:
+      vpn_net:
+        ipv4_address: 172.20.0.2
 
   db:
     image: postgres:15-alpine
@@ -116,6 +110,11 @@ services:
 
 networks:
   backend:
+  vpn_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
 
 volumes:
   postgres_data:
