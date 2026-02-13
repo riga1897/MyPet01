@@ -11,7 +11,7 @@ services:
     depends_on:
       - nginx
       - softether
-    restart: unless-stopped
+    restart: always
 
   web:
     image: ghcr.io/${GITHUB_REPOSITORY:-local/mypet01}:${IMAGE_TAG:-latest}
@@ -31,7 +31,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
     networks:
       - backend
 
@@ -51,7 +51,7 @@ services:
       - certbot_www:/var/www/certbot:ro
     depends_on:
       - web
-    restart: unless-stopped
+    restart: always
     networks:
       - backend
 
@@ -62,7 +62,7 @@ services:
       - certbot_www:/var/www/certbot
       - ./nginx/ssl:/ssl-copy
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --deploy-hook \"cp /etc/letsencrypt/live/www.mine-craft.su/fullchain.pem /ssl-copy/fullchain.pem && cp /etc/letsencrypt/live/www.mine-craft.su/privkey.pem /ssl-copy/privkey.pem\"; sleep 12h & wait $${!}; done;'"
-    restart: unless-stopped
+    restart: always
 
   softether:
     image: softethervpn/vpnserver:stable
@@ -81,7 +81,7 @@ services:
       - softether_logs:/usr/local/bin/server_log
       - ./nginx/ssl:/etc/ssl/vpn:ro
       - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
+    restart: always
 
   db:
     image: postgres:15-alpine
@@ -96,7 +96,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: always
     networks:
       - backend
 
@@ -110,7 +110,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+    restart: always
     networks:
       - backend
 
