@@ -8,7 +8,14 @@ DH_PARAMS="/etc/letsencrypt/ssl-dhparams.pem"
 BUNDLED_DH="/etc/nginx/ssl-dhparams.pem"
 
 is_real_cert() {
-    [ -f "$CERT_DIR/fullchain.pem" ] && [ ! -L "$CERT_DIR/fullchain.pem" ]
+    if [ -L "$CERT_DIR/fullchain.pem" ]; then
+        LINK_TARGET=$(readlink -f "$CERT_DIR/fullchain.pem" 2>/dev/null || true)
+        case "$LINK_TARGET" in
+            /etc/letsencrypt/archive/*) return 0 ;;
+        esac
+        return 1
+    fi
+    [ -f "$CERT_DIR/fullchain.pem" ]
 }
 
 if is_real_cert; then
