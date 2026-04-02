@@ -34,134 +34,163 @@
 |-----------|-------------|---------------|
 | 🔴 Высокий | Python-автоматизация | `paramiko`, `netmiko`, `requests` (работа с API), `psutil` |
 | 🔴 Высокий | **Ansible** | Роли, плейбуки, Ansible Vault; написать плейбук деплоя mypet01 |
-| 🟡 Средний | **Terraform** | IaC для управления ВМ у облачных провайдеров |
 | 🟡 Средний | Контейнеризация | Docker Compose для продакшна, базовый Kubernetes |
 | 🟢 Желательно | TSDB / Мониторинг | Prometheus, InfluxDB, Netdata |
 | 🟢 Желательно | Работа с API железа | VMware vSphere API, Redfish (IPMI), API СХД Dell/NetApp |
+| ⚪ Опционально | **Terraform** | IaC для управления ВМ — только при переходе на провайдера с API |
 
 ---
 
 ## 3. Архитектура инфраструктуры MyPet01
 
-### Целевая схема (2 VPS)
+### Принятые решения
+- Хостинг: **VDSka** (текущий), возможный переезд на Selectel — в самом конце и только при необходимости
+- Staging: **локально на Windows** (Docker Desktop) — тестирование перед деплоем на продакшн
+- Terraform: **опционально**, только если будет переход на провайдера с API
+
+### Целевая схема (3 VPS + локальный Windows)
 
 ```
-┌─────────────────────────────┐    ┌──────────────────────────────┐
-│   VPS1 — Продакшн           │    │   VPS2 — Бэкапы / Мониторинг │
-│   2 vCPU / 4 GB RAM / 20 GB │    │   1 vCPU / 2 GB RAM / 50+ GB │
-│                             │    │                              │
-│  ┌──────────────────────┐   │    │  SSH / rsync приёмник        │
-│  │ Docker Compose       │   │───▶│  Хранение pg_dump + media    │
-│  │  - Django (Gunicorn) │   │    │  Uptime Kuma (мониторинг)    │
-│  │  - PostgreSQL        │   │    └──────────────────────────────┘
-│  │  - Nginx             │   │
-│  │  - Redis (кэш)       │   │
-│  └──────────────────────┘   │
-│  Netdata (мониторинг)       │
-└─────────────────────────────┘
+💻 Windows (локально)
+   Docker Desktop
+   Staging / разработка
+   тестирование перед деплоем
+         │
+         │  деплой после проверки
+         ▼
+┌─────────────────────┐       ┌──────────────────────────────┐
+│   VPS1 — Продакшн   │       │   VPS2 — Бэкапы + Резерв     │
+│   (VDSka)           │       │   (VDSka)                    │
+│                     │       │                              │
+│  Docker Compose:    │──────▶│  pg_dump + media архив       │
+│  Django + PG +      │ rsync │  Uptime Kuma                 │
+│  Redis + Nginx      │       │                              │
+│  Netdata            │       │  ⚡ Failover: при сбое VPS3  │
+└─────────────────────┘       │  берёт управление на себя    │
+         ▲                    │  и восстанавливает VPS3      │
+         │ Ansible            └──────────────┬───────────────┘
+         │ (SSH)                             │ Ansible (SSH)
+         │                                  │
+         └──────────────────┬───────────────┘
+                            │
+               ┌────────────▼─────────────┐
+               │   VPS3 — Управление      │
+               │   (VDSka)                │
+               │                          │
+               │  Ansible control node    │
+               │  Python-скрипты          │
+               │  управления бэкапами     │
+               │  Управляет VPS1 и VPS2   │
+               │  по SSH                  │
+               │                          │
+               │  ⚠ При сбое VPS3:        │
+               │  VPS2 подхватывает       │
+               │  функции и               │
+               │  восстанавливает VPS3    │
+               └──────────────────────────┘
 ```
 
 ### Инструменты управления инфраструктурой
 
 | Инструмент | Роль |
 |------------|------|
-| **Terraform** | Создание ВМ у облачного провайдера через API |
-| **Ansible** | Настройка ВМ изнутри: Docker, контейнеры, бэкапы, мониторинг |
-| **Docker Compose** | Оркестрация контейнеров приложения |
-| **Python-скрипт** | Автоматизация бэкапов (pg_dump + rsync + ротация) |
+| **Ansible** | Запускается с VPS3, настраивает VPS1 и VPS2 через SSH |
+| **Docker Compose** | Оркестрация контейнеров на продакшн-сервере (VPS1) |
+| **Python-скрипт** | Автоматизация бэкапов (pg_dump + rsync + ротация) на VPS3 |
+| **Terraform** | Опционально — только при переходе на Selectel/облако |
+
+### Ansible inventory.ini
+
+```ini
+[prod]
+vps1.example.com ansible_user=root
+
+[backup]
+vps2.example.com ansible_user=root
+
+[management]
+vps3.example.com ansible_user=root
+
+[all:vars]
+ansible_ssh_private_key_file=~/.ssh/id_rsa
+```
 
 ---
 
-## 4. Выбор хостинга
+## 4. Failover VPS3 → VPS2
 
-### Требования
-- Поддержка Terraform (API провайдера)
-- Оплата из России (карты РФ / СБП)
-- Дата-центр в Европе (Финляндия, Латвия)
-
-### Сравнение провайдеров
-
-| Провайдер | Terraform | Оплата из РФ | ДЦ |
-|-----------|-----------|--------------|-----|
-| **Selectel** ✅ | Официальный provider | ✅ Карты РФ, СБП | Финляндия (Хельсинки, регион `ru-3`) |
-| Timeweb Cloud | Есть provider | ✅ Карты РФ, СБП | Нидерланды |
-| FirstVDS | API (без офиц. provider) | ✅ Карты РФ | Латвия (Рига) |
-| Hetzner | Отличная поддержка | ⚠️ Нужна EU-карта | Германия, Финляндия |
-
-### ✅ Итоговый выбор: Selectel, ДЦ Хельсинки (регион `ru-3`)
+При сбое VPS3 (Ansible control node):
+- **VPS2** обнаруживает сбой через Uptime Kuma
+- VPS2 берёт на себя запуск Ansible-плейбука восстановления
+- Плейбук восстанавливает VPS3: пересоздаёт сервер (если провайдер поддерживает API) или восстанавливает из снапшота
+- После восстановления VPS3 управление возвращается обратно
 
 ---
 
-## 5. Структура репозитория инфраструктуры
+## 5. Выбор хостинга
 
-Рекомендуется создать отдельный репозиторий `mypet01-infra`:
+### Текущее решение: VDSka
+- Нет API для Terraform → управление ВМ руками в панели
+- Ansible настраивает всё внутри ВМ — этого достаточно для 95% автоматизации
+- Создание/переезд ВМ — руками (разово), всё остальное через код
+
+### Возможный переезд: Selectel (Хельсинки, регион `ru-3`)
+- Официальный Terraform provider
+- Оплата из РФ (карты / СБП)
+- Рассматривать только в самом конце, когда всё остальное уже работает
+
+---
+
+## 6. Структура репозитория инфраструктуры
+
+Создать отдельный репозиторий `mypet01-infra`:
 
 ```
 mypet01-infra/
-├── terraform/
-│   ├── main.tf              # Создание ВМ (Selectel + OpenStack provider)
-│   ├── variables.tf         # Переменные (регион, flavor, диск)
-│   ├── outputs.tf           # Вывод IP-адресов для Ansible
-│   └── terraform.tfvars     # Секреты (НЕ в Git!)
 ├── ansible/
-│   ├── inventory.ini        # IP серверов (заполняется из terraform output)
-│   ├── site.yml             # Главный плейбук
+│   ├── inventory.ini           # IP всех трёх серверов
+│   ├── site.yml                # Главный плейбук
 │   ├── group_vars/
-│   │   ├── prod.yml         # Переменные продакшн-сервера
-│   │   └── backup.yml       # Переменные бэкап-сервера
+│   │   ├── prod.yml            # Переменные VPS1
+│   │   ├── backup.yml          # Переменные VPS2
+│   │   └── management.yml      # Переменные VPS3
 │   └── roles/
-│       ├── docker/          # Установка Docker + Compose
-│       ├── mypet01/         # Деплой приложения
-│       ├── backup_client/   # Настройка отправки бэкапов
-│       ├── backup_server/   # Настройка приёма бэкапов
-│       └── monitoring/      # Netdata
-├── docker-compose.prod.yml  # Продакшн-конфиг контейнеров
-├── .env.example             # Шаблон переменных окружения
+│       ├── docker/             # Установка Docker + Compose
+│       ├── mypet01/            # Деплой приложения на VPS1
+│       ├── backup_client/      # Настройка отправки бэкапов (VPS1)
+│       ├── backup_server/      # Настройка приёма бэкапов (VPS2)
+│       ├── management/         # Настройка VPS3 (Ansible, Python-скрипты)
+│       └── monitoring/         # Netdata (VPS1) + Uptime Kuma (VPS2)
+├── docker-compose.prod.yml     # Продакшн-конфиг контейнеров
+├── .env.example                # Шаблон переменных окружения
 └── scripts/
-    └── backup.py            # Python-скрипт резервного копирования
+    └── backup.py               # Python-скрипт резервного копирования
 ```
-
----
-
-## 6. Пайплайн деплоя (полный цикл)
-
-```bash
-# Шаг 1: Создаём ВМ через Terraform
-terraform apply -auto-approve
-
-# Шаг 2: Получаем IP и формируем inventory для Ansible
-terraform output -json | jq -r '.prod_ip.value' >> ansible/inventory.ini
-
-# Шаг 3: Настраиваем серверы через Ansible
-ansible-playbook -i ansible/inventory.ini ansible/site.yml
-```
-
-**Результат**: с нуля до работающего сайта на новом сервере за ~10 минут.
 
 ---
 
 ## 7. Стратегия бэкапов
 
 ```bash
-# На продакшн-сервере (cron или systemd timer):
-docker exec mypet01_db pg_dump -U postgres mypet > /tmp/db_$(date +%Y%m%d).sql
+# Запускается с VPS3 (cron или systemd timer):
+docker exec -T mypet01_db pg_dump -U postgres mypet > /tmp/db_$(date +%Y%m%d).sql
 tar -czf /tmp/media_$(date +%Y%m%d).tar.gz /opt/mypet01/media/
-rsync -avz /tmp/*.sql /tmp/*.tar.gz backup-server:/backups/
+rsync -avz /tmp/*.sql /tmp/*.tar.gz vps2:/backups/
 rm /tmp/*.sql /tmp/*.tar.gz
 ```
 
 Python-скрипт `scripts/backup.py` обернёт это в полноценный модуль с:
 - Логированием результата
-- Ротацией старых бэкапов
+- Ротацией старых бэкапов (хранить N последних)
 - Уведомлением в Telegram при ошибке
 
 ---
 
 ## 8. Рекомендуемый порядок реализации
 
-1. **Ansible** (1–2 нед.) — написать роли для Docker, деплоя mypet01 и бэкапов. Проверить на VDSka.
-2. **Перенос на Selectel** (1–2 дня) — аренда двух ВМ в регионе `ru-3`.
-3. **Terraform** (1 нед.) — описать оба VPS как код, связать с Ansible через `outputs.tf`.
-4. **Мониторинг** (2–3 дня) — Ansible-роль для Netdata на проде + Uptime Kuma на бэкапе.
-5. **Python backup-скрипт** (2–3 дня) — инкрементальные бэкапы с отправкой на второй VPS.
-6. **Оформление для портфолио** — README, схема архитектуры, описание ролей.
+1. **`docker-compose.prod.yml`** — продакшн-конфиг (Nginx + Gunicorn + PG + Redis + .env секреты)
+2. **Ansible-роли** — docker, mypet01, backup_client, backup_server, management, monitoring
+3. **Python backup.py** — pg_dump + rsync + Telegram алерт + ротация
+4. **Мониторинг** — Netdata на VPS1 через Ansible-роль + Uptime Kuma на VPS2
+5. **Failover-логика** — скрипт на VPS2 для подхвата функций VPS3 при сбое
+6. **Terraform + Selectel** — опционально, только если нужен полноценный IaC
