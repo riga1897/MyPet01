@@ -169,20 +169,46 @@ mypet01-infra/
 
 ---
 
-## 7. Стратегия бэкапов
+## 7. Стратегия бэкапов (правило 3-2-1)
+
+**3 копии, 2 носителя, 1 вне площадки:**
+
+| Копия | Где | Скорость восстановления | Назначение |
+|-------|-----|------------------------|------------|
+| Оригинал | VPS1 (продакшн) | мгновенно | рабочие данные |
+| Локальная | VPS2 (rsync) | секунды | быстрый failover |
+| Offsite | S3 Selectel Object Storage | минуты | катастрофное восстановление |
 
 ```bash
 # Запускается с VPS3 (cron или systemd timer):
 docker exec -T mypet01_db pg_dump -U postgres mypet > /tmp/db_$(date +%Y%m%d).sql
 tar -czf /tmp/media_$(date +%Y%m%d).tar.gz /opt/mypet01/media/
+
+# Шаг 1: rsync на VPS2 (быстрый локальный бэкап)
 rsync -avz /tmp/*.sql /tmp/*.tar.gz vps2:/backups/
+
+# Шаг 2: загрузка в S3 Selectel (off-site)
+python3 scripts/backup.py --upload-s3
+
 rm /tmp/*.sql /tmp/*.tar.gz
 ```
 
 Python-скрипт `scripts/backup.py` обернёт это в полноценный модуль с:
 - Логированием результата
-- Ротацией старых бэкапов (хранить N последних)
+- rsync на VPS2 (локальная копия, быстрый failover)
+- Загрузкой в S3 через `boto3` (Selectel Object Storage, S3-совместим)
+- Ротацией старых бэкапов: хранить 7 дней на VPS2, 30 дней в S3
 - Уведомлением в Telegram при ошибке
+
+### S3 провайдер
+
+**Рекомендация: Selectel Object Storage**
+- S3-совместимый API (работает с `boto3` без изменений)
+- Оплата в рублях / картой РФ / СБП
+- Логично, если потом переезжаем на Selectel VPS
+- Эндпоинт: `https://s3.selcdn.ru`
+
+**Альтернатива: Yandex Object Storage** — тоже S3-совместим, оплата в РФ.
 
 ---
 
