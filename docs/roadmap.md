@@ -186,14 +186,14 @@ ansible_ssh_private_key_file=~/.ssh/id_rsa
 
 ## 7. Порядок реализации
 
-| # | Задача | Что входит | Оценка |
-|---|--------|------------|--------|
-| 1 | **docker-compose.prod.yml** | Nginx + Gunicorn + PG + Redis + .env секреты | 2–3 дня |
-| 2 | **Ansible-роли** | docker, mypet01, backup_client, backup_server, management, monitoring, **security** | 1–2 нед. |
-| 3 | **Python backup.py** | pg_dump + rsync → VPS2 + boto3 → S3 + Telegram алерт + ротация | 2–3 дня |
-| 4 | **Мониторинг** | Prometheus + Grafana на VPS3, exporters на всех VPS, Uptime Kuma на VPS2 | 2–3 дня |
-| 5 | **Failover-логика** | Скрипт на VPS2 для подхвата функций VPS3 при сбое | 2–3 дня |
-| 6 | **Terraform + Selectel** | Опционально — только если нужен полноценный IaC | — |
+| # | Статус | Задача | Что входит | Оценка |
+|---|--------|--------|------------|--------|
+| 1 | ✅ Готово | **docker-compose.prod.yml** | HAProxy + Nginx + Gunicorn + PG + Redis + Certbot + SoftEther VPN + .env секреты | — |
+| 2 | ⏳ | **Ansible-роли** | docker, mypet01, backup_client, backup_server, management, monitoring, **security** | 1–2 нед. |
+| 3 | ⏳ | **Python backup.py** | pg_dump + rsync → VPS2 + boto3 → S3 + Telegram алерт + ротация | 2–3 дня |
+| 4 | ⏳ | **Мониторинг** | Prometheus + Grafana на VPS3, exporters на всех VPS, Uptime Kuma на VPS2 | 2–3 дня |
+| 5 | ⏳ | **Failover-логика** | Скрипт на VPS2 для подхвата функций VPS3 при сбое | 2–3 дня |
+| 6 | ⏭ Опционально | **Terraform + Selectel** | Только если нужен полноценный IaC | — |
 
 ---
 
