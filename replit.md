@@ -1,5 +1,7 @@
 # MyPet01
 
+> **ВАЖНО:** Перед началом любой инфраструктурной задачи обязательно сверяться с [`docs/roadmap.md`](docs/roadmap.md) — там зафиксированы все принятые решения по архитектуре, стеку, безопасности и порядку реализации.
+
 ## Overview
 MyPet01 is a family-oriented blog built with Django 5.1+ for publishing photo and video content about pets. The project is designed for gradual development, scalability, maximum security, and 100% test coverage. It includes robust content management, user authentication, and advanced security features. The project aims to serve domains like `www.mine-craft.su` and `mine-craft.su`, with dedicated pre-production and production VPS environments.
 
