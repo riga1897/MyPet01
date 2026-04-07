@@ -1,0 +1,71 @@
+---
+# Node exporter — на всех VPS
+- name: Создать пользователя node_exporter
+  user:
+    name: node_exporter
+    system: true
+    shell: /bin/false
+    create_home: false
+
+- name: Скачать node_exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v1.8.1/node_exporter-1.8.1.linux-amd64.tar.gz"
+    dest: /tmp/node_exporter.tar.gz
+    mode: "0644"
+
+- name: Распаковать node_exporter
+  unarchive:
+    src: /tmp/node_exporter.tar.gz
+    dest: /tmp/
+    remote_src: true
+
+- name: Установить node_exporter
+  copy:
+    src: /tmp/node_exporter-1.8.1.linux-amd64/node_exporter
+    dest: /usr/local/bin/node_exporter
+    mode: "0755"
+    remote_src: true
+
+- name: Создать systemd unit для node_exporter
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    mode: "0644"
+  notify: restart node_exporter
+
+- name: Запустить node_exporter
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: true
+    daemon_reload: true
+
+# Prometheus + Grafana — только VPS3
+- name: Создать директорию мониторинга
+  file:
+    path: "{{ monitoring_dir }}"
+    state: directory
+    mode: "0755"
+  when: "'management' in group_names"
+
+- name: Скопировать docker-compose мониторинга
+  template:
+    src: docker-compose.monitoring.yml.j2
+    dest: "{{ monitoring_dir }}/docker-compose.yml"
+    mode: "0644"
+  when: "'management' in group_names"
+
+- name: Создать конфиг Prometheus
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ monitoring_dir }}/prometheus.yml"
+    mode: "0644"
+  when: "'management' in group_names"
+
+- name: Запустить Prometheus + Grafana
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_dir }}"
+    state: present
+  when: "'management' in group_names"
+
+# Uptime Kuma — только VPS2 (запускается в роли backup_server)

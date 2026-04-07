@@ -1,0 +1,17 @@
+---
+# Переменные VPS2 — Бэкапы + Резерв
+
+backup_dir: /opt/backups
+backup_retention_days: 7     # хранить 7 дней локально
+
+# Uptime Kuma
+uptime_kuma_port: 3001
+uptime_kuma_data: /opt/uptime-kuma
+
+# rsync — принимаем от VPS1 и VPS3
+rsync_allowed_hosts:
+  - "{{ hostvars[groups['prod'][0]]['ansible_host'] | default(groups['prod'][0]) }}"
+  - "{{ hostvars[groups['management'][0]]['ansible_host'] | default(groups['management'][0]) }}"
+
+# Prometheus exporter
+node_exporter_port: 9100

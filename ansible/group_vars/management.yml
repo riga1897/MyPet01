@@ -1,0 +1,28 @@
+---
+# Переменные VPS3 — Управление
+
+# Ansible
+ansible_control_dir: /opt/ansible
+
+# Prometheus + Grafana
+prometheus_port: 9090
+grafana_port: 3000
+monitoring_dir: /opt/monitoring
+prometheus_retention: "30d"
+
+# Grafana
+grafana_admin_password: "{{ vault_grafana_password }}"
+
+# GeoIP update
+geoip_script_dir: /opt/scripts
+geoip_update_cron: "0 3 * * 0"   # каждое воскресенье в 3:00
+
+# Prometheus exporter
+node_exporter_port: 9100
+
+# S3 (провайдер TBD — заполнить перед запуском)
+s3_endpoint: ""            # например: https://s3.selcdn.ru
+s3_bucket: ""              # название бакета
+s3_access_key: "{{ vault_s3_access_key }}"
+s3_secret_key: "{{ vault_s3_secret_key }}"
+s3_retention_days: 30

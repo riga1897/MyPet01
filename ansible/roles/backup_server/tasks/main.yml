@@ -1,0 +1,43 @@
+---
+- name: Установить rsync
+  apt:
+    name: rsync
+    state: present
+    update_cache: true
+
+- name: Создать директорию бэкапов
+  file:
+    path: "{{ backup_dir }}"
+    state: directory
+    mode: "0750"
+
+- name: Создать поддиректории бэкапов
+  file:
+    path: "{{ backup_dir }}/{{ item }}"
+    state: directory
+    mode: "0750"
+  loop:
+    - db
+    - media
+    - volumes
+    - configs
+
+- name: Запустить Uptime Kuma через Docker
+  community.docker.docker_container:
+    name: uptime-kuma
+    image: louislam/uptime-kuma:latest
+    state: started
+    restart_policy: always
+    ports:
+      - "127.0.0.1:{{ uptime_kuma_port }}:3001"
+    volumes:
+      - "{{ uptime_kuma_data }}:/app/data"
+
+- name: Настроить ротацию бэкапов (cron)
+  cron:
+    name: "Ротация бэкапов — удалить старше {{ backup_retention_days }} дней"
+    cron_file: backup-rotation
+    user: root
+    job: "find {{ backup_dir }} -type f -mtime +{{ backup_retention_days }} -delete >> /var/log/backup-rotation.log 2>&1"
+    hour: "4"
+    minute: "0"

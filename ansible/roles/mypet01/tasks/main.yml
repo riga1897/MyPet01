@@ -1,0 +1,58 @@
+---
+- name: Создать директорию приложения
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Скопировать docker-compose.prod.yml
+  copy:
+    src: "{{ playbook_dir }}/../docker-compose.prod.yml"
+    dest: "{{ app_dir }}/docker-compose.prod.yml"
+    mode: "0644"
+
+- name: Скопировать HAProxy конфиги
+  copy:
+    src: "{{ playbook_dir }}/../haproxy/"
+    dest: "{{ app_dir }}/haproxy/"
+    mode: "0644"
+
+- name: Скопировать Nginx конфиги
+  copy:
+    src: "{{ playbook_dir }}/../nginx/"
+    dest: "{{ app_dir }}/nginx/"
+    mode: "0644"
+
+- name: Скопировать .env из Ansible Vault
+  template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    mode: "0600"
+
+- name: Скопировать скрипты обновления GeoIP
+  copy:
+    src: "{{ playbook_dir }}/../scripts/update-geoip.sh"
+    dest: "{{ geoip_script_dir | default('/opt/scripts') }}/update-geoip.sh"
+    mode: "0755"
+
+- name: Создать директорию скриптов
+  file:
+    path: "{{ geoip_script_dir | default('/opt/scripts') }}"
+    state: directory
+    mode: "0755"
+
+- name: Настроить cron обновления GeoIP
+  cron:
+    name: "Обновление GeoIP базы"
+    cron_file: geoip-update
+    user: root
+    job: "{{ geoip_script_dir | default('/opt/scripts') }}/update-geoip.sh >> /var/log/geoip-update.log 2>&1"
+    special_time: weekly
+
+- name: Запустить приложение через Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_dir }}"
+    files:
+      - docker-compose.prod.yml
+    state: present
+    pull: always

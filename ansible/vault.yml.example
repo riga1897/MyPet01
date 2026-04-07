@@ -1,0 +1,23 @@
+# Скопировать в vault.yml и зашифровать: ansible-vault encrypt vault.yml
+# Использовать в плейбуках: ansible-playbook site.yml --ask-vault-pass
+
+vault_secret_key: "django-insecure-ЗАМЕНИ-НА-РЕАЛЬНЫЙ-КЛЮЧ"
+vault_allowed_hosts: "www.mine-craft.su,mine-craft.su"
+vault_csrf_trusted_origins: "https://www.mine-craft.su,https://mine-craft.su"
+
+vault_db_user: "blog_user"
+vault_db_password: "ЗАМЕНИ-НА-РЕАЛЬНЫЙ-ПАРОЛЬ"
+vault_db_name: "blog_db"
+
+vault_grafana_password: "ЗАМЕНИ-НА-РЕАЛЬНЫЙ-ПАРОЛЬ"
+
+vault_s3_access_key: ""       # заполнить после выбора провайдера S3
+vault_s3_secret_key: ""       # заполнить после выбора провайдера S3
+
+vault_telegram_token: ""      # токен бота для алертов
+vault_telegram_chat_id: ""    # chat_id для алертов
+
+vault_ssh_private_key: |
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  ВСТАВИТЬ ПРИВАТНЫЙ КЛЮЧ ДЛЯ УПРАВЛЕНИЯ VPS1 И VPS2 С VPS3
+  -----END OPENSSH PRIVATE KEY-----

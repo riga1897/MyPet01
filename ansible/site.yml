@@ -1,0 +1,27 @@
+---
+- name: Базовая настройка всех серверов
+  hosts: all
+  become: true
+  roles:
+    - docker
+    - security
+
+- name: Продакшн сервер (VPS1)
+  hosts: prod
+  become: true
+  roles:
+    - mypet01
+    - backup_client
+
+- name: Сервер бэкапов (VPS2)
+  hosts: backup
+  become: true
+  roles:
+    - backup_server
+
+- name: Сервер управления (VPS3)
+  hosts: management
+  become: true
+  roles:
+    - management
+    - monitoring

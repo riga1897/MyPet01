@@ -219,8 +219,8 @@ ansible_ssh_private_key_file=~/.ssh/id_rsa
 | 1 | ✅ Готово | **docker-compose.prod.yml** | HAProxy + Nginx + Gunicorn + PG + Redis + Certbot + SoftEther VPN | — |
 | 2 | ✅ Готово | **CI/CD** | GitHub Actions: preprod (217.147.15.220) → prod (91.204.75.25) | — |
 | 3 | ⏳ | **Провизионинг VPS2 + VPS3** | Создать новые VPS на VDSka, настроить SSH-доступ | 1 день |
-| 4 | ⏳ | **Ansible-роли** | docker, mypet01, backup_client, backup_server, management, monitoring, **security** | 1–2 нед. |
-| 5 | ⏳ | **Python backup.py** | pg_dump + volumes + rsync → VPS2 + boto3 → S3 + Telegram алерт + ротация | 2–3 дня |
+| 4 | 🔧 В работе | **Ansible-роли** | docker, mypet01, backup_client, backup_server, management, monitoring, security — структура создана, нужны IP VPS2/VPS3 | 1–2 нед. |
+| 5 | 🔧 В работе | **Python backup.py** | `scripts/backup.py` создан: pg_dump + volumes + rsync → VPS2 + boto3 → S3 + Telegram алерт + ротация | — |
 | 6 | ⏳ | **Мониторинг** | Prometheus + Grafana + HAProxy-exporter (VPS3), Uptime Kuma (VPS2), TLS-алерт | 2–3 дня |
 | 7 | ⏳ | **Failover-логика** | Скрипт на VPS2 для подхвата функций VPS3 при сбое | 2–3 дня |
 | 8 | ⏭ Опционально | **S3 для медиафайлов** | Миграция media на S3 (подробно в `docs/planning/S3_MIGRATION_PLAN.md`) | — |
