@@ -128,7 +128,16 @@
 **Что бэкапим:** pg_dump, media volume, certbot_conf volume, softether_data volume, HAProxy configs.
 **Ротация:** 7 дней на VPS2, 30 дней в S3.
 
-**S3 для бэкапов:** Selectel Object Storage (`boto3`, эндпоинт `https://s3.selcdn.ru`)
+**S3 для бэкапов:** провайдер не выбран, варианты:
+
+| Провайдер | Плюсы | Минусы |
+|-----------|-------|--------|
+| **Selectel Object Storage** | Оплата в РФ, логично при переезде на Selectel VPS | — |
+| **Yandex Object Storage** | Надёжный, S3-совместим, оплата в РФ | Yandex |
+| **Cloudflare R2** | Нет платы за egress | Оплата валютой |
+
+Все три работают с `boto3` без изменений кода — только эндпоинт и ключи разные.
+
 **S3 для медиа:** отдельный план — `docs/planning/S3_MIGRATION_PLAN.md`
 
 ---
