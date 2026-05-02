@@ -10,7 +10,10 @@
 
 | Решение | Выбор | Причина |
 |---------|-------|---------|
-| Хостинг | VDSka (3 VPS) | Текущий провайдер, нет API → Ansible достаточно |
+| Хостинг | VDSka (3 VPS + 3 новых) | Текущий провайдер, нет API → Ansible достаточно |
+| VPS2 — тип резерва | Холодный резерв (cold standby) | Контейнеры установлены, остановлены; при сбое VPS1 — запуск + восстановление бэкапа за 30–60 мин |
+| VPS2 — ресурсы | **4 CPU / 4 GB RAM / 80 GB SSD** | Идентично VPS1 — при активации поднимает полный стек |
+| VPS3 — ресурсы | **2 CPU / 2 GB RAM / 40 GB SSD** | Ansible + Prometheus + Grafana + backup.py |
 | Мониторинг | Prometheus + Grafana + Uptime Kuma | Netdata исключён, Prometheus — стандарт |
 | Staging | Windows локально (Docker Desktop) | Отдельный VPS для staging не нужен |
 | Бэкапы | rsync → VPS2 + boto3 → S3 (Selectel) | Правило 3-2-1 |
@@ -196,15 +199,18 @@ mypet01-infra/
 
 ### Ansible inventory.ini
 
+IP вставляются в `ansible/inventory.ini` после создания серверов.
+Все остальные настройки уже в `group_vars/` — менять не нужно.
+
 ```ini
 [prod]
-vps1.example.com ansible_user=root   # 91.204.75.25
+91.204.75.25    ansible_user=root   # новый VPS1 (заменить после миграции)
 
 [backup]
-vps2.example.com ansible_user=root   # новый VPS
+YOUR_VPS2_IP    ansible_user=root   # 4 CPU / 4 GB / 80 GB SSD — холодный резерв
 
 [management]
-vps3.example.com ansible_user=root   # новый VPS
+YOUR_VPS3_IP    ansible_user=root   # 2 CPU / 2 GB / 40 GB SSD — управление
 
 [all:vars]
 ansible_ssh_private_key_file=~/.ssh/id_rsa
@@ -218,8 +224,8 @@ ansible_ssh_private_key_file=~/.ssh/id_rsa
 |---|--------|--------|------------|--------|
 | 1 | ✅ Готово | **docker-compose.prod.yml** | HAProxy + Nginx + Gunicorn + PG + Redis + Certbot + SoftEther VPN | — |
 | 2 | ✅ Готово | **CI/CD** | GitHub Actions: preprod (217.147.15.220) → prod (91.204.75.25) | — |
-| 3 | ⏳ | **Провизионинг VPS2 + VPS3** | Создать новые VPS на VDSka, настроить SSH-доступ | 1 день |
-| 4 | 🔧 В работе | **Ansible-роли** | docker, mypet01, backup_client, backup_server, management, monitoring, security — структура создана, нужны IP VPS2/VPS3 | 1–2 нед. |
+| 3 | ⏳ | **Провизионинг новых серверов** | 3 новых VPS на VDSka (новый VPS1 + VPS2 + VPS3); IP вставить в `ansible/inventory.ini` | 1 день |
+| 4 | 🔧 В работе | **Ansible-роли** | Структура создана; IP — плейсхолдеры в `inventory.ini`, заменить после создания серверов | 1–2 нед. |
 | 5 | 🔧 В работе | **Python backup.py** | `scripts/backup.py` создан: pg_dump + volumes + rsync → VPS2 + boto3 → S3 + Telegram алерт + ротация | — |
 | 6 | ⏳ | **Мониторинг** | Prometheus + Grafana + HAProxy-exporter (VPS3), Uptime Kuma (VPS2), TLS-алерт | 2–3 дня |
 | 7 | ⏳ | **Failover-логика** | Скрипт на VPS2 для подхвата функций VPS3 при сбое | 2–3 дня |
