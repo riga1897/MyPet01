@@ -1,0 +1,30 @@
+# ================================================================
+# ШАБЛОН — скопируй в inventory.ini и вставь реальные IP:
+#
+#   cp ansible/inventory.ini.example ansible/inventory.ini
+#   # отредактируй ansible/inventory.ini (он в .gitignore — не попадёт в git)
+#   ansible-playbook site.yml --ask-vault-pass
+#
+# IP-адреса серверов хранить ТОЛЬКО локально или на VPS3.
+# В git и GitHub Secrets попадают только VPS1/VPS2 IP для CI/CD.
+# ================================================================
+
+[prod]
+# VPS1 — Продакшн (новый сервер VDSka)
+# ЗАМЕНИТЬ на реальный IP после создания:
+YOUR_VPS1_IP ansible_user=root ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[backup]
+# VPS2 — Холодный резерв + Бэкапы
+# Ресурсы: 4 CPU / 4 GB RAM / 80 GB SSD (идентично VPS1)
+# ЗАМЕНИТЬ на реальный IP после создания:
+YOUR_VPS2_IP ansible_user=root ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[management]
+# VPS3 — Управление (Ansible control node, Prometheus, Grafana)
+# Ресурсы: 2 CPU / 2 GB RAM / 40 GB SSD
+# ЗАМЕНИТЬ на реальный IP после создания:
+YOUR_VPS3_IP ansible_user=root ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

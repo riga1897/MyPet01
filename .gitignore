@@ -211,6 +211,10 @@ media/
 # Production secrets (never commit!)
 .env.production
 
+# Ansible inventory с реальными IP — только локально, не в git
+# Используй ansible/inventory.ini.example как шаблон
+ansible/inventory.ini
+
 # Security logs (keep directory, ignore log files)
 logs/*.log
 
