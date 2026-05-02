@@ -216,8 +216,12 @@ media/
 ansible/inventory.ini
 
 # Ansible vault с реальными секретами — только локально, не в git
-# Используй ansible/vault.yml.example как шаблон
+# Генерировать: source .env.vault && bash scripts/generate-vault.sh
 ansible/vault.yml
+
+# Локальные секреты для генерации vault.yml
+# Используй .env.vault.example как шаблон
+.env.vault
 
 # Security logs (keep directory, ignore log files)
 logs/*.log

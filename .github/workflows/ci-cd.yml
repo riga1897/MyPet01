@@ -589,13 +589,19 @@ jobs:
       - name: Verify required secrets
         run: |
           MISSING=""
-          [ -z "${{ secrets.VPS1_SERVER_IP }}" ] && MISSING="$MISSING VPS1_SERVER_IP"
-          [ -z "${{ secrets.VPS1_SSH_USER }}"  ] && MISSING="$MISSING VPS1_SSH_USER"
-          [ -z "${{ secrets.VPS2_SERVER_IP }}" ] && MISSING="$MISSING VPS2_SERVER_IP"
-          [ -z "${{ secrets.VPS2_SSH_USER }}"  ] && MISSING="$MISSING VPS2_SSH_USER"
-          [ -z "${{ secrets.VPS3_SERVER_IP }}" ] && MISSING="$MISSING VPS3_SERVER_IP"
-          [ -z "${{ secrets.VPS3_SSH_USER }}"  ] && MISSING="$MISSING VPS3_SSH_USER"
-          [ -z "${{ secrets.ANSIBLE_SSH_KEY }}" ] && MISSING="$MISSING ANSIBLE_SSH_KEY"
+          [ -z "${{ secrets.VPS1_SERVER_IP }}"               ] && MISSING="$MISSING VPS1_SERVER_IP"
+          [ -z "${{ secrets.VPS1_SSH_USER }}"                ] && MISSING="$MISSING VPS1_SSH_USER"
+          [ -z "${{ secrets.VPS2_SERVER_IP }}"               ] && MISSING="$MISSING VPS2_SERVER_IP"
+          [ -z "${{ secrets.VPS2_SSH_USER }}"                ] && MISSING="$MISSING VPS2_SSH_USER"
+          [ -z "${{ secrets.VPS3_SERVER_IP }}"               ] && MISSING="$MISSING VPS3_SERVER_IP"
+          [ -z "${{ secrets.VPS3_SSH_USER }}"                ] && MISSING="$MISSING VPS3_SSH_USER"
+          [ -z "${{ secrets.ANSIBLE_SSH_KEY }}"              ] && MISSING="$MISSING ANSIBLE_SSH_KEY"
+          [ -z "${{ secrets.VAULT_SECRET_KEY }}"             ] && MISSING="$MISSING VAULT_SECRET_KEY"
+          [ -z "${{ secrets.VAULT_DB_PASSWORD }}"            ] && MISSING="$MISSING VAULT_DB_PASSWORD"
+          [ -z "${{ secrets.VAULT_PG_REPLICATION_PASSWORD }}" ] && MISSING="$MISSING VAULT_PG_REPLICATION_PASSWORD"
+          [ -z "${{ secrets.VAULT_GRAFANA_PASSWORD }}"       ] && MISSING="$MISSING VAULT_GRAFANA_PASSWORD"
+          [ -z "${{ secrets.VAULT_SEMAPHORE_ADMIN_PASSWORD }}" ] && MISSING="$MISSING VAULT_SEMAPHORE_ADMIN_PASSWORD"
+          [ -z "${{ secrets.VAULT_SSH_PRIVATE_KEY }}"        ] && MISSING="$MISSING VAULT_SSH_PRIVATE_KEY"
           if [ -n "$MISSING" ]; then
             echo "::error::Missing secrets:$MISSING"
             exit 1
@@ -617,7 +623,23 @@ jobs:
           [all:vars]
           ansible_python_interpreter=/usr/bin/python3
           EOF
-          echo "inventory.ini generated (not stored in git)"
+          echo "inventory.ini generated"
+
+      - name: Generate vault.yml from secrets
+        env:
+          VAULT_SECRET_KEY:              ${{ secrets.VAULT_SECRET_KEY }}
+          VAULT_DB_PASSWORD:             ${{ secrets.VAULT_DB_PASSWORD }}
+          VAULT_PG_REPLICATION_PASSWORD: ${{ secrets.VAULT_PG_REPLICATION_PASSWORD }}
+          VAULT_GRAFANA_PASSWORD:        ${{ secrets.VAULT_GRAFANA_PASSWORD }}
+          VAULT_SEMAPHORE_ADMIN_PASSWORD: ${{ secrets.VAULT_SEMAPHORE_ADMIN_PASSWORD }}
+          VAULT_SSH_PRIVATE_KEY:         ${{ secrets.VAULT_SSH_PRIVATE_KEY }}
+          VAULT_S3_ACCESS_KEY:           ${{ secrets.VAULT_S3_ACCESS_KEY }}
+          VAULT_S3_SECRET_KEY:           ${{ secrets.VAULT_S3_SECRET_KEY }}
+          VAULT_TELEGRAM_TOKEN:          ${{ secrets.VAULT_TELEGRAM_TOKEN }}
+          VAULT_TELEGRAM_CHAT_ID:        ${{ secrets.VAULT_TELEGRAM_CHAT_ID }}
+        run: |
+          bash scripts/generate-vault.sh
+          echo "vault.yml generated"
 
       - name: Set up SSH key
         run: |
@@ -636,7 +658,6 @@ jobs:
       - name: Run Ansible playbook
         env:
           ANSIBLE_HOST_KEY_CHECKING: 'False'
-          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
         run: |
           TAGS_ARG=""
           [ -n "${{ github.event.inputs.ansible_tags }}" ] && TAGS_ARG="--tags ${{ github.event.inputs.ansible_tags }}"
@@ -644,6 +665,5 @@ jobs:
           ansible-playbook ansible/site.yml \
             -i ansible/inventory.ini \
             --limit "${{ github.event.inputs.ansible_target }}" \
-            --vault-password-file <(echo "$ANSIBLE_VAULT_PASSWORD") \
             $TAGS_ARG \
             -v
