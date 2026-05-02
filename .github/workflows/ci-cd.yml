@@ -5,6 +5,16 @@ on:
     branches: ['release/*', 'main']
   pull_request:
     branches: ['release/*']
+  workflow_dispatch:
+    inputs:
+      ansible_target:
+        description: 'Ansible target (all / prod / backup / management)'
+        required: false
+        default: 'all'
+      ansible_tags:
+        description: 'Ansible tags (например: docker,security)'
+        required: false
+        default: ''
 
 env:
   REGISTRY: ghcr.io
@@ -493,3 +503,73 @@ jobs:
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
           gh pr create --base main --head "$BRANCH_NAME" --title "Release to Production" --body "Automated PR from release branch $BRANCH_NAME" --draft || echo "PR already exists or cannot be created"
+
+  ansible-provision:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Verify required secrets
+        run: |
+          MISSING=""
+          [ -z "${{ secrets.VPS1_SERVER_IP }}" ] && MISSING="$MISSING VPS1_SERVER_IP"
+          [ -z "${{ secrets.VPS1_SSH_USER }}"  ] && MISSING="$MISSING VPS1_SSH_USER"
+          [ -z "${{ secrets.VPS2_SERVER_IP }}" ] && MISSING="$MISSING VPS2_SERVER_IP"
+          [ -z "${{ secrets.VPS2_SSH_USER }}"  ] && MISSING="$MISSING VPS2_SSH_USER"
+          [ -z "${{ secrets.VPS3_SERVER_IP }}" ] && MISSING="$MISSING VPS3_SERVER_IP"
+          [ -z "${{ secrets.VPS3_SSH_USER }}"  ] && MISSING="$MISSING VPS3_SSH_USER"
+          [ -z "${{ secrets.ANSIBLE_SSH_KEY }}" ] && MISSING="$MISSING ANSIBLE_SSH_KEY"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing secrets:$MISSING"
+            exit 1
+          fi
+          echo "All required secrets present"
+
+      - name: Generate Ansible inventory from secrets
+        run: |
+          cat > ansible/inventory.ini << EOF
+          [prod]
+          ${{ secrets.VPS1_SERVER_IP }} ansible_user=${{ secrets.VPS1_SSH_USER }} ansible_ssh_private_key_file=~/.ssh/ansible_key
+
+          [backup]
+          ${{ secrets.VPS2_SERVER_IP }} ansible_user=${{ secrets.VPS2_SSH_USER }} ansible_ssh_private_key_file=~/.ssh/ansible_key
+
+          [management]
+          ${{ secrets.VPS3_SERVER_IP }} ansible_user=${{ secrets.VPS3_SSH_USER }} ansible_ssh_private_key_file=~/.ssh/ansible_key
+
+          [all:vars]
+          ansible_python_interpreter=/usr/bin/python3
+          EOF
+          echo "inventory.ini generated (not stored in git)"
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/ansible_key
+          chmod 600 ~/.ssh/ansible_key
+          ssh-keyscan -H ${{ secrets.VPS1_SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H ${{ secrets.VPS2_SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H ${{ secrets.VPS3_SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ansible
+
+      - name: Run Ansible playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: |
+          TAGS_ARG=""
+          [ -n "${{ github.event.inputs.ansible_tags }}" ] && TAGS_ARG="--tags ${{ github.event.inputs.ansible_tags }}"
+
+          ansible-playbook ansible/site.yml \
+            -i ansible/inventory.ini \
+            --limit "${{ github.event.inputs.ansible_target }}" \
+            --vault-password-file <(echo "$ANSIBLE_VAULT_PASSWORD") \
+            $TAGS_ARG \
+            -v

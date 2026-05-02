@@ -1,12 +1,15 @@
 # ================================================================
-# ШАБЛОН — скопируй в inventory.ini и вставь реальные IP:
+# ШАБЛОН Ansible inventory
 #
+# В CI/CD (workflow_dispatch) inventory.ini генерируется АВТОМАТИЧЕСКИ
+# из GitHub Secrets — вручную редактировать не нужно.
+#
+# Для запуска Ansible ЛОКАЛЬНО (с VPS3 или своей машины):
 #   cp ansible/inventory.ini.example ansible/inventory.ini
-#   # отредактируй ansible/inventory.ini (он в .gitignore — не попадёт в git)
+#   # Вставь реальные IP вместо YOUR_VPS*_IP
 #   ansible-playbook site.yml --ask-vault-pass
 #
-# IP-адреса серверов хранить ТОЛЬКО локально или на VPS3.
-# В git и GitHub Secrets попадают только VPS1/VPS2 IP для CI/CD.
+# ansible/inventory.ini добавлен в .gitignore — в git не попадёт.
 # ================================================================
 
 [prod]

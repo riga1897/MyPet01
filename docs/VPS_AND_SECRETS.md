@@ -188,6 +188,23 @@ IP-адреса хранятся **только** в GitHub Secrets. В коде
 | `VPS2_SERVER_IP` | IP VPS2 сервера | вставить после создания |
 | `VPS2_DEPLOY_DIR` | Путь деплоя | `/opt/mypet01` |
 
+### VPS3 (Management — только для Ansible)
+
+| Secret | Описание | Пример |
+|--------|----------|--------|
+| `VPS3_SERVER_IP` | IP VPS3 сервера | вставить после создания |
+| `VPS3_SSH_USER` | Пользователь SSH | `root` |
+
+### Ansible (провизионинг через `workflow_dispatch`)
+
+| Secret | Описание | Как получить |
+|--------|----------|--------------|
+| `ANSIBLE_SSH_KEY` | Приватный SSH ключ для Ansible | Отдельный ключ с доступом на все 3 VPS |
+| `ANSIBLE_VAULT_PASSWORD` | Пароль Ansible Vault | Придумать и сохранить при создании vault |
+
+> `inventory.ini` генерируется автоматически в CI/CD из этих секретов — вручную редактировать не нужно.  
+> Для локального запуска: `cp ansible/inventory.ini.example ansible/inventory.ini` и вставить реальные IP.
+
 ### Автогенерируемые значения
 
 Генерируются автоматически скриптом на VPS:
@@ -252,6 +269,14 @@ git push origin main
 - [ ] `VPS2_SSH_USER`
 - [ ] `VPS2_SERVER_IP`
 - [ ] `VPS2_DEPLOY_DIR`
+
+### VPS3 (Management)
+- [ ] `VPS3_SERVER_IP`
+- [ ] `VPS3_SSH_USER`
+
+### Ansible (для workflow_dispatch)
+- [ ] `ANSIBLE_SSH_KEY` — SSH ключ с доступом на все 3 VPS
+- [ ] `ANSIBLE_VAULT_PASSWORD` — пароль для Ansible Vault
 
 ### Variables (опциональные)
 - [ ] `LOAD_DEMO_DATA` — `true` для VPS2
