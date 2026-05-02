@@ -399,14 +399,13 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 if [ "$ENV_TYPE" = "vps2" ]; then
     echo -e "  VPS2_SERVER_IP:      ${YELLOW}$SERVER_IP${NC}"
     echo -e "  VPS2_SSH_USER:       ${YELLOW}$DEPLOY_USER${NC}"
-    echo -e "  VPS2_DEPLOY_DIR:     ${YELLOW}$DEPLOY_DIR${NC}"
     echo -e "  VPS2_SSH_KEY:        ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
 else
     echo -e "  VPS1_SERVER_IP:      ${YELLOW}$SERVER_IP${NC}"
     echo -e "  VPS1_SSH_USER:       ${YELLOW}$DEPLOY_USER${NC}"
-    echo -e "  VPS1_DEPLOY_DIR:     ${YELLOW}$DEPLOY_DIR${NC}"
     echo -e "  VPS1_SSH_KEY:        ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
 fi
+echo -e "  (DEPLOY_DIR не нужен — захардкожен в CI/CD: /opt/mypet01)"
 echo ""
 echo -e "${BLUE}При первом деплое CI/CD автоматически установит:${NC}"
 echo -e "${BLUE}  - Docker CE и Docker Compose${NC}"
