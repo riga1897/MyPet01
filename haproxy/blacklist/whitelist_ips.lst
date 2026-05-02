@@ -7,8 +7,9 @@
 # =============================================================
 
 # --- Ваш домашний IP ---
-95.31.25.30
-109.252.112.119
+# Добавьте свои IP вручную на сервере после деплоя:
+#   echo "1.2.3.4" >> /opt/mypet01/haproxy/blacklist/whitelist_ips.lst
+#   docker compose -f docker-compose.prod.yml kill -s HUP haproxy
 
 # --- IP серверов ---
 # VPS2 (pre-production) — добавить IP после создания сервера
