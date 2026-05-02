@@ -243,14 +243,20 @@ jobs:
           echo "Image built and pushed: ${{ env.REGISTRY }}/${{ env.REPO_LOWERCASE }}"
           echo "Tags: ${{ steps.meta.outputs.tags }}"
 
-  deploy:
+  deploy-vps2:
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: always() && needs.build-and-push.result == 'success'
+    if: always() && needs.build-and-push.result == 'success' && startsWith(github.ref, 'refs/heads/release/')
+    environment: vps2
 
     permissions:
       contents: write
       pull-requests: write
+
+    env:
+      SSH_TARGET: "${{ secrets.VPS2_SSH_USER }}@${{ secrets.VPS2_SERVER_IP }}"
+      SERVER_IP: "${{ secrets.VPS2_SERVER_IP }}"
+      DEPLOY_DIR: "/opt/mypet01"
 
     steps:
       - name: Check out code
@@ -258,56 +264,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine deploy environment
-        id: env
-        run: |
-          if [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
-            echo "name=vps2" >> $GITHUB_OUTPUT
-            echo "image_tag=vps2-latest" >> $GITHUB_OUTPUT
-            echo "sleep_time=30" >> $GITHUB_OUTPUT
-            echo "env_generator=generate-vps2-env.sh" >> $GITHUB_OUTPUT
-            echo "certbot_staging=${{ vars.CERTBOT_STAGING || '0' }}" >> $GITHUB_OUTPUT
-            echo "load_demo_data=${{ vars.LOAD_DEMO_DATA || 'false' }}" >> $GITHUB_OUTPUT
-
-            echo "SSH_TARGET=${{ format('{0}@{1}', secrets.VPS2_SSH_USER, secrets.VPS2_SERVER_IP) }}" >> $GITHUB_ENV
-            echo "DEPLOY_DIR=/opt/mypet01" >> $GITHUB_ENV
-            echo "SERVER_IP=${{ secrets.VPS2_SERVER_IP }}" >> $GITHUB_ENV
-          else
-            echo "name=vps1" >> $GITHUB_OUTPUT
-            echo "image_tag=vps1-latest" >> $GITHUB_OUTPUT
-            echo "sleep_time=45" >> $GITHUB_OUTPUT
-            echo "env_generator=generate-vps1-env.sh" >> $GITHUB_OUTPUT
-            echo "certbot_staging=0" >> $GITHUB_OUTPUT
-            echo "load_demo_data=false" >> $GITHUB_OUTPUT
-
-            echo "SSH_TARGET=${{ format('{0}@{1}', secrets.VPS1_SSH_USER, secrets.VPS1_SERVER_IP) }}" >> $GITHUB_ENV
-            echo "DEPLOY_DIR=/opt/mypet01" >> $GITHUB_ENV
-            echo "SERVER_IP=${{ secrets.VPS1_SERVER_IP }}" >> $GITHUB_ENV
-          fi
-
       - name: Verify required secrets
         run: |
-          if [[ "${{ steps.env.outputs.name }}" == "vps2" ]]; then
-            if [[ -z "${{ secrets.VPS2_SSH_KEY }}" || -z "${{ secrets.VPS2_SERVER_IP }}" || -z "${{ secrets.VPS2_SSH_USER }}" ]]; then
-              echo "::error::Missing VPS2_SSH_KEY/VPS2_SERVER_IP/VPS2_SSH_USER secrets"
-              exit 1
-            fi
-          else
-            if [[ -z "${{ secrets.VPS1_SSH_KEY }}" || -z "${{ secrets.VPS1_SERVER_IP }}" || -z "${{ secrets.VPS1_SSH_USER }}" ]]; then
-              echo "::error::Missing VPS1_SSH_KEY/VPS1_SERVER_IP/VPS1_SSH_USER secrets"
-              exit 1
-            fi
+          if [[ -z "${{ secrets.VPS2_SSH_KEY }}" || -z "${{ secrets.VPS2_SERVER_IP }}" || -z "${{ secrets.VPS2_SSH_USER }}" ]]; then
+            echo "::error::Missing VPS2_SSH_KEY/VPS2_SERVER_IP/VPS2_SSH_USER secrets"
+            exit 1
           fi
-          echo "Required secrets verified for ${{ steps.env.outputs.name }}"
+          echo "Required secrets verified for vps2"
 
       - name: Prepare repository name (lowercase)
-        run: |
-          echo "REPO_LOWERCASE=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+        run: echo "REPO_LOWERCASE=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
-          ssh-private-key: ${{ steps.env.outputs.name == 'vps2' && secrets.VPS2_SSH_KEY || secrets.VPS1_SSH_KEY }}
+          ssh-private-key: ${{ secrets.VPS2_SSH_KEY }}
 
       - name: Configure SSH known hosts
         run: |
@@ -318,24 +289,18 @@ jobs:
         run: |
           ssh $SSH_TARGET << EOFDEPS
             set -e
-
             echo '=== Checking VPS infrastructure ==='
 
             if [ ! -d "$DEPLOY_DIR" ]; then
-              echo 'Creating deploy directory...'
               sudo mkdir -p $DEPLOY_DIR
               sudo chown -R \$USER:\$USER $DEPLOY_DIR
-              echo 'Deploy directory created'
             fi
 
             if ! command -v ufw &> /dev/null; then
-              echo 'Installing UFW...'
-              sudo apt-get update
-              sudo apt-get install -y ufw
+              sudo apt-get update && sudo apt-get install -y ufw
             fi
 
             if sudo ufw status | grep -q "inactive"; then
-              echo 'Configuring firewall...'
               sudo ufw default deny incoming
               sudo ufw default allow outgoing
               sudo ufw allow 22/tcp
@@ -348,126 +313,79 @@ jobs:
               sudo ufw allow 1701/udp
               sudo ufw allow 1194/udp
               echo 'y' | sudo ufw enable
-              echo 'Firewall configured'
-            else
-              echo 'Firewall already active'
             fi
 
             if ! command -v fail2ban-client &> /dev/null; then
-              echo 'Installing fail2ban...'
-              sudo apt-get update
-              sudo apt-get install -y fail2ban
-              sudo systemctl enable fail2ban
-              sudo systemctl start fail2ban
-              echo 'Fail2ban installed'
-            else
-              echo 'Fail2ban already installed'
+              sudo apt-get update && sudo apt-get install -y fail2ban
+              sudo systemctl enable fail2ban && sudo systemctl start fail2ban
             fi
 
             if ! command -v docker &> /dev/null; then
-              echo 'Installing Docker...'
-              sudo apt-get update
-              sudo apt-get install -y ca-certificates curl gnupg
+              sudo apt-get update && sudo apt-get install -y ca-certificates curl gnupg
               sudo install -m 0755 -d /etc/apt/keyrings
               curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
               sudo chmod a+r /etc/apt/keyrings/docker.gpg
-
-              echo \
-                "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-                \$(. /etc/os-release && echo "\$VERSION_CODENAME") stable" | \
-                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-              sudo apt-get update
-              sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-              sudo systemctl enable docker
-              sudo systemctl start docker
+              echo "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \$(. /etc/os-release && echo "\$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+              sudo systemctl enable docker && sudo systemctl start docker
               sudo usermod -aG docker \$USER
-              echo 'Docker installed!'
-            else
-              echo 'Docker already installed'
-            fi
-
-            if ! docker compose version &> /dev/null; then
-              echo 'Installing Docker Compose v2...'
-              sudo apt-get update
-              sudo apt-get install -y docker-compose-plugin
             fi
 
             if ! grep -q 'net.ipv4.ip_unprivileged_port_start=0' /etc/sysctl.conf 2>/dev/null; then
-              echo 'Configuring unprivileged port binding...'
               echo 'net.ipv4.ip_unprivileged_port_start=0' | sudo tee -a /etc/sysctl.conf
               sudo sysctl -p
-              echo 'Unprivileged port binding configured'
-            else
-              echo 'Unprivileged port binding already configured'
             fi
 
-            echo '=== VPS infrastructure ready ==='
+            echo '=== VPS2 infrastructure ready ==='
           EOFDEPS
 
       - name: Copy files to server
-        env:
-          ENV_GENERATOR: ${{ steps.env.outputs.env_generator }}
         run: |
           scp docker-compose.prod.yml $SSH_TARGET:$DEPLOY_DIR/
           scp -r nginx haproxy $SSH_TARGET:$DEPLOY_DIR/
-          scp scripts/$ENV_GENERATOR scripts/init-letsencrypt.sh $SSH_TARGET:$DEPLOY_DIR/
+          scp scripts/generate-vps2-env.sh scripts/init-letsencrypt.sh $SSH_TARGET:$DEPLOY_DIR/
 
       - name: Generate .env and deploy
         env:
-          IMAGE_TAG: ${{ steps.env.outputs.image_tag }}
-          ENV_GENERATOR: ${{ steps.env.outputs.env_generator }}
-          LOAD_DEMO_DATA: ${{ steps.env.outputs.load_demo_data }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          LOAD_DEMO_DATA: ${{ vars.LOAD_DEMO_DATA || 'false' }}
         run: |
           ssh $SSH_TARGET << EOFDEPLOY
             set -e
             cd $DEPLOY_DIR
-
-            chmod +x $ENV_GENERATOR
-            SERVER_IP=$SERVER_IP LOAD_DEMO_DATA=$LOAD_DEMO_DATA ./$ENV_GENERATOR
-
-            grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$IMAGE_TAG/" .env || echo "IMAGE_TAG=$IMAGE_TAG" >> .env
+            chmod +x generate-vps2-env.sh
+            SERVER_IP=$SERVER_IP LOAD_DEMO_DATA=$LOAD_DEMO_DATA ./generate-vps2-env.sh
+            grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=vps2-latest/" .env || echo "IMAGE_TAG=vps2-latest" >> .env
             grep -q "^GITHUB_REPOSITORY=" .env && sed -i "s|^GITHUB_REPOSITORY=.*|GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}|" .env || echo "GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}" >> .env
-
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
             docker compose -f docker-compose.prod.yml --env-file .env pull
             docker compose -f docker-compose.prod.yml --env-file .env up -d --remove-orphans
-
             docker image prune -af
           EOFDEPLOY
 
       - name: Health check
-        env:
-          DEPLOY_ENV: ${{ steps.env.outputs.name }}
-          SLEEP_TIME: ${{ steps.env.outputs.sleep_time }}
         run: |
           echo "Waiting for services to start..."
-          sleep $SLEEP_TIME
-
+          sleep 30
           for i in {1..12}; do
             if ssh $SSH_TARGET "curl -sf http://localhost:8080/health/ || curl -sf http://localhost:8080/"; then
-              echo "$DEPLOY_ENV is healthy!"
+              echo "VPS2 is healthy!"
               exit 0
             fi
             echo "Attempt $i/12 failed, retrying in 5s..."
             sleep 5
           done
-
           echo "Health check failed!"
           ssh $SSH_TARGET "cd $DEPLOY_DIR && docker compose -f docker-compose.prod.yml logs --tail=50"
           exit 1
 
       - name: Setup SSL certificate (if needed)
         env:
-          CERTBOT_STAGING: ${{ steps.env.outputs.certbot_staging }}
+          CERTBOT_STAGING: ${{ vars.CERTBOT_STAGING || '0' }}
         run: |
           ssh $SSH_TARGET << EOFSSL
             set -e
             cd $DEPLOY_DIR
-
             CERT_DIR="/etc/letsencrypt/live/www.mine-craft.su"
             CERT_EXISTS=\$(docker compose -f docker-compose.prod.yml exec -T nginx sh -c "
               if [ -f '\$CERT_DIR/fullchain.pem' ] && [ ! -L '\$CERT_DIR/fullchain.pem' ] && openssl x509 -in '\$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Temporary'; then
@@ -476,11 +394,9 @@ jobs:
                 echo 'false'
               fi
             " 2>/dev/null | tail -1)
-
             if [ "\$CERT_EXISTS" = "true" ]; then
-              echo 'Real SSL certificate already installed. Skipping.'
+              echo 'SSL certificate already installed. Skipping.'
             else
-              echo 'Real SSL certificate not found. Running init-letsencrypt...'
               chmod +x init-letsencrypt.sh
               STAGING=$CERTBOT_STAGING ./init-letsencrypt.sh --auto
             fi
@@ -491,18 +407,176 @@ jobs:
           ssh $SSH_TARGET << EOFSETUP
             set -e
             cd $DEPLOY_DIR
-            echo "Verifying entrypoint completed (migrate, collectstatic, loaddata, createsuperuser)..."
             docker compose -f docker-compose.prod.yml exec -T web python manage.py showmigrations --list | tail -5
             echo "Entrypoint setup verified."
           EOFSETUP
 
-      - name: Create draft PR to main (vps2 only)
-        if: startsWith(github.ref, 'refs/heads/release/') && vars.CREATE_PR_ON_VPS2DEPLOY != 'false'
+      - name: Create draft PR to main
+        if: vars.CREATE_PR_ON_VPS2DEPLOY != 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
           gh pr create --base main --head "$BRANCH_NAME" --title "Release to Production" --body "Automated PR from release branch $BRANCH_NAME" --draft || echo "PR already exists or cannot be created"
+
+  deploy-vps1:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: always() && needs.build-and-push.result == 'success' && github.ref == 'refs/heads/main'
+    environment: vps1
+
+    env:
+      SSH_TARGET: "${{ secrets.VPS1_SSH_USER }}@${{ secrets.VPS1_SERVER_IP }}"
+      SERVER_IP: "${{ secrets.VPS1_SERVER_IP }}"
+      DEPLOY_DIR: "/opt/mypet01"
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Verify required secrets
+        run: |
+          if [[ -z "${{ secrets.VPS1_SSH_KEY }}" || -z "${{ secrets.VPS1_SERVER_IP }}" || -z "${{ secrets.VPS1_SSH_USER }}" ]]; then
+            echo "::error::Missing VPS1_SSH_KEY/VPS1_SERVER_IP/VPS1_SSH_USER secrets"
+            exit 1
+          fi
+          echo "Required secrets verified for vps1"
+
+      - name: Prepare repository name (lowercase)
+        run: echo "REPO_LOWERCASE=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.VPS1_SSH_KEY }}
+
+      - name: Configure SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Setup VPS infrastructure (if needed)
+        run: |
+          ssh $SSH_TARGET << EOFDEPS
+            set -e
+            echo '=== Checking VPS infrastructure ==='
+
+            if [ ! -d "$DEPLOY_DIR" ]; then
+              sudo mkdir -p $DEPLOY_DIR
+              sudo chown -R \$USER:\$USER $DEPLOY_DIR
+            fi
+
+            if ! command -v ufw &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y ufw
+            fi
+
+            if sudo ufw status | grep -q "inactive"; then
+              sudo ufw default deny incoming
+              sudo ufw default allow outgoing
+              sudo ufw allow 22/tcp
+              sudo ufw allow 80/tcp
+              sudo ufw allow 443/tcp
+              sudo ufw allow 992/tcp
+              sudo ufw allow 5555/tcp
+              sudo ufw allow 500/udp
+              sudo ufw allow 4500/udp
+              sudo ufw allow 1701/udp
+              sudo ufw allow 1194/udp
+              echo 'y' | sudo ufw enable
+            fi
+
+            if ! command -v fail2ban-client &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y fail2ban
+              sudo systemctl enable fail2ban && sudo systemctl start fail2ban
+            fi
+
+            if ! command -v docker &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y ca-certificates curl gnupg
+              sudo install -m 0755 -d /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              sudo chmod a+r /etc/apt/keyrings/docker.gpg
+              echo "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \$(. /etc/os-release && echo "\$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+              sudo systemctl enable docker && sudo systemctl start docker
+              sudo usermod -aG docker \$USER
+            fi
+
+            if ! grep -q 'net.ipv4.ip_unprivileged_port_start=0' /etc/sysctl.conf 2>/dev/null; then
+              echo 'net.ipv4.ip_unprivileged_port_start=0' | sudo tee -a /etc/sysctl.conf
+              sudo sysctl -p
+            fi
+
+            echo '=== VPS1 infrastructure ready ==='
+          EOFDEPS
+
+      - name: Copy files to server
+        run: |
+          scp docker-compose.prod.yml $SSH_TARGET:$DEPLOY_DIR/
+          scp -r nginx haproxy $SSH_TARGET:$DEPLOY_DIR/
+          scp scripts/generate-vps1-env.sh scripts/init-letsencrypt.sh $SSH_TARGET:$DEPLOY_DIR/
+
+      - name: Generate .env and deploy
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          ssh $SSH_TARGET << EOFDEPLOY
+            set -e
+            cd $DEPLOY_DIR
+            chmod +x generate-vps1-env.sh
+            SERVER_IP=$SERVER_IP LOAD_DEMO_DATA=false ./generate-vps1-env.sh
+            grep -q "^IMAGE_TAG=" .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=vps1-latest/" .env || echo "IMAGE_TAG=vps1-latest" >> .env
+            grep -q "^GITHUB_REPOSITORY=" .env && sed -i "s|^GITHUB_REPOSITORY=.*|GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}|" .env || echo "GITHUB_REPOSITORY=${{ env.REPO_LOWERCASE }}" >> .env
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose -f docker-compose.prod.yml --env-file .env pull
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --remove-orphans
+            docker image prune -af
+          EOFDEPLOY
+
+      - name: Health check
+        run: |
+          echo "Waiting for services to start..."
+          sleep 45
+          for i in {1..12}; do
+            if ssh $SSH_TARGET "curl -sf http://localhost:8080/health/ || curl -sf http://localhost:8080/"; then
+              echo "VPS1 is healthy!"
+              exit 0
+            fi
+            echo "Attempt $i/12 failed, retrying in 5s..."
+            sleep 5
+          done
+          echo "Health check failed!"
+          ssh $SSH_TARGET "cd $DEPLOY_DIR && docker compose -f docker-compose.prod.yml logs --tail=50"
+          exit 1
+
+      - name: Setup SSL certificate (if needed)
+        run: |
+          ssh $SSH_TARGET << EOFSSL
+            set -e
+            cd $DEPLOY_DIR
+            CERT_DIR="/etc/letsencrypt/live/www.mine-craft.su"
+            CERT_EXISTS=\$(docker compose -f docker-compose.prod.yml exec -T nginx sh -c "
+              if [ -f '\$CERT_DIR/fullchain.pem' ] && [ ! -L '\$CERT_DIR/fullchain.pem' ] && openssl x509 -in '\$CERT_DIR/fullchain.pem' -noout -issuer 2>/dev/null | grep -qv 'O=Temporary'; then
+                echo 'true'
+              else
+                echo 'false'
+              fi
+            " 2>/dev/null | tail -1)
+            if [ "\$CERT_EXISTS" = "true" ]; then
+              echo 'SSL certificate already installed. Skipping.'
+            else
+              chmod +x init-letsencrypt.sh
+              STAGING=0 ./init-letsencrypt.sh --auto
+            fi
+          EOFSSL
+
+      - name: Verify entrypoint completed successfully
+        run: |
+          ssh $SSH_TARGET << EOFSETUP
+            set -e
+            cd $DEPLOY_DIR
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py showmigrations --list | tail -5
+            echo "Entrypoint setup verified."
+          EOFSETUP
 
   ansible-provision:
     runs-on: ubuntu-latest
