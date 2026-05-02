@@ -1,7 +1,7 @@
 # Скопировать в vault.yml и зашифровать: ansible-vault encrypt vault.yml
 # Использовать в плейбуках: ansible-playbook site.yml --ask-vault-pass
 
-vault_secret_key: "django-insecure-ЗАМЕНИ-НА-РЕАЛЬНЫЙ-КЛЮЧ"
+vault_secret_key: ""  # не нужен — generate-vps1-env.sh генерирует автоматически
 vault_allowed_hosts: "www.mine-craft.su,mine-craft.su"
 vault_csrf_trusted_origins: "https://www.mine-craft.su,https://mine-craft.su"
 

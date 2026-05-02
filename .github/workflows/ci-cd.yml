@@ -596,7 +596,6 @@ jobs:
           [ -z "${{ secrets.VPS3_SERVER_IP }}"               ] && MISSING="$MISSING VPS3_SERVER_IP"
           [ -z "${{ secrets.VPS3_SSH_USER }}"                ] && MISSING="$MISSING VPS3_SSH_USER"
           [ -z "${{ secrets.ANSIBLE_SSH_KEY }}"              ] && MISSING="$MISSING ANSIBLE_SSH_KEY"
-          [ -z "${{ secrets.VAULT_SECRET_KEY }}"             ] && MISSING="$MISSING VAULT_SECRET_KEY"
           [ -z "${{ secrets.VAULT_DB_PASSWORD }}"            ] && MISSING="$MISSING VAULT_DB_PASSWORD"
           [ -z "${{ secrets.VAULT_PG_REPLICATION_PASSWORD }}" ] && MISSING="$MISSING VAULT_PG_REPLICATION_PASSWORD"
           [ -z "${{ secrets.VAULT_GRAFANA_PASSWORD }}"       ] && MISSING="$MISSING VAULT_GRAFANA_PASSWORD"
@@ -627,7 +626,6 @@ jobs:
 
       - name: Generate vault.yml from secrets
         env:
-          VAULT_SECRET_KEY:              ${{ secrets.VAULT_SECRET_KEY }}
           VAULT_DB_PASSWORD:             ${{ secrets.VAULT_DB_PASSWORD }}
           VAULT_PG_REPLICATION_PASSWORD: ${{ secrets.VAULT_PG_REPLICATION_PASSWORD }}
           VAULT_GRAFANA_PASSWORD:        ${{ secrets.VAULT_GRAFANA_PASSWORD }}

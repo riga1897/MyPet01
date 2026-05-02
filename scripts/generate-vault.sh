@@ -16,7 +16,6 @@ VAULT_FILE="ansible/vault.yml"
 
 # Проверить обязательные переменные
 REQUIRED=(
-    VAULT_SECRET_KEY
     VAULT_DB_PASSWORD
     VAULT_PG_REPLICATION_PASSWORD
     VAULT_GRAFANA_PASSWORD
@@ -40,7 +39,7 @@ cat > "$VAULT_FILE" << EOF
 # Источник: GitHub Secrets (CI/CD) или .env.vault (локально)
 # Регенерировать: source .env.vault && bash scripts/generate-vault.sh
 
-vault_secret_key: "${VAULT_SECRET_KEY}"
+vault_secret_key: "${VAULT_SECRET_KEY:-}"
 vault_allowed_hosts: "${VAULT_ALLOWED_HOSTS:-www.mine-craft.su,mine-craft.su}"
 vault_csrf_trusted_origins: "${VAULT_CSRF_TRUSTED_ORIGINS:-https://www.mine-craft.su,https://mine-craft.su}"
 
