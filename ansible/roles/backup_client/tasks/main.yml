@@ -8,11 +8,12 @@
     state: present
     update_cache: true
 
-- name: Установить boto3 для S3
+- name: Установить boto3 и зависимости для S3
   pip:
     name:
       - boto3
       - requests
+      - python-dotenv
     state: present
 
 - name: Создать директорию скриптов

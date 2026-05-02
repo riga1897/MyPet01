@@ -29,16 +29,16 @@
     dest: "{{ app_dir }}/.env"
     mode: "0600"
 
-- name: Скопировать скрипты обновления GeoIP
-  copy:
-    src: "{{ playbook_dir }}/../scripts/update-geoip.sh"
-    dest: "{{ geoip_script_dir | default('/opt/scripts') }}/update-geoip.sh"
-    mode: "0755"
-
 - name: Создать директорию скриптов
   file:
     path: "{{ geoip_script_dir | default('/opt/scripts') }}"
     state: directory
+    mode: "0755"
+
+- name: Скопировать скрипты обновления GeoIP
+  copy:
+    src: "{{ playbook_dir }}/../scripts/update-geoip.sh"
+    dest: "{{ geoip_script_dir | default('/opt/scripts') }}/update-geoip.sh"
     mode: "0755"
 
 - name: Настроить cron обновления GeoIP

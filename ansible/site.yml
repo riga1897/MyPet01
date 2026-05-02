@@ -5,6 +5,7 @@
   roles:
     - docker
     - security
+    - monitoring
 
 - name: Продакшн сервер (VPS1)
   hosts: prod
