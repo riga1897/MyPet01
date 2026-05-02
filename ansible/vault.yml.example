@@ -9,6 +9,9 @@ vault_db_user: "blog_user"
 vault_db_password: "ЗАМЕНИ-НА-РЕАЛЬНЫЙ-ПАРОЛЬ"
 vault_db_name: "blog_db"
 
+# PostgreSQL Streaming Replication (hot standby VPS2)
+vault_pg_replication_password: "ЗАМЕНИ-НА-РЕАЛЬНЫЙ-ПАРОЛЬ"
+
 vault_grafana_password: "ЗАМЕНИ-НА-РЕАЛЬНЫЙ-ПАРОЛЬ"
 
 vault_s3_access_key: ""       # заполнить после выбора провайдера S3

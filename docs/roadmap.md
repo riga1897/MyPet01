@@ -11,8 +11,8 @@
 | Решение | Выбор | Причина |
 |---------|-------|---------|
 | Хостинг | VDSka (3 VPS + 3 новых) | Текущий провайдер, нет API → Ansible достаточно |
-| VPS2 — тип резерва | Холодный резерв (cold standby) | Контейнеры установлены, остановлены; при сбое VPS1 — запуск + восстановление бэкапа за 30–60 мин |
-| VPS2 — ресурсы | **4 CPU / 4 GB RAM / 80 GB SSD** | Идентично VPS1 — при активации поднимает полный стек |
+| VPS2 — тип резерва | **Горячий резерв (hot standby)** | PostgreSQL streaming replication + rsync медиа каждые 10 мин; при сбое VPS1 — failover за 2–5 мин |
+| VPS2 — ресурсы | **4 CPU / 4 GB RAM / 80 GB SSD** | Идентично VPS1 — при failover поднимает полный стек |
 | VPS3 — ресурсы | **2 CPU / 2 GB RAM / 40 GB SSD** | Ansible + Prometheus + Grafana + backup.py |
 | Мониторинг | Prometheus + Grafana + Uptime Kuma | Netdata исключён, Prometheus — стандарт |
 | Staging | Windows локально (Docker Desktop) | Отдельный VPS для staging не нужен |
@@ -125,7 +125,7 @@
 | Копия | Где | Скорость восстановления | Назначение |
 |-------|-----|------------------------|------------|
 | Оригинал | VPS1 (продакшн) | мгновенно | рабочие данные |
-| Локальная | VPS2 (rsync) | секунды | быстрый failover |
+| Hot standby | VPS2 (streaming replication) | **2–5 мин** (DNS switch) | failover без потери данных |
 | Offsite | S3 Selectel Object Storage | минуты | катастрофное восстановление |
 
 **Что бэкапим:** pg_dump, media volume, certbot_conf volume, softether_data volume, HAProxy configs.
