@@ -215,6 +215,10 @@ media/
 # Используй ansible/inventory.ini.example как шаблон
 ansible/inventory.ini
 
+# Ansible vault с реальными секретами — только локально, не в git
+# Используй ansible/vault.yml.example как шаблон
+ansible/vault.yml
+
 # Security logs (keep directory, ignore log files)
 logs/*.log
 
