@@ -28,11 +28,19 @@ print_error() {
 
 ENV_TYPE="${1:-}"
 if [ -z "$ENV_TYPE" ]; then
-    echo "Использование: $0 <vps2|vps1>"
-    echo "  vps2 — настройка VPS2 pre-production (deploy dir: /opt/mypet01)"
-    echo "  vps1 — настройка VPS1 production     (deploy dir: /opt/mypet01)"
+    echo "Использование: $0 <vps2|vps1> [ansible_public_key]"
+    echo ""
+    echo "  vps2 — настройка VPS2 pre-production"
+    echo "  vps1 — настройка VPS1 production"
+    echo ""
+    echo "  ansible_public_key — публичный ключ с VPS3 (опционально):"
+    echo "    $0 vps1 'ssh-ed25519 AAAA...'"
+    echo "    или через переменную окружения:"
+    echo "    ANSIBLE_PUBLIC_KEY='ssh-ed25519 AAAA...' $0 vps1"
     exit 1
 fi
+
+ANSIBLE_PUBLIC_KEY="${2:-${ANSIBLE_PUBLIC_KEY:-}}"
 
 case "$ENV_TYPE" in
     vps2)
@@ -66,14 +74,14 @@ echo "  Пользователь деплоя:        $DEPLOY_USER"
 echo "  Пользователь администратор: $ADMIN_USER"
 echo ""
 
-print_header "1/8 — Обновление системы"
+print_header "1/9 — Обновление системы"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 print_success "Система обновлена"
 
-print_header "2/8 — Создание администратора $ADMIN_USER"
+print_header "2/9 — Создание администратора $ADMIN_USER"
 
 if getent passwd "$ADMIN_USER" > /dev/null 2>&1; then
     print_success "Пользователь $ADMIN_USER уже существует"
@@ -148,7 +156,7 @@ if [ -f "$ADMIN_KEY_PATH" ]; then
     chmod 600 "$ADMIN_KEY_PATH.pub"
 fi
 
-print_header "3/8 — Создание пользователя $DEPLOY_USER"
+print_header "3/9 — Создание пользователя $DEPLOY_USER"
 
 if getent passwd "$DEPLOY_USER" > /dev/null 2>&1; then
     print_success "Пользователь $DEPLOY_USER уже существует"
@@ -210,7 +218,7 @@ if ! visudo -cf "$SUDOERS_FILE"; then
 fi
 print_success "Sudo настроен для $DEPLOY_USER (ограниченные права)"
 
-print_header "4/8 — SSH ключ для GitHub Actions"
+print_header "4/9 — SSH ключ для GitHub Actions"
 
 DEPLOY_HOME=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
 if [ -z "$DEPLOY_HOME" ]; then
@@ -254,7 +262,26 @@ if [ -f "$KEY_PATH" ]; then
     chmod 600 "$KEY_PATH.pub"
 fi
 
-print_header "5/8 — Блокировка ICMP (ping)"
+print_header "5/9 — Добавление ANSIBLE_SSH_KEY в authorized_keys"
+
+if [ -n "$ANSIBLE_PUBLIC_KEY" ]; then
+    ROOT_AUTH="/root/.ssh/authorized_keys"
+    mkdir -p /root/.ssh
+    chmod 700 /root/.ssh
+
+    if grep -qF "$ANSIBLE_PUBLIC_KEY" "$ROOT_AUTH" 2>/dev/null; then
+        print_success "Ключ Ansible уже есть в $ROOT_AUTH"
+    else
+        echo "$ANSIBLE_PUBLIC_KEY" >> "$ROOT_AUTH"
+        chmod 600 "$ROOT_AUTH"
+        print_success "Публичный ключ Ansible добавлен в $ROOT_AUTH"
+    fi
+else
+    print_warning "ANSIBLE_PUBLIC_KEY не передан — добавь вручную после настройки VPS3:"
+    print_warning "  echo '<ключ>' >> /root/.ssh/authorized_keys"
+fi
+
+print_header "6/9 — Блокировка ICMP (ping)"
 
 SYSCTL_CONF="/etc/sysctl.conf"
 if grep -q "net.ipv4.icmp_echo_ignore_all" "$SYSCTL_CONF"; then
@@ -265,7 +292,7 @@ fi
 sysctl -p > /dev/null 2>&1
 print_success "ICMP (ping) заблокирован — сервер не отвечает на ping"
 
-print_header "6/8 — Отключение root SSH"
+print_header "7/9 — Отключение root SSH"
 
 SSHD_CONFIG="/etc/ssh/sshd_config"
 if [ -f "$SSHD_CONFIG" ]; then
@@ -287,7 +314,7 @@ else
     print_warning "Файл $SSHD_CONFIG не найден. Настройте PermitRootLogin вручную."
 fi
 
-print_header "7/8 — Настройка GeoIP (обновление списка российских IP)"
+print_header "8/9 — Настройка GeoIP (обновление списка российских IP)"
 
 GEOIP_SCRIPT="${DEPLOY_DIR}/haproxy/update-geoip.sh"
 GEOIP_LOG="/var/log/update-geoip.log"
@@ -331,7 +358,7 @@ else
     print_warning "Cron запустит обновление GeoIP автоматически после деплоя"
 fi
 
-print_header "8/8 — Настройка автобана (блокировка агрессивных IP)"
+print_header "9/9 — Настройка автобана (блокировка агрессивных IP)"
 
 AUTOBAN_SCRIPT="${DEPLOY_DIR}/haproxy/auto-ban.sh"
 AUTOBAN_LOG="/var/log/haproxy-autoban.log"
