@@ -270,7 +270,7 @@ jobs:
             echo "load_demo_data=${{ vars.LOAD_DEMO_DATA || 'false' }}" >> $GITHUB_OUTPUT
 
             echo "SSH_TARGET=${{ format('{0}@{1}', secrets.VPS2_SSH_USER, secrets.VPS2_SERVER_IP) }}" >> $GITHUB_ENV
-            echo "DEPLOY_DIR=${{ secrets.VPS2_DEPLOY_DIR }}" >> $GITHUB_ENV
+            echo "DEPLOY_DIR=/opt/mypet01" >> $GITHUB_ENV
             echo "SERVER_IP=${{ secrets.VPS2_SERVER_IP }}" >> $GITHUB_ENV
           else
             echo "name=vps1" >> $GITHUB_OUTPUT
@@ -281,20 +281,20 @@ jobs:
             echo "load_demo_data=false" >> $GITHUB_OUTPUT
 
             echo "SSH_TARGET=${{ format('{0}@{1}', secrets.VPS1_SSH_USER, secrets.VPS1_SERVER_IP) }}" >> $GITHUB_ENV
-            echo "DEPLOY_DIR=${{ secrets.VPS1_DEPLOY_DIR }}" >> $GITHUB_ENV
+            echo "DEPLOY_DIR=/opt/mypet01" >> $GITHUB_ENV
             echo "SERVER_IP=${{ secrets.VPS1_SERVER_IP }}" >> $GITHUB_ENV
           fi
 
       - name: Verify required secrets
         run: |
           if [[ "${{ steps.env.outputs.name }}" == "vps2" ]]; then
-            if [[ -z "${{ secrets.VPS2_SSH_KEY }}" || -z "${{ secrets.VPS2_SERVER_IP }}" || -z "${{ secrets.VPS2_DEPLOY_DIR }}" ]]; then
-              echo "::error::Missing VPS2_* secrets for vps2 deployment"
+            if [[ -z "${{ secrets.VPS2_SSH_KEY }}" || -z "${{ secrets.VPS2_SERVER_IP }}" || -z "${{ secrets.VPS2_SSH_USER }}" ]]; then
+              echo "::error::Missing VPS2_SSH_KEY/VPS2_SERVER_IP/VPS2_SSH_USER secrets"
               exit 1
             fi
           else
-            if [[ -z "${{ secrets.VPS1_SSH_KEY }}" || -z "${{ secrets.VPS1_SERVER_IP }}" || -z "${{ secrets.VPS1_DEPLOY_DIR }}" ]]; then
-              echo "::error::Missing VPS1_SSH_KEY/VPS1_SERVER_IP/VPS1_DEPLOY_DIR secrets for vps1 deployment"
+            if [[ -z "${{ secrets.VPS1_SSH_KEY }}" || -z "${{ secrets.VPS1_SERVER_IP }}" || -z "${{ secrets.VPS1_SSH_USER }}" ]]; then
+              echo "::error::Missing VPS1_SSH_KEY/VPS1_SERVER_IP/VPS1_SSH_USER secrets"
               exit 1
             fi
           fi

@@ -177,7 +177,6 @@ IP-адреса хранятся **только** в GitHub Secrets. В коде
 | `VPS1_SSH_KEY` | Приватный SSH ключ | `-----BEGIN OPENSSH PRIVATE KEY-----` |
 | `VPS1_SSH_USER` | Имя пользователя SSH | `depuser` |
 | `VPS1_SERVER_IP` | IP адрес VPS1 | вставить после создания |
-| `VPS1_DEPLOY_DIR` | Путь для деплоя | `/opt/mypet01` |
 
 ### VPS2 (Pre-Production — ветка `release/*`)
 
@@ -186,7 +185,8 @@ IP-адреса хранятся **только** в GitHub Secrets. В коде
 | `VPS2_SSH_KEY` | SSH ключ для VPS2 | `-----BEGIN OPENSSH PRIVATE KEY-----` |
 | `VPS2_SSH_USER` | Пользователь SSH | `depuser` |
 | `VPS2_SERVER_IP` | IP VPS2 сервера | вставить после создания |
-| `VPS2_DEPLOY_DIR` | Путь деплоя | `/opt/mypet01` |
+
+> Путь деплоя захардкожен в workflow: `/opt/mypet01` — одинаков для обоих серверов.
 
 ### VPS3 (Management — только для Ansible)
 
@@ -262,13 +262,11 @@ git push origin main
 - [ ] `VPS1_SSH_KEY`
 - [ ] `VPS1_SSH_USER`
 - [ ] `VPS1_SERVER_IP`
-- [ ] `VPS1_DEPLOY_DIR`
 
 ### VPS2 (Pre-Production / Hot Standby)
 - [ ] `VPS2_SSH_KEY`
 - [ ] `VPS2_SSH_USER`
 - [ ] `VPS2_SERVER_IP`
-- [ ] `VPS2_DEPLOY_DIR`
 
 ### VPS3 (Management)
 - [ ] `VPS3_SERVER_IP`
