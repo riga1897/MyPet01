@@ -39,10 +39,13 @@ gh auth status
 
 ```bash
 # VPS2 (pre-production)
-./scripts/setup-github.sh vps2 $VPS2_SERVER_IP
+./scripts/setup_vps.sh vps2
 
 # VPS1 (production)
-./scripts/setup-github.sh vps1 $VPS1_SERVER_IP
+./scripts/setup_vps.sh vps1
+
+# VPS3 (management — отдельный скрипт)
+./scripts/setup_vps3.sh
 ```
 
 Скрипт автоматически:
