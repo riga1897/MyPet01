@@ -25,4 +25,5 @@
   become: true
   roles:
     - management
+    - semaphore
     - monitoring
