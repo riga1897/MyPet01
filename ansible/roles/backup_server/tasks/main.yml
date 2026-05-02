@@ -169,9 +169,21 @@
     hour: "4"
     minute: "0"
 
-# --- Скрипт переключения в боевой режим (failover) ---
+# --- Скрипты failover / failback ---
+- name: Создать директорию скриптов
+  file:
+    path: /opt/scripts
+    state: directory
+    mode: "0755"
+
 - name: Скопировать скрипт failover
   template:
     src: failover.sh.j2
     dest: /opt/scripts/failover.sh
+    mode: "0755"
+
+- name: Скопировать скрипт failback
+  template:
+    src: failback.sh.j2
+    dest: /opt/scripts/failback.sh
     mode: "0755"
