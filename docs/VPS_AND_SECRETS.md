@@ -38,11 +38,11 @@ gh auth status
 ### Запуск (в Git Bash из директории проекта)
 
 ```bash
-# Препрод
-./scripts/setup-github.sh preprod 217.147.15.220
+# VPS2 (pre-production)
+./scripts/setup-github.sh vps2 $VPS2_SERVER_IP
 
-# Прод
-./scripts/setup-github.sh prod 91.204.75.25
+# VPS1 (production)
+./scripts/setup-github.sh vps1 $VPS1_SERVER_IP
 ```
 
 Скрипт автоматически:
@@ -52,7 +52,7 @@ gh auth status
 - Меняет пароль root на новый случайный
 - Отключает root SSH
 - Устанавливает GitHub Secrets
-- Для препрода — устанавливает Variables (`CERTBOT_STAGING`, `LOAD_DEMO_DATA`, `CREATE_PR_ON_PREDEPLOY`)
+- Для VPS2 — устанавливает Variables (`CERTBOT_STAGING`, `LOAD_DEMO_DATA`, `CREATE_PR_ON_VPS2DEPLOY`)
 - Выводит пароль root и ключ администратора для сохранения
 
 > **Важно:** После завершения скрипта сохраните пароль root и ключ администратора — они больше нигде не доступны!
@@ -65,7 +65,7 @@ gh auth status
 
 ```bash
 # На VPS от root:
-./setup_vps.sh preprod   # или prod
+./setup_vps.sh vps2   # или vps1
 ```
 
 Затем вручную настройте GitHub Secrets (см. раздел ниже).
@@ -149,12 +149,12 @@ cat /home/depuser/.ssh/github_deploy
 
 ## Требования к VPS
 
-| Параметр | Минимум | Рекомендуется |
-|----------|---------|---------------|
-| ОС | Ubuntu 20.04+ / Debian 11+ | Ubuntu 22.04 |
-| RAM | 1 GB | 2 GB |
-| Диск | 10 GB | 20 GB |
-| CPU | 1 vCPU | 2 vCPU |
+| Параметр | VPS1 (Production) | VPS2 (Hot Standby) | VPS3 (Management) |
+|----------|-------------------|--------------------|-------------------|
+| CPU | 4 vCPU | 4 vCPU | 2 vCPU |
+| RAM | 4 GB | 4 GB | 2 GB |
+| Диск | 40 GB SSD | 80 GB SSD | 40 GB SSD |
+| ОС | Ubuntu 22.04 | Ubuntu 22.04 | Ubuntu 22.04 |
 
 ---
 
@@ -162,29 +162,31 @@ cat /home/depuser/.ssh/github_deploy
 
 Перейти: GitHub → Repository → Settings → Secrets and variables → Actions → **New repository secret**
 
+IP-адреса хранятся **только** в GitHub Secrets. В коде и конфигах используются только имена переменных.
+
 ### Общие
 
 | Secret | Описание | Как получить |
 |--------|----------|--------------|
 | `GHCR_TOKEN` | Personal Access Token для GHCR | GitHub → Settings → Developer settings → Personal access tokens → Classic → scope: `read:packages` |
 
-### Production
+### VPS1 (Production — ветка `main`)
 
 | Secret | Описание | Пример |
 |--------|----------|--------|
-| `SSH_KEY` | Приватный SSH ключ | `-----BEGIN OPENSSH PRIVATE KEY-----` |
-| `SSH_USER` | Имя пользователя SSH | `depuser` |
-| `SERVER_IP` | IP адрес production VPS | `91.204.75.25` |
-| `DEPLOY_DIR` | Путь для деплоя | `/opt/blog` |
+| `VPS1_SSH_KEY` | Приватный SSH ключ | `-----BEGIN OPENSSH PRIVATE KEY-----` |
+| `VPS1_SSH_USER` | Имя пользователя SSH | `depuser` |
+| `VPS1_SERVER_IP` | IP адрес VPS1 | вставить после создания |
+| `VPS1_DEPLOY_DIR` | Путь для деплоя | `/opt/mypet01` |
 
-### Pre-Production
+### VPS2 (Pre-Production — ветка `release/*`)
 
 | Secret | Описание | Пример |
 |--------|----------|--------|
-| `PREPROD_SSH_KEY` | SSH ключ для препрода | `-----BEGIN OPENSSH PRIVATE KEY-----` |
-| `PREPROD_SSH_USER` | Пользователь SSH | `depuser` |
-| `PREPROD_SERVER_IP` | IP препрод сервера | `217.147.15.220` |
-| `PREPROD_DEPLOY_DIR` | Путь деплоя | `/opt/blog-preprod` |
+| `VPS2_SSH_KEY` | SSH ключ для VPS2 | `-----BEGIN OPENSSH PRIVATE KEY-----` |
+| `VPS2_SSH_USER` | Пользователь SSH | `depuser` |
+| `VPS2_SERVER_IP` | IP VPS2 сервера | вставить после создания |
+| `VPS2_DEPLOY_DIR` | Путь деплоя | `/opt/mypet01` |
 
 ### Автогенерируемые значения
 
@@ -212,23 +214,23 @@ cat /home/depuser/.ssh/github_deploy
 
 | Variable | Описание | Значения | По умолчанию | Область |
 |----------|----------|----------|--------------|---------|
-| `LOAD_DEMO_DATA` | Загрузка демо-данных | `true` / `false` | `false` | Только препрод |
-| `CERTBOT_STAGING` | Тестовый SSL (staging Let's Encrypt) | `0` / `1` | `0` | Только препрод |
-| `CREATE_PR_ON_PREDEPLOY` | Создание draft PR в main | `true` / `false` | `true` | Только препрод |
+| `LOAD_DEMO_DATA` | Загрузка демо-данных | `true` / `false` | `false` | Только VPS2 |
+| `CERTBOT_STAGING` | Тестовый SSL (staging Let's Encrypt) | `0` / `1` | `0` | Только VPS2 |
+| `CREATE_PR_ON_VPS2DEPLOY` | Создание draft PR в main | `true` / `false` | `true` | Только VPS2 |
 
-> **Важно:** `CERTBOT_STAGING` и `LOAD_DEMO_DATA` влияют **только на препрод**. В production SSL всегда реальный, демо-данные не загружаются.
+> **Важно:** `CERTBOT_STAGING` и `LOAD_DEMO_DATA` влияют **только на VPS2**. На VPS1 SSL всегда реальный, демо-данные не загружаются.
 
 ---
 
 ## Идемпотентность .env
 
-Скрипты `generate-production-env.sh` и `generate-preprod-env.sh`:
+Скрипты `generate-vps1-env.sh` и `generate-vps2-env.sh`:
 - Если `.env` существует → **НЕ перезаписывают**
 - Секреты сохраняются между деплоями
 - Для пересоздания: удалите `.env` вручную
 
 ```bash
-ssh user@vps "rm /opt/blog/.env"
+ssh user@vps "rm /opt/mypet01/.env"
 git push origin main
 ```
 
@@ -239,22 +241,22 @@ git push origin main
 ### Общие
 - [ ] `GHCR_TOKEN` — Personal Access Token с правами `read:packages`
 
-### Production
-- [ ] `SSH_KEY`
-- [ ] `SSH_USER`
-- [ ] `SERVER_IP`
-- [ ] `DEPLOY_DIR`
+### VPS1 (Production)
+- [ ] `VPS1_SSH_KEY`
+- [ ] `VPS1_SSH_USER`
+- [ ] `VPS1_SERVER_IP`
+- [ ] `VPS1_DEPLOY_DIR`
 
-### Pre-Production
-- [ ] `PREPROD_SSH_KEY`
-- [ ] `PREPROD_SSH_USER`
-- [ ] `PREPROD_SERVER_IP`
-- [ ] `PREPROD_DEPLOY_DIR`
+### VPS2 (Pre-Production / Hot Standby)
+- [ ] `VPS2_SSH_KEY`
+- [ ] `VPS2_SSH_USER`
+- [ ] `VPS2_SERVER_IP`
+- [ ] `VPS2_DEPLOY_DIR`
 
 ### Variables (опциональные)
-- [ ] `LOAD_DEMO_DATA` — `true` для препрода
+- [ ] `LOAD_DEMO_DATA` — `true` для VPS2
 - [ ] `CERTBOT_STAGING` — `1` для тестовых сертификатов
-- [ ] `CREATE_PR_ON_PREDEPLOY` — `false` если не нужны PR
+- [ ] `CREATE_PR_ON_VPS2DEPLOY` — `false` если не нужны PR
 
 ---
 
@@ -263,7 +265,8 @@ git push origin main
 ### Проверить подключение
 
 ```bash
-ssh -i ~/.ssh/depuser_key depuser@<IP_VPS>
+ssh -i ~/.ssh/depuser_key depuser@$VPS1_SERVER_IP
+ssh -i ~/.ssh/depuser_key depuser@$VPS2_SERVER_IP
 ```
 
 ### Проверить инфраструктуру (после первого деплоя)
@@ -273,15 +276,6 @@ docker ps
 docker compose version
 sudo ufw status
 sudo systemctl status fail2ban
-```
-
-### Проверить ограничения sudo
-
-```bash
-sudo apt-get update       # ← должно работать
-sudo rm -rf /             # ← запрещено
-sudo reboot               # ← запрещено
-sudo nano /etc/hosts      # ← запрещено
 ```
 
 ---
@@ -317,7 +311,7 @@ sudo nano /etc/hosts      # ← запрещено
 
 ### Permission denied (publickey)
 1. Проверьте публичный ключ на VPS: `cat ~/.ssh/authorized_keys`
-2. Проверьте приватный ключ в GitHub Secrets
+2. Проверьте приватный ключ в GitHub Secrets (`VPS1_SSH_KEY` или `VPS2_SSH_KEY`)
 
 ### .env не изменился после деплоя
 Скрипт пропускает генерацию если `.env` уже существует. Удалите `.env` на VPS и деплойте снова.
@@ -326,16 +320,3 @@ sudo nano /etc/hosts      # ← запрещено
 1. Проверьте `LOAD_DEMO_DATA=true` в GitHub Variables
 2. Проверьте `.env` на VPS: `grep LOAD_DEMO_DATA .env`
 3. Загрузите вручную: `docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_demo_content`
-
----
-
-## FAQ
-
-**Q: Что если Docker уже установлен?**
-A: CI/CD проверяет наличие и пропускает установку. То же для UFW и fail2ban.
-
-**Q: Можно использовать другое имя пользователя?**
-A: Да, в скрипте: `DEPLOY_USER=myuser bash setup_vps.sh`. Укажите это имя в `SSH_USER`.
-
-**Q: Что делать при компрометации ключа?**
-A: Удалите публичный ключ из `authorized_keys`, сгенерируйте новый и обновите GitHub Secret.

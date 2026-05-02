@@ -27,8 +27,8 @@ git checkout -b release/v1.0 develop
 git push origin release/v1.0
 ```
 
-CI/CD автоматически прогонит тесты, соберёт образ, задеплоит на препрод и создаст draft PR.
-Подробности pipeline: [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md#pre-production-pipeline-release)
+CI/CD автоматически прогонит тесты, соберёт образ, задеплоит на VPS2 и создаст draft PR.
+Подробности pipeline: [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md#vps2-pipeline-release)
 
 ## Деплой на production
 
@@ -38,8 +38,8 @@ git merge release/v1.0
 git push origin main
 ```
 
-CI/CD задеплоит на production VPS с реальным SSL сертификатом.
-Подробности: [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md#production-pipeline-main)
+CI/CD задеплоит на VPS1 с реальным SSL сертификатом.
+Подробности: [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md#vps1-pipeline-main)
 
 ---
 
@@ -359,8 +359,8 @@ sudo systemctl restart blog
 # SSL при CI/CD деплое
 
 SSL сертификаты настраиваются автоматически при деплое:
-- **Препрод:** Зависит от `CERTBOT_STAGING` (`1` = тестовый, `0` = реальный)
-- **Production:** Всегда реальный сертификат (захардкожен `STAGING=0`)
+- **VPS2:** Зависит от `CERTBOT_STAGING` (`1` = тестовый, `0` = реальный)
+- **VPS1:** Всегда реальный сертификат (захардкожен `STAGING=0`)
 
 При первом деплое:
 1. Nginx стартует с самоподписанным (dummy) сертификатом
@@ -370,8 +370,8 @@ SSL сертификаты настраиваются автоматически
 ### Ручная настройка SSL (если нужно)
 
 ```bash
-ssh depuser@<IP>
-cd /opt/blog-preprod
+ssh depuser@$VPS2_SERVER_IP
+cd /opt/mypet01
 
 # Получить тестовый сертификат
 STAGING=1 bash init-letsencrypt.sh
@@ -384,8 +384,8 @@ STAGING=0 bash init-letsencrypt.sh
 
 **Требования:**
 - Домены должны указывать на IP серверов (DNS A-записи):
-  - **Прод**: `www.mine-craft.su` → прод VPS, `mainsrv01.mine-craft.su` → прод VPS
-  - **Препрод**: `site.mine-craft.su` → препрод VPS, `vpn.mine-craft.su` → препрод VPS
+  - **VPS1**: `www.mine-craft.su` → `$VPS1_SERVER_IP`, `mainsrv01.mine-craft.su` → `$VPS1_SERVER_IP`
+  - **VPS2**: `site.mine-craft.su` → `$VPS2_SERVER_IP`, `vpn.mine-craft.su` → `$VPS2_SERVER_IP`
 - Порт 80 должен быть открыт (для ACME-challenge через HAProxy)
 
 **Автообновление:** Certbot проверяет каждые 12 часов, обновление раз в ~60 дней. Nginx перезагружается раз в неделю для подхвата сертификатов.
@@ -416,8 +416,8 @@ STAGING=0 bash init-letsencrypt.sh
 ## Полезные команды на VPS
 
 ```bash
-ssh depuser@<IP>
-cd /opt/blog-preprod
+ssh depuser@$VPS1_SERVER_IP   # или $VPS2_SERVER_IP
+cd /opt/mypet01
 
 docker compose -f docker-compose.prod.yml logs -f web
 docker compose -f docker-compose.prod.yml logs -f nginx
@@ -433,8 +433,8 @@ docker compose -f docker-compose.prod.yml exec -T web python manage.py setup_dem
 # Откат при проблемах
 
 ```bash
-ssh depuser@<IP>
-cd /opt/blog-preprod
+ssh depuser@$VPS1_SERVER_IP   # или $VPS2_SERVER_IP
+cd /opt/mypet01
 
 # Посмотреть логи
 docker compose -f docker-compose.prod.yml logs --tail=100 web
@@ -446,7 +446,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 # Пересоздать .env с нуля
 rm .env
-SERVER_IP=<IP> ./generate-preprod-env.sh
+SERVER_IP=$VPS2_SERVER_IP ./generate-vps2-env.sh   # или generate-vps1-env.sh
 docker compose -f docker-compose.prod.yml restart
 ```
 

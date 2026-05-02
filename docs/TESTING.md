@@ -213,7 +213,7 @@ Pipeline (`.github/workflows/ci-cd.yml`) запускается при push в `
 - После успешных тестов
 - `ruff check .` и `mypy .` параллельно
 
-Порядок: test → lint → build-and-push → deploy-preprod
+Порядок: test → lint → build-and-push → deploy (vps2)
 
 Подробнее: [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md)
 

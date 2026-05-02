@@ -97,8 +97,8 @@ MyPet01/
 │   └── planning/           # Планы развития
 ├── deploy/                 # Скрипты деплоя
 ├── scripts/                # Автоматизация настройки VPS
-├── haproxy/                # Конфигурации HAProxy (prod, preprod)
-├── nginx/                  # Конфигурации Nginx (prod, preprod)
+├── haproxy/                # Конфигурации HAProxy (vps1, vps2)
+├── nginx/                  # Конфигурации Nginx (vps1, vps2)
 ├── Dockerfile
 ├── docker-compose.yml      # Локальная разработка (Docker Desktop)
 ├── docker-compose.prod.yml # Продакшен (VPS)
@@ -236,15 +236,17 @@ HAProxy (SNI-маршрутизация, порт 443)
 
 | Среда | Ветка | VPS | Домены |
 |---|---|---|---|
-| Pre-production | `release/*` | 217.147.15.220 | site.mine-craft.su, vpn.mine-craft.su |
-| Production | `main` | 91.204.75.25 | www.mine-craft.su, mainsrv01.mine-craft.su |
+| VPS2 (Pre-production) | `release/*` | `$VPS2_SERVER_IP` | site.mine-craft.su, vpn.mine-craft.su |
+| VPS1 (Production) | `main` | `$VPS1_SERVER_IP` | www.mine-craft.su, mainsrv01.mine-craft.su |
+
+> IP-адреса хранятся только в GitHub Secrets (`VPS1_SERVER_IP`, `VPS2_SERVER_IP`).
 
 **Gitflow:**
 
 ```
 feature/* -> develop -> release/* -> main
                            |           |
-                      preprod VPS   prod VPS
+                          VPS2        VPS1
 ```
 
 Подробная документация: [docs/DEPLOYMENT_STRATEGY.md](docs/DEPLOYMENT_STRATEGY.md)

@@ -16,7 +16,7 @@
 ```
 feature/* → develop → release/* → main
                           ↓           ↓
-                     preprod VPS   prod VPS
+                        VPS2        VPS1
 ```
 
 ## Настройка (один раз)
@@ -28,17 +28,17 @@ feature/* → develop → release/* → main
 **Общие:**
 - `GHCR_TOKEN` — Personal Access Token с `read:packages` (GitHub → Settings → Developer settings → Personal access tokens)
 
-**Production:**
-- `SSH_KEY` — приватный SSH ключ
-- `SSH_USER` — пользователь (например, `root`)
-- `SERVER_IP` — IP production сервера
-- `DEPLOY_DIR` — путь деплоя (`/opt/blog`)
+**VPS1 (Production):**
+- `VPS1_SSH_KEY` — приватный SSH ключ
+- `VPS1_SSH_USER` — пользователь (например, `depuser`)
+- `VPS1_SERVER_IP` — IP VPS1 (только здесь!)
+- `VPS1_DEPLOY_DIR` — путь деплоя (`/opt/mypet01`)
 
-**Pre-Production:**
-- `PREPROD_SSH_KEY`
-- `PREPROD_SSH_USER`
-- `PREPROD_SERVER_IP`
-- `PREPROD_DEPLOY_DIR` (`/opt/blog-preprod`)
+**VPS2 (Pre-Production):**
+- `VPS2_SSH_KEY`
+- `VPS2_SSH_USER`
+- `VPS2_SERVER_IP` — IP VPS2 (только здесь!)
+- `VPS2_DEPLOY_DIR` (`/opt/mypet01`)
 
 ### 2. SSH ключ для деплоя
 
@@ -50,11 +50,11 @@ cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
 cat ~/.ssh/github_deploy
 ```
 
-Скопируйте приватный ключ в GitHub Secrets → `SSH_KEY`
+Скопируйте приватный ключ в GitHub Secrets → `VPS1_SSH_KEY` или `VPS2_SSH_KEY`
 
 ## Использование
 
-### Деплой на pre-production
+### Деплой на VPS2 (pre-production)
 
 ```bash
 git checkout -b release/v1.0 develop
@@ -63,11 +63,11 @@ git push origin release/v1.0
 
 CI/CD автоматически:
 1. Запускает тесты
-2. Собирает Docker образ
-3. Деплоит на препрод
+2. Собирает Docker образ (`vps2-latest`)
+3. Деплоит на VPS2
 4. Создаёт draft PR в main
 
-### Деплой на production
+### Деплой на VPS1 (production)
 
 ```bash
 git checkout main
@@ -324,13 +324,13 @@ HAProxy использует файл `haproxy/geoip/ru_networks.lst` для Geo
 
 #### Настройка на уже работающих VPS (без редеплоя)
 
-Выполните на **каждом VPS** (препрод и прод) от root:
+Выполните на **каждом VPS** (VPS1 и VPS2) от root:
 
 ```bash
-# === Препрод (217.147.15.220) ===
-ssh root@217.147.15.220
+# === VPS2 (pre-production) ===
+ssh root@$VPS2_SERVER_IP
 
-DEPLOY_DIR="/opt/blog-preprod"
+DEPLOY_DIR="/opt/mypet01"
 DEPLOY_USER="depuser"
 
 # 1. Права на директорию geoip
@@ -356,13 +356,13 @@ crontab -u ${DEPLOY_USER} -l
 ```
 
 ```bash
-# === Прод (91.204.75.25) ===
-ssh root@91.204.75.25
+# === VPS1 (production) — те же команды ===
+ssh root@$VPS1_SERVER_IP
 
-DEPLOY_DIR="/opt/blog"
+DEPLOY_DIR="/opt/mypet01"
 DEPLOY_USER="depuser"
 
-# Те же команды 1-6, что и для препрода (выше)
+# Те же команды 1-6, что и для VPS2 (выше)
 ```
 
 #### Проверка работы
@@ -398,7 +398,7 @@ cat /var/log/update-geoip.log
 ```bash
 # На каждом VPS от root:
 
-DEPLOY_DIR="/opt/blog-preprod"  # или /opt/blog для прода
+DEPLOY_DIR="/opt/mypet01"
 DEPLOY_USER="depuser"
 
 # 1. Лог-файл

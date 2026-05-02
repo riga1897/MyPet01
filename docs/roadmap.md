@@ -31,15 +31,15 @@
 | Django-приложение | ✅ | `mypet_project/`, `blog/`, `users/`, `core/` |
 | `docker-compose.prod.yml` | ✅ | HAProxy + Nginx + Gunicorn + PG + Redis + Certbot + SoftEther VPN |
 | `docker-compose.yml` | ✅ | Локальная разработка (Django + PG + Redis) |
-| CI/CD | ✅ | GitHub Actions: preprod → prod |
+| CI/CD | ✅ | GitHub Actions: VPS2 (release/*) → VPS1 (main) |
 | HAProxy (GeoIP, security) | ✅ | `haproxy/` — RIPE NCC GeoIP, rate limiting, blacklist |
 | Nginx конфиги | ✅ | `nginx/` |
-| `scripts/setup_vps.sh` | ✅ | Bash-скрипт настройки VPS (preprod / prod) |
+| `scripts/setup_vps.sh` | ✅ | Bash-скрипт настройки VPS (vps2 / vps1) |
 | `scripts/update-geoip.sh` | ✅ | Обновление GeoIP-базы RIPE NCC |
 | `scripts/cron-geoip-update.sh` | ✅ | Cron-задача обновления GeoIP |
 | `scripts/init-letsencrypt.sh` | ✅ | Инициализация Let's Encrypt |
 | `docs/planning/S3_MIGRATION_PLAN.md` | ✅ | План миграции медиафайлов на S3 |
-| 2 VPS (preprod + prod) | ✅ | 217.147.15.220 (preprod), 91.204.75.25 (prod) |
+| 2 VPS (VPS1 + VPS2) | 🔄 | Старые серверы заменяются на 3 новых VPS (VDSka) |
 
 **Что НЕ реализовано:** VPS2 (бэкапы), VPS3 (управление), Ansible-роли, backup.py, Prometheus+Grafana, fail2ban.
 
@@ -55,8 +55,8 @@
          │  деплой после проверки
          ▼
 ┌──────────────────────────────┐  rsync  ┌──────────────────────────────┐
-│   VPS1 — Продакшн (VDSka)    │────────▶│   VPS2 — Бэкапы + Резерв     │
-│   91.204.75.25               │         │   (VDSka, новый)             │
+│   VPS1 — Продакшн (VDSka)    │────────▶│   VPS2 — Hot Standby          │
+│   IP: VPS1_SERVER_IP (секрет)│         │   IP: VPS2_SERVER_IP (секрет)│
 │                              │         │                              │
 │  Docker Compose:             │         │  Хранение: pg_dump + media   │
 │  HAProxy → Nginx → Gunicorn  │         │  Uptime Kuma (пинг VPS1)     │
@@ -204,7 +204,7 @@ IP вставляются в `ansible/inventory.ini` после создания
 
 ```ini
 [prod]
-91.204.75.25    ansible_user=root   # новый VPS1 (заменить после миграции)
+YOUR_VPS1_IP    ansible_user=root   # заменить после создания на VDSka
 
 [backup]
 YOUR_VPS2_IP    ansible_user=root   # 4 CPU / 4 GB / 80 GB SSD — холодный резерв
@@ -223,7 +223,7 @@ ansible_ssh_private_key_file=~/.ssh/id_rsa
 | # | Статус | Задача | Что входит | Оценка |
 |---|--------|--------|------------|--------|
 | 1 | ✅ Готово | **docker-compose.prod.yml** | HAProxy + Nginx + Gunicorn + PG + Redis + Certbot + SoftEther VPN | — |
-| 2 | ✅ Готово | **CI/CD** | GitHub Actions: preprod (217.147.15.220) → prod (91.204.75.25) | — |
+| 2 | ✅ Готово | **CI/CD** | GitHub Actions: VPS2 (release/*) → VPS1 (main); IP только в секретах | — |
 | 3 | ⏳ | **Провизионинг новых серверов** | 3 новых VPS на VDSka (новый VPS1 + VPS2 + VPS3); IP вставить в `ansible/inventory.ini` | 1 день |
 | 4 | 🔧 В работе | **Ansible-роли** | Структура создана; IP — плейсхолдеры в `inventory.ini`, заменить после создания серверов | 1–2 нед. |
 | 5 | 🔧 В работе | **Python backup.py** | `scripts/backup.py` создан: pg_dump + volumes + rsync → VPS2 + boto3 → S3 + Telegram алерт + ротация | — |

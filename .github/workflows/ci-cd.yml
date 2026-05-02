@@ -214,8 +214,8 @@ jobs:
           tags: |
             type=sha,prefix={{branch}}-
             type=ref,event=branch
-            type=raw,value=preprod-latest,enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=vps2-latest,enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
+            type=raw,value=vps1-latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -252,39 +252,39 @@ jobs:
         id: env
         run: |
           if [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
-            echo "name=preprod" >> $GITHUB_OUTPUT
-            echo "image_tag=preprod-latest" >> $GITHUB_OUTPUT
+            echo "name=vps2" >> $GITHUB_OUTPUT
+            echo "image_tag=vps2-latest" >> $GITHUB_OUTPUT
             echo "sleep_time=30" >> $GITHUB_OUTPUT
-            echo "env_generator=generate-preprod-env.sh" >> $GITHUB_OUTPUT
+            echo "env_generator=generate-vps2-env.sh" >> $GITHUB_OUTPUT
             echo "certbot_staging=${{ vars.CERTBOT_STAGING || '0' }}" >> $GITHUB_OUTPUT
             echo "load_demo_data=${{ vars.LOAD_DEMO_DATA || 'false' }}" >> $GITHUB_OUTPUT
 
-            echo "SSH_TARGET=${{ format('{0}@{1}', secrets.PREPROD_SSH_USER, secrets.PREPROD_SERVER_IP) }}" >> $GITHUB_ENV
-            echo "DEPLOY_DIR=${{ secrets.PREPROD_DEPLOY_DIR }}" >> $GITHUB_ENV
-            echo "SERVER_IP=${{ secrets.PREPROD_SERVER_IP }}" >> $GITHUB_ENV
+            echo "SSH_TARGET=${{ format('{0}@{1}', secrets.VPS2_SSH_USER, secrets.VPS2_SERVER_IP) }}" >> $GITHUB_ENV
+            echo "DEPLOY_DIR=${{ secrets.VPS2_DEPLOY_DIR }}" >> $GITHUB_ENV
+            echo "SERVER_IP=${{ secrets.VPS2_SERVER_IP }}" >> $GITHUB_ENV
           else
-            echo "name=production" >> $GITHUB_OUTPUT
-            echo "image_tag=latest" >> $GITHUB_OUTPUT
+            echo "name=vps1" >> $GITHUB_OUTPUT
+            echo "image_tag=vps1-latest" >> $GITHUB_OUTPUT
             echo "sleep_time=45" >> $GITHUB_OUTPUT
-            echo "env_generator=generate-production-env.sh" >> $GITHUB_OUTPUT
+            echo "env_generator=generate-vps1-env.sh" >> $GITHUB_OUTPUT
             echo "certbot_staging=0" >> $GITHUB_OUTPUT
             echo "load_demo_data=false" >> $GITHUB_OUTPUT
 
-            echo "SSH_TARGET=${{ format('{0}@{1}', secrets.SSH_USER, secrets.SERVER_IP) }}" >> $GITHUB_ENV
-            echo "DEPLOY_DIR=${{ secrets.DEPLOY_DIR }}" >> $GITHUB_ENV
-            echo "SERVER_IP=${{ secrets.SERVER_IP }}" >> $GITHUB_ENV
+            echo "SSH_TARGET=${{ format('{0}@{1}', secrets.VPS1_SSH_USER, secrets.VPS1_SERVER_IP) }}" >> $GITHUB_ENV
+            echo "DEPLOY_DIR=${{ secrets.VPS1_DEPLOY_DIR }}" >> $GITHUB_ENV
+            echo "SERVER_IP=${{ secrets.VPS1_SERVER_IP }}" >> $GITHUB_ENV
           fi
 
       - name: Verify required secrets
         run: |
-          if [[ "${{ steps.env.outputs.name }}" == "preprod" ]]; then
-            if [[ -z "${{ secrets.PREPROD_SSH_KEY }}" || -z "${{ secrets.PREPROD_SERVER_IP }}" || -z "${{ secrets.PREPROD_DEPLOY_DIR }}" ]]; then
-              echo "::error::Missing PREPROD_* secrets for preprod deployment"
+          if [[ "${{ steps.env.outputs.name }}" == "vps2" ]]; then
+            if [[ -z "${{ secrets.VPS2_SSH_KEY }}" || -z "${{ secrets.VPS2_SERVER_IP }}" || -z "${{ secrets.VPS2_DEPLOY_DIR }}" ]]; then
+              echo "::error::Missing VPS2_* secrets for vps2 deployment"
               exit 1
             fi
           else
-            if [[ -z "${{ secrets.SSH_KEY }}" || -z "${{ secrets.SERVER_IP }}" || -z "${{ secrets.DEPLOY_DIR }}" ]]; then
-              echo "::error::Missing SSH_KEY/SERVER_IP/DEPLOY_DIR secrets for production deployment"
+            if [[ -z "${{ secrets.VPS1_SSH_KEY }}" || -z "${{ secrets.VPS1_SERVER_IP }}" || -z "${{ secrets.VPS1_DEPLOY_DIR }}" ]]; then
+              echo "::error::Missing VPS1_SSH_KEY/VPS1_SERVER_IP/VPS1_DEPLOY_DIR secrets for vps1 deployment"
               exit 1
             fi
           fi
@@ -297,7 +297,7 @@ jobs:
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
-          ssh-private-key: ${{ steps.env.outputs.name == 'preprod' && secrets.PREPROD_SSH_KEY || secrets.SSH_KEY }}
+          ssh-private-key: ${{ steps.env.outputs.name == 'vps2' && secrets.VPS2_SSH_KEY || secrets.VPS1_SSH_KEY }}
 
       - name: Configure SSH known hosts
         run: |
@@ -486,8 +486,8 @@ jobs:
             echo "Entrypoint setup verified."
           EOFSETUP
 
-      - name: Create draft PR to main (preprod only)
-        if: startsWith(github.ref, 'refs/heads/release/') && vars.CREATE_PR_ON_PREDEPLOY != 'false'
+      - name: Create draft PR to main (vps2 only)
+        if: startsWith(github.ref, 'refs/heads/release/') && vars.CREATE_PR_ON_VPS2DEPLOY != 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

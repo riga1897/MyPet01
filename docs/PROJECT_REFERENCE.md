@@ -4,8 +4,8 @@
 MyPet01 — семейный блог на Django 5.1+ для публикации фото/видео контента о домашних животных. Проект ориентирован на постепенное развитие, масштабируемость, максимальную безопасность и 100% покрытие тестами.
 
 **Веб-домены**: `www.mine-craft.su`, `site.mine-craft.su`, `mine-craft.su`
-**VPN SNI**: `vpn.mine-craft.su` (preprod), `mainsrv01.mine-craft.su` (prod)
-**Preprod VPS**: 217.147.15.220 | **Prod VPS**: 91.204.75.25
+**VPN SNI**: `vpn.mine-craft.su` (VPS2), `mainsrv01.mine-craft.su` (VPS1)
+**VPS1** (production): IP в секрете `VPS1_SERVER_IP` | **VPS2** (pre-production): IP в секрете `VPS2_SERVER_IP`
 
 ## User Preferences
 - **Coding Workflow (TDD + QA)**:
@@ -146,8 +146,8 @@ MyPet01/
 │   ├── update-geoip.sh         # Download RIPE NCC data -> haproxy/geoip/ru_networks.lst
 │   ├── cron-geoip-update.sh    # Weekly cron wrapper for GeoIP update
 │   ├── init-letsencrypt.sh     # Let's Encrypt initial certificate setup
-│   ├── generate-preprod-env.sh # Generate preprod .env file
-│   └── generate-production-env.sh  # Generate production .env file
+│   ├── generate-vps2-env.sh    # Generate VPS2 (pre-production) .env file
+│   └── generate-vps1-env.sh    # Generate VPS1 (production) .env file
 │
 ├── haproxy/
 │   ├── haproxy.cfg             # HAProxy config (SNI routing, GeoIP, rate limiting, scanner blocking)
@@ -352,7 +352,7 @@ BaseModel (abstract: created_at, updated_at)
 ### First Deploy Checklist
 1. Run `bash scripts/update-geoip.sh` (generates GeoIP data for HAProxy)
 2. Run `bash scripts/setup_vps.sh` (VPS hardening: firewall, sysctl, ICMP block)
-3. Configure `.env` via `scripts/generate-production-env.sh`
+3. Configure `.env` via `scripts/generate-vps1-env.sh`
 4. `docker compose -f docker-compose.prod.yml up -d`
 5. Run `scripts/init-letsencrypt.sh` (obtain Let's Encrypt certs)
 

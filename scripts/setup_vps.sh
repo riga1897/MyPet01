@@ -28,21 +28,21 @@ print_error() {
 
 ENV_TYPE="${1:-}"
 if [ -z "$ENV_TYPE" ]; then
-    echo "Использование: $0 <preprod|prod>"
-    echo "  preprod — настройка препрод VPS (deploy dir: /opt/blog-preprod)"
-    echo "  prod    — настройка production VPS (deploy dir: /opt/blog)"
+    echo "Использование: $0 <vps2|vps1>"
+    echo "  vps2 — настройка VPS2 pre-production (deploy dir: /opt/mypet01)"
+    echo "  vps1 — настройка VPS1 production     (deploy dir: /opt/mypet01)"
     exit 1
 fi
 
 case "$ENV_TYPE" in
-    preprod)
-        DEPLOY_DIR="/opt/blog-preprod"
+    vps2)
+        DEPLOY_DIR="/opt/mypet01"
         ;;
-    prod)
-        DEPLOY_DIR="/opt/blog"
+    vps1)
+        DEPLOY_DIR="/opt/mypet01"
         ;;
     *)
-        print_error "Неизвестный тип окружения: $ENV_TYPE. Используйте 'preprod' или 'prod'"
+        print_error "Неизвестный тип окружения: $ENV_TYPE. Используйте 'vps2' или 'vps1'"
         exit 1
         ;;
 esac
@@ -57,7 +57,7 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-print_header "MyPet01 — Настройка VPS ($ENV_TYPE)"
+print_header "MyPet01 — Настройка $ENV_TYPE"
 
 echo "Параметры:"
 echo "  Окружение:                  $ENV_TYPE"
@@ -365,7 +365,7 @@ echo -e "${YELLOW}║  ВАЖНО: Скопируйте приватные кл�
 echo -e "${YELLOW}║                                                          ║${NC}"
 echo -e "${YELLOW}║  1. Ключ $ADMIN_USER — для подключения к серверу по SSH   ║${NC}"
 echo -e "${YELLOW}║  2. Ключ $DEPLOY_USER — в GitHub Secret для CI/CD        ║${NC}"
-echo -e "${YELLOW}║     Secret name: PREPROD_SSH_KEY (или SSH_KEY для prod)   ║${NC}"
+echo -e "${YELLOW}║     Secret name: VPS2_SSH_KEY (или VPS1_SSH_KEY для prod) ║${NC}"
 echo -e "${YELLOW}╚══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -396,16 +396,16 @@ echo -e "  Root SSH:            ${RED}ОТКЛЮЧЁН${NC}"
 echo ""
 echo "Информация для GitHub Secrets:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if [ "$ENV_TYPE" = "preprod" ]; then
-    echo -e "  PREPROD_SERVER_IP:   ${YELLOW}$SERVER_IP${NC}"
-    echo -e "  PREPROD_SSH_USER:    ${YELLOW}$DEPLOY_USER${NC}"
-    echo -e "  PREPROD_DEPLOY_DIR:  ${YELLOW}$DEPLOY_DIR${NC}"
-    echo -e "  PREPROD_SSH_KEY:     ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
+if [ "$ENV_TYPE" = "vps2" ]; then
+    echo -e "  VPS2_SERVER_IP:      ${YELLOW}$SERVER_IP${NC}"
+    echo -e "  VPS2_SSH_USER:       ${YELLOW}$DEPLOY_USER${NC}"
+    echo -e "  VPS2_DEPLOY_DIR:     ${YELLOW}$DEPLOY_DIR${NC}"
+    echo -e "  VPS2_SSH_KEY:        ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
 else
-    echo -e "  SERVER_IP:           ${YELLOW}$SERVER_IP${NC}"
-    echo -e "  SSH_USER:            ${YELLOW}$DEPLOY_USER${NC}"
-    echo -e "  DEPLOY_DIR:          ${YELLOW}$DEPLOY_DIR${NC}"
-    echo -e "  SSH_KEY:             ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
+    echo -e "  VPS1_SERVER_IP:      ${YELLOW}$SERVER_IP${NC}"
+    echo -e "  VPS1_SSH_USER:       ${YELLOW}$DEPLOY_USER${NC}"
+    echo -e "  VPS1_DEPLOY_DIR:     ${YELLOW}$DEPLOY_DIR${NC}"
+    echo -e "  VPS1_SSH_KEY:        ${YELLOW}(приватный ключ $DEPLOY_USER выше)${NC}"
 fi
 echo ""
 echo -e "${BLUE}При первом деплое CI/CD автоматически установит:${NC}"
