@@ -1,8 +1,17 @@
 from pathlib import Path
 import dj_database_url
+import sentry_sdk
 from mypet_project.config import settings as env_settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+if env_settings.sentry_dsn:
+    sentry_sdk.init(
+        dsn=env_settings.sentry_dsn,
+        environment=env_settings.sentry_environment,
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+    )
 
 DEBUG = env_settings.debug
 SECRET_KEY = env_settings.secret_key

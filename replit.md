@@ -45,6 +45,14 @@ The project is organized into `blog` (content management), `core` (shared utilit
 - **HAProxy Security (Production)**: Features GeoIP filtering (Russian IPs only, with VPN/ACME bypasses), extensive rate limiting for SSL, HTTP, and Minecraft traffic, scanner path blocking, BADREQ auto-banning, and a manual IP blacklist. ICMP blocking is also configured at the VPS level.
 - **Nginx Security**: Manages SSL/TLS termination, robust headers (HSTS, X-Frame-Options, etc.), gzip compression, and efficient static/media file serving.
 
+### Observability Stack (VPS3)
+- **Prometheus** — метрики (node_exporter на всех VPS, pg_exporter на VPS1)
+- **Grafana** — дашборды с auto-provisioning (datasources: Prometheus + Loki)
+- **Loki** — агрегация логов Docker-контейнеров
+- **Promtail** — сбор логов на VPS1/VPS2 → отправка в Loki
+- **Alertmanager** — алерты в Telegram (сервер down, CPU > 85%, диск < 15%, репликация)
+- **Health endpoint** — `/health/` (проверка DB, Redis, диска)
+
 ### Docker Architecture
 - **Local Development**: `docker-compose.yml` sets up `web` (Django dev server), `db` (PostgreSQL), and `redis`.
 - **Production**: `docker-compose.prod.yml` orchestrates `haproxy`, `nginx`, `web` (Gunicorn), `db`, `redis`, `certbot`, and `softether` for a complete production environment.
@@ -75,3 +83,6 @@ The project is organized into `blog` (content management), `core` (shared utilit
 - **VPN**: SoftEther VPN
 - **SSL Certificates**: Let's Encrypt (Certbot)
 - **CI/CD**: GitHub Actions
+- **Error Tracking**: sentry-sdk[django] (optional, configurable via SENTRY_DSN env var)
+- **Log Aggregation**: Loki + Promtail (on VPS3 + all nodes)
+- **Alerting**: Prometheus Alertmanager with Telegram receiver

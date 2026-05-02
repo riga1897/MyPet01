@@ -84,6 +84,10 @@ ADMIN_SHOW_FACETS=True
 # Redis
 REDIS_URL=redis://redis:6379/0
 
+# Sentry (опционально)
+SENTRY_DSN=${SENTRY_DSN:-}
+SENTRY_ENVIRONMENT=staging
+
 # Суперпользователь
 DJANGO_SUPERUSER_USERNAME=admin
 DJANGO_SUPERUSER_EMAIL=admin@vps2.mine-craft.su

@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     browser_cache_enabled: bool = False
     browser_cache_max_age: int = 86400
 
+    sentry_dsn: str = ''
+    sentry_environment: str = 'production'
+
     @property
     def is_secure_ssl_redirect(self) -> bool:
         return self.secure_ssl_redirect if self.secure_ssl_redirect is not None else self.use_https

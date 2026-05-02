@@ -7,6 +7,7 @@ from django.views.generic import RedirectView
 
 from blog.sitemaps import ContentSitemap, StaticViewSitemap
 from blog.views import ProtectedMediaView
+from core.views_health import HealthView
 
 sitemaps = {
     "content": ContentSitemap,
@@ -14,6 +15,7 @@ sitemaps = {
 }
 
 urlpatterns: list[URLPattern | URLResolver] = [
+    path('health/', HealthView.as_view(), name='health'),
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.png', permanent=True)),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('', include('blog.urls')),

@@ -7,6 +7,8 @@ ansible_control_dir: /opt/ansible
 # Prometheus + Grafana
 prometheus_port: 9090
 grafana_port: 3000
+alertmanager_port: 9093
+loki_port: 3100
 monitoring_dir: /opt/monitoring
 prometheus_retention: "30d"
 
